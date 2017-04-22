@@ -4,6 +4,8 @@ import com.infomaximum.rocksdb.migration.struct.IMigrationItem;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +17,7 @@ import java.util.Map;
 public class RocksdbBuilder {
 
 	private DBOptions dbOptions;
-	private String path;
+	private Path path;
 
 	private List<IMigrationItem> migrationItems;
 
@@ -25,7 +27,12 @@ public class RocksdbBuilder {
 	}
 
 	public RocksdbBuilder withPath(String path) {
-		this.path=path;
+		this.path = Paths.get(path);
+		return this;
+	}
+
+	public RocksdbBuilder withPath(Path path) {
+		this.path = path;
 		return this;
 	}
 
@@ -35,7 +42,7 @@ public class RocksdbBuilder {
 		//Загружаем список columnFamilyName
 		Options options = new Options().setCreateIfMissing(true);
 		List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<ColumnFamilyDescriptor>();
-		for (byte[] columnFamilyName: RocksDB.listColumnFamilies(options, path)) {
+		for (byte[] columnFamilyName: RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
 			columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
 		}
 		if (columnFamilyDescriptors.isEmpty()) columnFamilyDescriptors.add(new ColumnFamilyDescriptor("default".getBytes()));
@@ -44,7 +51,7 @@ public class RocksdbBuilder {
 
 		//Подключаемся к базе данных
 		List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<ColumnFamilyHandle>();
-		RocksDB rocksDB = RocksDB.open(dbOptions, path, columnFamilyDescriptors, columnFamilyHandles);
+		RocksDB rocksDB = RocksDB.open(dbOptions, path.toAbsolutePath().toString(), columnFamilyDescriptors, columnFamilyHandles);
 
 		Map<String, ColumnFamilyHandle> columnFamilies = new HashMap<String, ColumnFamilyHandle>();
 		for (int i=0; i<columnFamilyDescriptors.size(); i++) {
