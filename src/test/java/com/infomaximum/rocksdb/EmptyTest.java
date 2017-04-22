@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb;
 
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -15,7 +16,10 @@ public class EmptyTest extends RocksDataTestAssert {
                 .withPath(pathDataBase)
                 .build();
 
-        assertTrue(true);
+
+        Assert.assertTrue(true);
+
+        rocksDataBase.destroy();
     }
 
 }

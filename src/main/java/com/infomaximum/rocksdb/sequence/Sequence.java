@@ -29,8 +29,8 @@ public class Sequence {
         increment = new AtomicLong(0);
         byte[] value = rocksDataBase.getRocksDB().get(columnFamilyHandle, sequenceName);
         if (value==null) {
-            increment.set(1);
-            maxCacheIncrement=1;
+            increment.set(0);
+            maxCacheIncrement=0;
         } else {
             long lValue = TypeConvertRocksdb.getLong(value);
             increment.set(lValue);
@@ -50,7 +50,7 @@ public class Sequence {
         do {
             value = increment.get();
             if (value>=maxCacheIncrement) {
-                //Кеш закончился
+                //Кеш закончился-берем еще
                 tryRefillCacheIncrement();
             }
         } while (!increment.compareAndSet(value, value + 1));
