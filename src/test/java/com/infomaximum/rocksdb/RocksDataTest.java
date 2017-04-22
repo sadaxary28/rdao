@@ -12,7 +12,7 @@ import java.nio.file.Path;
 /**
  * Created by kris on 22.04.17.
  */
-public class RocksDataTestAssert {
+public class RocksDataTest {
 
     protected Path pathDataBase;
 

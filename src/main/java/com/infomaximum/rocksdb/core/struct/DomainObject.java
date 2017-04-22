@@ -7,7 +7,7 @@ public abstract class DomainObject {
 
     private final long id;
 
-    private boolean readOnly=false;
+    private boolean readOnly=true;
 
     public DomainObject(long id) {
         this.id = id;
@@ -21,6 +21,14 @@ public abstract class DomainObject {
         return readOnly;
     }
 
-    public abstract void save();
+    @Override
+    public String toString() {
+        return new StringBuilder()
+                .append(getClass().getSuperclass().getName()).append('(')
+                .append("id: ").append(id)
+                .append(')').toString();
+    }
+
+    public void save(){}
 }
 

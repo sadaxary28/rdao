@@ -1,7 +1,8 @@
-package com.infomaximum.rocksdb.sequence;
+package com.infomaximum.rocksdb.test.sequence;
 
-import com.infomaximum.rocksdb.RocksDataTestAssert;
+import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.sequence.Sequence;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by kris on 22.04.17.
  */
-public class TestSequenceOrder extends RocksDataTestAssert {
+public class TestSequenceOrder extends RocksDataTest {
 
     private final static Logger log = LoggerFactory.getLogger(TestSequenceOrder.class);
 
@@ -29,7 +30,7 @@ public class TestSequenceOrder extends RocksDataTestAssert {
             Assert.assertEquals(i, id);
         }
 
-        Assert.assertTrue(true);
+        rocksDataBase.destroy();
     }
 
 }

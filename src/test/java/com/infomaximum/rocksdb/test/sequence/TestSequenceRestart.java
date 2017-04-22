@@ -1,7 +1,8 @@
-package com.infomaximum.rocksdb.sequence;
+package com.infomaximum.rocksdb.test.sequence;
 
-import com.infomaximum.rocksdb.RocksDataTestAssert;
+import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.sequence.Sequence;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
@@ -15,7 +16,7 @@ import java.util.Set;
 /**
  * Created by kris on 22.04.17.
  */
-public class TestSequenceRestart extends RocksDataTestAssert {
+public class TestSequenceRestart extends RocksDataTest {
 
     private final static Logger log = LoggerFactory.getLogger(TestSequenceRestart.class);
 
@@ -37,8 +38,6 @@ public class TestSequenceRestart extends RocksDataTestAssert {
         for (int i=0; i<10; i++) {
             startDbAndIncrementSequence(sequenceName, ids, RandomUtil.random.nextInt(100)+1);
         }
-
-        Assert.assertTrue(true);
     }
 
     private void startDbAndIncrementSequence(String sequenceName, Set<Long> ids, int count) throws Exception {

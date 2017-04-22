@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public interface DataSource {
 
-    public long nextId(String columnFamily);
+    public long nextId(String columnFamily) throws RocksDBException;
 
     public Map<String, byte[]> load(String columnFamily, long id, boolean isReadOnly) throws RocksDBException;
 

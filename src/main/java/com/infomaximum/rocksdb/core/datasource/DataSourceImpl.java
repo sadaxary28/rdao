@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.core.datasource;
 
 import com.infomaximum.rocksdb.struct.RocksDataBase;
+import org.rocksdb.RocksDBException;
 
 import java.util.Map;
 
@@ -16,8 +17,8 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public long nextId(String columnFamily) {
-        return 0;
+    public long nextId(String sequenceName) throws RocksDBException {
+        return rocksDataBase.getSequence(sequenceName).next();
     }
 
     @Override

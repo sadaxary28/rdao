@@ -30,6 +30,7 @@ public class ManagerSequence {
         Sequence sequence = sequences.get(sequenceName);
         if (sequence==null) {
             synchronized (sequences) {
+                sequence = sequences.get(sequenceName);
                 if (sequence==null) {
                     sequence = new Sequence(rocksDataBase, columnFamilyHandle, TypeConvertRocksdb.pack(sequenceName));
                     sequences.put(sequenceName, sequence);
