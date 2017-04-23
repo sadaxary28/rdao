@@ -43,7 +43,7 @@ public class DomainObjectSource {
         return engineTransaction;
     }
 
-    
+
     public <T extends DomainObject> T create(final Transaction transaction, final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
         if (transaction==null) throw new IllegalArgumentException("Transaction is empty");
 
