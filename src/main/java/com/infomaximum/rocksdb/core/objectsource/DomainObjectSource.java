@@ -16,6 +16,7 @@ import javassist.util.proxy.ProxyFactory;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +43,7 @@ public class DomainObjectSource {
         return engineTransaction;
     }
 
+    
     public <T extends DomainObject> T create(final Transaction transaction, final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
         if (transaction==null) throw new IllegalArgumentException("Transaction is empty");
 
@@ -50,15 +52,28 @@ public class DomainObjectSource {
 
         long id = dataSource.nextId(entityAnnotation.columnFamily());
 
-        ProxyFactory factory = new ProxyFactory();
-        factory.setSuperclass(clazz);
-        factory.setFilter(getMethodFilter(clazz));
+        T domainObject = create(clazz, id, null);
 
-        T domainObject = (T) factory.create(
-                new Class<?>[]{long.class},
-                new Object[]{id},
-                getMethodHandler(clazz)
-        );
+        //Указываем транзакцию
+        HashFields.getTransactionField().set(domainObject, transaction);
+
+        return domainObject;
+    }
+
+    /**
+     * load object to readonly
+     * @param id
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> T edit(final Transaction transaction, final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
+        if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
+
+        Map<String, byte[]> data = dataSource.load(entityAnnotation.columnFamily(), id, true);
+        if (data==null) return null;
+
+        T domainObject = create(clazz, id, data);
 
         //Указываем транзакцию
         HashFields.getTransactionField().set(domainObject, transaction);
@@ -76,9 +91,13 @@ public class DomainObjectSource {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        Map<String, byte[]> data = dataSource.load(entityAnnotation.columnFamily(), id, true);
+        Map<String, byte[]> data = dataSource.load(entityAnnotation.columnFamily(), id, false);
         if (data==null) return null;
 
+        return create(clazz, id, data);
+    }
+
+    private <T extends DomainObject> T create(final Class<? extends DomainObject> clazz, long id, Map<String, byte[]> data) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();
         factory.setSuperclass(clazz);
         factory.setFilter(getMethodFilter(clazz));
@@ -90,12 +109,14 @@ public class DomainObjectSource {
         );
 
         //Загружаем поля
-        for (Map.Entry<String, byte[]> entry: data.entrySet()) {
-            String fieldName = entry.getKey();
-            byte[] value = entry.getValue();
+        if (data!=null) {
+            for (Map.Entry<String, byte[]> entry: data.entrySet()) {
+                String fieldName = entry.getKey();
+                byte[] value = entry.getValue();
 
-            Field field = HashFields.getEntityField(clazz, fieldName);
-            field.set(domainObject, TypeConvertRocksdb.get(field.getType(), value));
+                Field field = HashFields.getEntityField(clazz, fieldName);
+                field.set(domainObject, TypeConvertRocksdb.get(field.getType(), value));
+            }
         }
 
         return domainObject;
