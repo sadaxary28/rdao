@@ -20,7 +20,7 @@ public abstract class DomainObject {
     }
 
     public boolean isReadOnly() {
-        return (transaction==null);
+        return (transaction==null || !transaction.isActive());
     }
 
     @Override

@@ -27,6 +27,7 @@ public class TransactionImpl implements Transaction {
         this.active=true;
     }
 
+    @Override
     public boolean isActive() {
         return active;
     }

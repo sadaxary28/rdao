@@ -7,6 +7,8 @@ import org.rocksdb.RocksDBException;
  */
 public interface Transaction {
 
+    boolean isActive();
+
     void put(String columnFamily, String key, byte[] value);
 
     void commit() throws RocksDBException;

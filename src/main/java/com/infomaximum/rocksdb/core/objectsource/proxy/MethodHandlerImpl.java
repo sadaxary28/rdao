@@ -44,9 +44,9 @@ public class MethodHandlerImpl implements MethodHandler {
     private void saveDomainObject(DomainObject self) throws NoSuchFieldException, IllegalAccessException {
         Field transactionField = HashFields.getTransactionField();
         Transaction transaction = (Transaction) transactionField.get(self);
-        if (transaction==null) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
+        if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
-        //TODO реализовать, что бы небыло перезаписы
+        //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
         for (String fieldName: HashFields.getEntityFieldNames(clazz)) {
             Field field = HashFields.getEntityField(clazz, fieldName);
 
