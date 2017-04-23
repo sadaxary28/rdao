@@ -11,7 +11,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({FIELD})
 @Retention(RUNTIME)
-public @interface Field {
+public @interface EntityField {
 
     /**
      * (Optional) The name of the column. Defaults to

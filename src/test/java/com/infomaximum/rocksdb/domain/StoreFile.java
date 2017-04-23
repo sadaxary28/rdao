@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.domain;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
-import com.infomaximum.rocksdb.core.anotation.Field;
+import com.infomaximum.rocksdb.core.anotation.EntityField;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 
 /**
@@ -10,13 +10,13 @@ import com.infomaximum.rocksdb.core.struct.DomainObject;
 @Entity(columnFamily = "com.infomaximum.StoreFile")
 public class StoreFile extends DomainObject {
 
-    @Field
+    @EntityField
     private String fileName;
 
-    @Field
+    @EntityField
     private String contentType;
 
-    @Field
+    @EntityField
     private long size;
 
     public StoreFile(long id) {

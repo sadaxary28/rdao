@@ -4,15 +4,18 @@ import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
+import com.infomaximum.rocksdb.core.objectsource.utils.HashFields;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
-import javassist.ClassPool;
+import com.infomaximum.rocksdb.transaction.Transaction;
+import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
+import com.infomaximum.rocksdb.transaction.engine.impl.EngineTransactionImpl;
+import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,24 +25,30 @@ import java.util.Map;
 public class DomainObjectSource {
 
     private final DataSource dataSource;
+    private final EngineTransaction engineTransaction;
 
-    private Map<Class<? extends DomainObject>, MethodFilter> methodFilters;
-    private Map<Class<? extends DomainObject>, MethodHandler> methodHandlers;
+    private final Map<Class<? extends DomainObject>, MethodFilter> methodFilters;
+    private final Map<Class<? extends DomainObject>, MethodHandler> methodHandlers;
 
     public DomainObjectSource(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.engineTransaction = new EngineTransactionImpl(dataSource);
 
         this.methodFilters = new HashMap<Class<? extends DomainObject>, MethodFilter>();
         this.methodHandlers = new HashMap<Class<? extends DomainObject>, MethodHandler>();
     }
 
-    public <T extends DomainObject> T create(final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
+    public EngineTransaction getEngineTransaction() {
+        return engineTransaction;
+    }
+
+    public <T extends DomainObject> T create(final Transaction transaction, final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
+        if (transaction==null) throw new IllegalArgumentException("Transaction is empty");
+
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
         long id = dataSource.nextId(entityAnnotation.columnFamily());
-
-        ClassPool classPool = ClassPool.getDefault();
 
         ProxyFactory factory = new ProxyFactory();
         factory.setSuperclass(clazz);
@@ -51,8 +60,8 @@ public class DomainObjectSource {
                 getMethodHandler(clazz)
         );
 
-        //Снимаем флаг readonly
-        setReadOnly(domainObject, false);
+        //Указываем транзакцию
+        HashFields.getTransactionField().set(domainObject, transaction);
 
         return domainObject;
     }
@@ -74,11 +83,22 @@ public class DomainObjectSource {
         factory.setSuperclass(clazz);
         factory.setFilter(getMethodFilter(clazz));
 
-        return (T) factory.create(
+        T domainObject = (T) factory.create(
                 new Class<?>[]{long.class},
                 new Object[]{id},
                 getMethodHandler(clazz)
         );
+
+        //Загружаем поля
+        for (Map.Entry<String, byte[]> entry: data.entrySet()) {
+            String fieldName = entry.getKey();
+            byte[] value = entry.getValue();
+
+            Field field = HashFields.getEntityField(clazz, fieldName);
+            field.set(domainObject, TypeConvertRocksdb.get(field.getType(), value));
+        }
+
+        return domainObject;
     }
 
     private MethodFilter getMethodFilter(final Class<? extends DomainObject> clazz) {
@@ -109,10 +129,4 @@ public class DomainObjectSource {
         return methodHandler;
     }
 
-    private static void setReadOnly(DomainObject domainObject, boolean readOnly) throws NoSuchFieldException, IllegalAccessException {
-        //таким способом не находит поле
-        //domainObject.getClass().getSuperclass().getSuperclass().getDeclaredFields()
-        Field fieldReadOnly = domainObject.getClass().getField("readOnly");
-        fieldReadOnly.set(domainObject, readOnly);
-    }
 }

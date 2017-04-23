@@ -1,5 +1,7 @@
 package com.infomaximum.rocksdb.core.struct;
 
+import com.infomaximum.rocksdb.transaction.Transaction;
+
 /**
  * Created by kris on 19.04.17.
  */
@@ -7,7 +9,7 @@ public abstract class DomainObject {
 
     private final long id;
 
-    private boolean readOnly=true;
+    private Transaction transaction = null;
 
     public DomainObject(long id) {
         this.id = id;
@@ -18,7 +20,7 @@ public abstract class DomainObject {
     }
 
     public boolean isReadOnly() {
-        return readOnly;
+        return (transaction==null);
     }
 
     @Override
