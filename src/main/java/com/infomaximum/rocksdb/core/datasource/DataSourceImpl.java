@@ -36,7 +36,7 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public Map<String, byte[]> load(String columnFamily, long id, boolean isReadOnly) throws RocksDBException {
+    public Map<String, byte[]> load(String columnFamily, long id, boolean isWriteLock) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
         RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
 
@@ -62,8 +62,4 @@ public class DataSourceImpl implements DataSource {
         }
     }
 
-    @Override
-    public void set(String columnFamily, long id, String field, byte[] value) {
-
-    }
 }
