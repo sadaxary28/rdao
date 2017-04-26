@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.struct;
 
 import com.infomaximum.rocksdb.sequence.ManagerSequence;
 import com.infomaximum.rocksdb.sequence.Sequence;
+import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 
 import java.util.Map;
@@ -30,7 +31,7 @@ public class RocksDataBase {
             synchronized (columnFamilies) {
                 columnFamilyHandle = columnFamilies.get(columnFamilyName);
                 if (columnFamilyHandle==null) {
-                    ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(columnFamilyName.getBytes());
+                    ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(columnFamilyName.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET));
                     columnFamilyHandle = rocksDB.createColumnFamily(columnFamilyDescriptor);
                     columnFamilies.put(columnFamilyName, columnFamilyHandle);
                 }

@@ -3,16 +3,20 @@ package com.infomaximum.rocksdb.utils;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
+import java.nio.charset.Charset;
+
 /**
  * Created by kris on 23.03.17.
  */
 public class TypeConvertRocksdb {
 
+    public static final Charset ROCKSDB_CHARSET = Charset.forName("UTF-8");
+
     public static String getString(byte[] value){
         if (value==null) {
             return null;
         } else {
-            return new String(value);
+            return new String(value, TypeConvertRocksdb.ROCKSDB_CHARSET);
         }
     }
 
@@ -41,7 +45,7 @@ public class TypeConvertRocksdb {
     }
 
     public static byte[] pack(String value){
-        return value.getBytes();
+        return value.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET);
     }
 
     public static byte[] pack(int value){

@@ -54,8 +54,11 @@ public class TransactionImpl implements Transaction {
         if (!active) throw new RuntimeException("Transaction is not active: is commited");
 
         //Комитим
-        for (String columnFamilyName: queue.keySet()) {
-            for (Map.Entry<String, byte[]> entry: queue.get(columnFamilyName).entrySet()){
+        for (Map.Entry<String, Map<String, byte[]>> entryFamilyName: queue.entrySet()) {
+            String columnFamilyName = entryFamilyName.getKey();
+            Map<String, byte[]> values = entryFamilyName.getValue();
+
+            for (Map.Entry<String, byte[]> entry: values.entrySet()) {
                 ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamilyName);
                 String key = entry.getKey();
                 byte[] value = entry.getValue();

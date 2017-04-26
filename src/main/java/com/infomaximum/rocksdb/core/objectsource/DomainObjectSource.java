@@ -52,7 +52,7 @@ public class DomainObjectSource {
 
         long id = dataSource.nextId(entityAnnotation.columnFamily());
 
-        T domainObject = create(clazz, id, null);
+        T domainObject = createDomainObject(clazz, id, null);
 
         //Указываем транзакцию
         HashFields.getTransactionField().set(domainObject, transaction);
@@ -73,7 +73,7 @@ public class DomainObjectSource {
         Map<String, byte[]> data = dataSource.load(entityAnnotation.columnFamily(), id, true);
         if (data==null) return null;
 
-        T domainObject = create(clazz, id, data);
+        T domainObject = createDomainObject(clazz, id, data);
 
         //Указываем транзакцию
         HashFields.getTransactionField().set(domainObject, transaction);
@@ -94,10 +94,10 @@ public class DomainObjectSource {
         Map<String, byte[]> data = dataSource.load(entityAnnotation.columnFamily(), id, false);
         if (data==null) return null;
 
-        return create(clazz, id, data);
+        return createDomainObject(clazz, id, data);
     }
 
-    private <T extends DomainObject> T create(final Class<? extends DomainObject> clazz, long id, Map<String, byte[]> data) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    private <T extends DomainObject> T createDomainObject(final Class<? extends DomainObject> clazz, long id, Map<String, byte[]> data) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();
         factory.setSuperclass(clazz);
         factory.setFilter(getMethodFilter(clazz));

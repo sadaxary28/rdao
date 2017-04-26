@@ -12,8 +12,8 @@ import java.util.Random;
  */
 public class RandomUtil {
 
-	public static Random random = new Random();
+	public final static Random random = new Random();
 
-	public static SecureRandom secureRandom = new SecureRandom();
+	public final static SecureRandom secureRandom = new SecureRandom();
 
 }

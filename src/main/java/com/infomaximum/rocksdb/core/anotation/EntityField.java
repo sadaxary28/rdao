@@ -19,4 +19,5 @@ public @interface EntityField {
      */
     String name() default "";
 
+    boolean lazy() default true;
 }
