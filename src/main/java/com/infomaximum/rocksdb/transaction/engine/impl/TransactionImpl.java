@@ -8,6 +8,7 @@ import org.rocksdb.RocksDBException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -16,13 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TransactionImpl implements Transaction {
 
     private final RocksDataBase rocksDataBase;
-    private final Map<String, Map<String, byte[]>> queue;
+    private final Map<String, Map<String, Optional<byte[]>>> queue;
 
     private boolean active;
 
     public TransactionImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
-        this.queue = new HashMap<String, Map<String, byte[]>>();
+        this.queue = new HashMap<String, Map<String, Optional<byte[]>>>();
 
         this.active=true;
     }
@@ -34,17 +35,17 @@ public class TransactionImpl implements Transaction {
 
     @Override
     public void put(String columnFamily, String key, byte[] value) {
-        Map<String, byte[]> columnFamilyItem = queue.get(columnFamily);
+        Map<String, Optional<byte[]>> columnFamilyItem = queue.get(columnFamily);
         if (columnFamilyItem==null) {
             synchronized (queue) {
                 columnFamilyItem = queue.get(columnFamily);
                 if (columnFamilyItem==null) {
-                    columnFamilyItem = new ConcurrentHashMap<String, byte[]>();
+                    columnFamilyItem = new ConcurrentHashMap<String, Optional<byte[]>>();
                     queue.put(columnFamily, columnFamilyItem);
                 }
             }
         }
-        columnFamilyItem.put(key, value);
+        columnFamilyItem.put(key, Optional.ofNullable(value));
     }
 
 
@@ -54,14 +55,14 @@ public class TransactionImpl implements Transaction {
         if (!active) throw new RuntimeException("Transaction is not active: is commited");
 
         //Комитим
-        for (Map.Entry<String, Map<String, byte[]>> entryFamilyName: queue.entrySet()) {
+        for (Map.Entry<String, Map<String, Optional<byte[]>>> entryFamilyName: queue.entrySet()) {
             String columnFamilyName = entryFamilyName.getKey();
-            Map<String, byte[]> values = entryFamilyName.getValue();
+            Map<String, Optional<byte[]>> values = entryFamilyName.getValue();
 
-            for (Map.Entry<String, byte[]> entry: values.entrySet()) {
+            for (Map.Entry<String, Optional<byte[]>> entry: values.entrySet()) {
                 ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamilyName);
                 String key = entry.getKey();
-                byte[] value = entry.getValue();
+                byte[] value = entry.getValue().orElse(new byte[0]);
                 rocksDataBase.getRocksDB().put(columnFamilyHandle, TypeConvertRocksdb.pack(key), value);
             }
         }

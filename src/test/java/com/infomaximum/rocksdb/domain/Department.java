@@ -13,8 +13,8 @@ public class Department extends DomainObject {
     @EntityField
     private String name;
 
-//    @EntityField
-//    private Department parent;
+    @EntityField()
+    private Department parent;
 
 
     public Department(long id) {

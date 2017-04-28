@@ -1,10 +1,10 @@
 package com.infomaximum.rocksdb.core.datasource;
 
-import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
+import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
+import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
+import com.infomaximum.rocksdb.core.objectsource.utils.key.TypeKey;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
-import com.infomaximum.rocksdb.transaction.engine.impl.EngineTransactionImpl;
 import com.infomaximum.rocksdb.transaction.engine.impl.TransactionImpl;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
@@ -13,6 +13,7 @@ import org.rocksdb.RocksIterator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by user on 20.04.2017.
@@ -36,30 +37,52 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public Map<String, byte[]> load(String columnFamily, long id, boolean isWriteLock) throws RocksDBException {
+    public byte[] get(String columnFamily, long id, String field) throws RocksDBException {
+        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+        return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyField(id, field).pack()));
+    }
+
+    @Override
+    public Map<String, byte[]> gets(String columnFamily, long id, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
         RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
 
-        Map<String, byte[]> values = new HashMap<String, byte[]>();
+        boolean availability = false;
+        Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
 
         rocksIterator.seek(TypeConvertRocksdb.pack(id));
         while (true) {
             if (!rocksIterator.isValid()) break;
 
-            Object[] keySplit = DomainObjectUtils.parseRocksDBKey(TypeConvertRocksdb.getString(rocksIterator.key()));
-            long iID = (long) keySplit[0];
-            if (iID!=id) break;
-            String fieldName = (String) keySplit[1];
+            Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+            if (key.getId()!=id) break;
 
-            values.put(fieldName, rocksIterator.value());
+            TypeKey typeKey = key.getTypeKey();
+            if (typeKey == TypeKey.AVAILABILITY) {
+                availability = true;
+            } else if (typeKey == TypeKey.FIELD) {
+                String fieldName = ((KeyField)key).getFieldName();
+                if (fields.contains(fieldName)) {
+                    fieldValues.put(fieldName, rocksIterator.value());
+                }
+            } else {
+                throw new RuntimeException("Not support type key: " + typeKey);
+            }
+
             rocksIterator.next();
         }
 
-        if (values.isEmpty()) {
-            return null;
+        if (availability) {
+            return fieldValues;
         } else {
-            return values;
+            return null;
         }
+    }
+
+    @Override
+    public Map<String, byte[]> lock(String columnFamily, long id, Set<String> fields) throws RocksDBException {
+        //TODO надо лочить объект!
+        return gets(columnFamily, id, fields);
     }
 
 }

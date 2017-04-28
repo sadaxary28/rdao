@@ -1,5 +1,7 @@
 package com.infomaximum.rocksdb.core.objectsource.proxy;
 
+import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
+import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import javassist.util.proxy.MethodFilter;
 
@@ -17,9 +19,14 @@ public class MethodFilterImpl implements MethodFilter {
     }
 
     @Override
-    public boolean isHandled(Method m) {
-        if ("save".equals(m.getName())) {
+    public boolean isHandled(Method method) {
+        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
+
+        if ("save".equals(method.getName())) {
             //Вот save мы ловим ставим свой обработчик
+            return true;
+        } else if (structEntity.isLazyGetterMethod(method.getName())) {
+            //Ловим getter'ы для lazy полей
             return true;
         } else {
             return false;
