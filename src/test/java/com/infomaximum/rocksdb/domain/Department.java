@@ -16,14 +16,24 @@ public class Department extends DomainObject {
     @EntityField()
     private Department parent;
 
-
     public Department(long id) {
         super(id);
     }
 
 
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
 
 
-
+    public Department getParent() {
+        return parent;
+    }
+    public void setParent(Department parent) {
+        this.parent = parent;
+    }
 
 }

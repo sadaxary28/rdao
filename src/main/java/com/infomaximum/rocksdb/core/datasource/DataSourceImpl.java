@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.core.datasource;
 
 import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
+import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.TypeKey;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
@@ -45,12 +46,27 @@ public class DataSourceImpl implements DataSource {
     @Override
     public Map<String, byte[]> gets(String columnFamily, long id, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
-        RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
 
+//        if (rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyAvailability(id).pack()))==null) {
+//            return null;
+//        } else {
+//            Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
+//            for (String field: fields){
+//                KeyField keyField = new KeyField(id, field);
+//                fieldValues.put(
+//                        field,
+//                        rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(keyField.pack()))
+//                );
+//            }
+//            return fieldValues;
+//        }
+
+
+        //TODO переписать на итератор
+        RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
         boolean availability = false;
         Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-
-        rocksIterator.seek(TypeConvertRocksdb.pack(id));
+        rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(id).pack()));
         while (true) {
             if (!rocksIterator.isValid()) break;
 

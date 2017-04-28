@@ -62,8 +62,11 @@ public class TransactionImpl implements Transaction {
             for (Map.Entry<String, Optional<byte[]>> entry: values.entrySet()) {
                 ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamilyName);
                 String key = entry.getKey();
-                byte[] value = entry.getValue().orElse(new byte[0]);
-                rocksDataBase.getRocksDB().put(columnFamilyHandle, TypeConvertRocksdb.pack(key), value);
+                if (entry.getValue().isPresent()) {
+                    rocksDataBase.getRocksDB().put(columnFamilyHandle, TypeConvertRocksdb.pack(key), entry.getValue().get());
+                } else {
+                    rocksDataBase.getRocksDB().delete(columnFamilyHandle, TypeConvertRocksdb.pack(key));
+                }
             }
         }
 

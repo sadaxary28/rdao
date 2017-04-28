@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.anotation.EntityField;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
+import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectFieldValueUtils;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
@@ -56,17 +57,17 @@ public class MethodHandlerImpl implements MethodHandler {
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
         //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
-        transaction.put(columnFamily, new KeyAvailability(self.getId()).pack(), null);
+        transaction.put(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId()));
         for (String fieldName: HashStructEntities.getStructEntity(clazz).getFieldNames()) {
             Field field = HashStructEntities.getStructEntity(clazz).getField(fieldName);
 
             String key = new KeyField(self.getId(), fieldName).pack();
-            byte[] value = TypeConvertRocksdb.packObject(field.getType(), field.get(self));
+            byte[] value = DomainObjectFieldValueUtils.packValue(self, field);
             transaction.put(columnFamily, key, value);
         }
     }
 
-    private Object getLazyValue(DomainObject domainObject, Field field) throws IllegalAccessException, RocksDBException {
+    private Object getLazyValue(DomainObject domainObject, Field field) throws ReflectiveOperationException, RocksDBException {
         //Проверяем загружено ли это поле
         Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
         Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(domainObject);
@@ -84,7 +85,7 @@ public class MethodHandlerImpl implements MethodHandler {
 
             DataSource dataSource = (DataSource) HashStructEntities.getDataSourceField().get(domainObject);
             byte[] bValue = dataSource.get(entityAnnotation.columnFamily(), domainObject.getId(), fieldName);
-            Object value = TypeConvertRocksdb.get(field.getType(), bValue);
+            Object value = DomainObjectFieldValueUtils.unpackValue(domainObject, field, bValue);
 
             field.set(domainObject, value);
 
