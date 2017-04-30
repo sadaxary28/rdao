@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.core.objectsource.utils;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
+import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
@@ -16,10 +17,7 @@ import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by kris on 28.04.17.
@@ -60,7 +58,7 @@ public class DomainObjectUtils {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        Map<String, byte[]> data = dataSource.lock(entityAnnotation.columnFamily(), id, null);
+        Map<String, byte[]> data = dataSource.lock(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
         if (data==null) return null;
 
         T domainObject = createDomainObject(dataSource, clazz, id, data);
@@ -70,8 +68,6 @@ public class DomainObjectUtils {
 
         return domainObject;
     }
-
-
 
     private static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<? extends DomainObject> clazz, long id, Map<String, byte[]> data) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();

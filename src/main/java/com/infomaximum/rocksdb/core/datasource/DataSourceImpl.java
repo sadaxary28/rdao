@@ -11,6 +11,7 @@ import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.WriteBatch;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,45 +48,30 @@ public class DataSourceImpl implements DataSource {
     public Map<String, byte[]> gets(String columnFamily, long id, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
-//        if (rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyAvailability(id).pack()))==null) {
-//            return null;
-//        } else {
-//            Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-//            for (String field: fields){
-//                KeyField keyField = new KeyField(id, field);
-//                fieldValues.put(
-//                        field,
-//                        rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(keyField.pack()))
-//                );
-//            }
-//            return fieldValues;
-//        }
-
-
-        //TODO переписать на итератор
-        RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
         boolean availability = false;
         Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-        rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(id).pack()));
-        while (true) {
-            if (!rocksIterator.isValid()) break;
+        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+            rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(id).pack()));
+            while (true) {
+                if (!rocksIterator.isValid()) break;
 
-            Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
-            if (key.getId()!=id) break;
+                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                if (key.getId() != id) break;
 
-            TypeKey typeKey = key.getTypeKey();
-            if (typeKey == TypeKey.AVAILABILITY) {
-                availability = true;
-            } else if (typeKey == TypeKey.FIELD) {
-                String fieldName = ((KeyField)key).getFieldName();
-                if (fields.contains(fieldName)) {
-                    fieldValues.put(fieldName, rocksIterator.value());
+                TypeKey typeKey = key.getTypeKey();
+                if (typeKey == TypeKey.AVAILABILITY) {
+                    availability = true;
+                } else if (typeKey == TypeKey.FIELD) {
+                    String fieldName = ((KeyField) key).getFieldName();
+                    if (fields.contains(fieldName)) {
+                        fieldValues.put(fieldName, rocksIterator.value());
+                    }
+                } else {
+                    throw new RuntimeException("Not support type key: " + typeKey);
                 }
-            } else {
-                throw new RuntimeException("Not support type key: " + typeKey);
-            }
 
-            rocksIterator.next();
+                rocksIterator.next();
+            }
         }
 
         if (availability) {

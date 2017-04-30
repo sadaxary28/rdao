@@ -5,6 +5,7 @@ import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.WriteBatch;
 
 import java.util.HashMap;
 import java.util.Map;

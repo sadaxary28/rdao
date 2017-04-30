@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.core.objectsource;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
+import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
@@ -19,10 +20,7 @@ import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by user on 19.04.2017.
@@ -70,4 +68,13 @@ public class DomainObjectSource {
         return DomainObjectUtils.get(dataSource, clazz, id);
     }
 
+    /**
+     * Возврощаем итератор по объектам
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<? extends DomainObject> clazz) {
+        return new IteratorEntity(dataSource, clazz);
+    }
 }
