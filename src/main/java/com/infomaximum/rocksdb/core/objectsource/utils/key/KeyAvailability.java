@@ -16,6 +16,6 @@ public class KeyAvailability extends Key {
 
     @Override
     public String pack() {
-        return new StringBuilder().append(id).append('.').append(getTypeKey().getId()).toString();
+        return new StringBuilder().append(packId(id)).append('.').append(getTypeKey().getId()).toString();
     }
 }

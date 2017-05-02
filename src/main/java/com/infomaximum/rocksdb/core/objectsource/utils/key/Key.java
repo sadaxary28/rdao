@@ -19,6 +19,10 @@ public abstract class Key {
 
     public abstract String pack();
 
+    protected static String packId(long id){
+        return String.format("%017d", id);
+    }
+
     public static Key parse(String sKey) {
         String[] keySplit = sKey.split("\\.", 3);
 

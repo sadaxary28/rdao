@@ -24,7 +24,7 @@ public class KeyField extends Key {
     @Override
     public String pack() {
         return new StringBuilder()
-                .append(id).append('.')
+                .append(packId(id)).append('.')
                 .append(getTypeKey().getId()).append('.')
                 .append(fieldName)
                 .toString();

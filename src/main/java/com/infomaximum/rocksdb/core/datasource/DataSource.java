@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
 import org.rocksdb.RocksDBException;
@@ -17,10 +18,12 @@ public interface DataSource {
 
     public long nextId(String columnFamily) throws RocksDBException;
 
-    public byte[] get(String columnFamily, long id, String field) throws RocksDBException;
+    public byte[] getField(String columnFamily, long id, String field) throws RocksDBException;
 
-    public Map<String, byte[]> gets(String columnFamily, long id, Set<String> fields) throws RocksDBException;
+    public EntitySource getObject(String columnFamily, long id, Set<String> fields) throws RocksDBException;
 
-    public Map<String, byte[]> lock(String columnFamily, long id, Set<String> fields) throws RocksDBException;
+    public EntitySource lockObject(String columnFamily, long id, Set<String> fields) throws RocksDBException;
+
+    public EntitySource next(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
 
 }

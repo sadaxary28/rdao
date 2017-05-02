@@ -53,14 +53,14 @@ public class IteratorEntityTest extends RocksDataTest {
 
 
         //Итератором пробегаемся
-        Iterator iterator = domainObjectSource.iterator(Department.class);
         int count = 0;
+        long prevId=0;
         for (DomainObject department: domainObjectSource.iterator(Department.class)) {
-
-        }
-        while (iterator.hasNext()) {
-            iterator.next();
             count++;
+
+            if (prevId==department.getId()) Assert.fail("Fail next object");
+            if (prevId>=department.getId()) Assert.fail("Fail sort id to iterators");
+            prevId=department.getId();
         }
         Assert.assertEquals(size, count);
     }

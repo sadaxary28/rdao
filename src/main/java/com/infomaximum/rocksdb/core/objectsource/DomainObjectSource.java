@@ -49,7 +49,7 @@ public class DomainObjectSource {
     }
 
     /**
-     * load object abd lock object to write
+     * load object abd lockObject object to write
      * @param id
      * @param <T>
      * @return
@@ -74,7 +74,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<? extends DomainObject> clazz) {
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<? extends DomainObject> clazz) throws RocksDBException, ReflectiveOperationException {
         return new IteratorEntity(dataSource, clazz);
     }
 }

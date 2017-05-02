@@ -2,7 +2,8 @@ package com.infomaximum.rocksdb.core.objectsource.utils;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
+import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
+import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
@@ -36,7 +37,7 @@ public class DomainObjectUtils {
 
         long id = dataSource.nextId(entityAnnotation.columnFamily());
 
-        T domainObject = createDomainObject(dataSource, clazz, id, null);
+        T domainObject = createDomainObject(dataSource, clazz, new EntitySourceImpl(id, null));
 
         //Указываем транзакцию
         HashStructEntities.getTransactionField().set(domainObject, transaction);
@@ -48,20 +49,20 @@ public class DomainObjectUtils {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        Map<String, byte[]> data = dataSource.gets(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
-        if (data==null) return null;
+        EntitySource entitySource = dataSource.getObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
+        if (entitySource==null) return null;
 
-        return createDomainObject(dataSource, clazz, id, data);
+        return createDomainObject(dataSource, clazz, entitySource);
     }
 
     public static <T extends DomainObject> T edit(DataSource dataSource, final Transaction transaction, final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        Map<String, byte[]> data = dataSource.lock(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
-        if (data==null) return null;
+        EntitySource entitySource = dataSource.lockObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
+        if (entitySource==null) return null;
 
-        T domainObject = createDomainObject(dataSource, clazz, id, data);
+        T domainObject = createDomainObject(dataSource, clazz, entitySource);
 
         //Указываем транзакцию
         HashStructEntities.getTransactionField().set(domainObject, transaction);
@@ -69,14 +70,14 @@ public class DomainObjectUtils {
         return domainObject;
     }
 
-    private static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<? extends DomainObject> clazz, long id, Map<String, byte[]> data) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<? extends DomainObject> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();
         factory.setSuperclass(clazz);
         factory.setFilter(getMethodFilter(clazz));
 
         T domainObject = (T) factory.create(
                 new Class<?>[]{long.class},
-                new Object[]{id},
+                new Object[]{entitySource.getId()},
                 getMethodHandler(clazz)
         );
 
@@ -84,6 +85,7 @@ public class DomainObjectUtils {
         HashStructEntities.getDataSourceField().set(domainObject, dataSource);
 
         //Загружаем поля
+        Map<String, byte[]> data = entitySource.getFields();
         if (data!=null) {
             StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
 

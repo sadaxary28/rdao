@@ -84,7 +84,7 @@ public class MethodHandlerImpl implements MethodHandler {
             if (fieldName.isEmpty()) fieldName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getName());
 
             DataSource dataSource = (DataSource) HashStructEntities.getDataSourceField().get(domainObject);
-            byte[] bValue = dataSource.get(entityAnnotation.columnFamily(), domainObject.getId(), fieldName);
+            byte[] bValue = dataSource.getField(entityAnnotation.columnFamily(), domainObject.getId(), fieldName);
             Object value = DomainObjectFieldValueUtils.unpackValue(domainObject, field, bValue);
 
             field.set(domainObject, value);

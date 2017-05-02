@@ -1,5 +1,7 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
+import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
@@ -11,7 +13,6 @@ import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
-import org.rocksdb.WriteBatch;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,13 +40,13 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public byte[] get(String columnFamily, long id, String field) throws RocksDBException {
+    public byte[] getField(String columnFamily, long id, String field) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
         return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyField(id, field).pack()));
     }
 
     @Override
-    public Map<String, byte[]> gets(String columnFamily, long id, Set<String> fields) throws RocksDBException {
+    public EntitySource getObject(String columnFamily, long id, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
         boolean availability = false;
@@ -75,16 +76,64 @@ public class DataSourceImpl implements DataSource {
         }
 
         if (availability) {
-            return fieldValues;
+            return new EntitySourceImpl(id, fieldValues);
         } else {
             return null;
         }
     }
 
     @Override
-    public Map<String, byte[]> lock(String columnFamily, long id, Set<String> fields) throws RocksDBException {
+    public EntitySource lockObject(String columnFamily, long id, Set<String> fields) throws RocksDBException {
         //TODO надо лочить объект!
-        return gets(columnFamily, id, fields);
+        return getObject(columnFamily, id, fields);
+    }
+
+    @Override
+    public EntitySource next(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException {
+        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+
+        KeyAvailability keyAvailability=null;
+        Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
+        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+            if (prevId==null) {
+                rocksIterator.seekToFirst();
+            } else {
+                rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(prevId).pack()));
+            }
+            while (true) {
+                if (!rocksIterator.isValid()) break;
+
+                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                TypeKey typeKey = key.getTypeKey();
+                if (keyAvailability == null) {
+                    if (typeKey == TypeKey.AVAILABILITY) {
+                        if (prevId==null) {
+                            keyAvailability = (KeyAvailability) key;
+                        } else if (key.getId() != prevId) {
+                            keyAvailability = (KeyAvailability) key;
+                        }
+                    }
+                }
+
+                if (keyAvailability!=null) {
+                    if (typeKey == TypeKey.FIELD) {
+                        String fieldName = ((KeyField) key).getFieldName();
+                        if (fields.contains(fieldName)) {
+                            fieldValues.put(fieldName, rocksIterator.value());
+                        }
+                    }
+                }
+
+                rocksIterator.next();
+            }
+        }
+
+        if (keyAvailability!=null) {
+            return new EntitySourceImpl(keyAvailability.getId(), fieldValues);
+        } else {
+            return null;
+        }
+
     }
 
 }
