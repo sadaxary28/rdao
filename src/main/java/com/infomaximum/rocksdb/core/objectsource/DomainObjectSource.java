@@ -18,10 +18,6 @@ import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import org.rocksdb.RocksDBException;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-
 /**
  * Created by user on 19.04.2017.
  */
@@ -44,7 +40,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T create(final Transaction transaction, final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T create(final Transaction transaction, final Class<T> clazz) throws ReflectiveOperationException, RocksDBException {
         return DomainObjectUtils.create(dataSource, transaction, clazz);
     }
 
@@ -54,7 +50,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T edit(final Transaction transaction, final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T edit(final Transaction transaction, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         return DomainObjectUtils.edit(dataSource, transaction, clazz, id);
     }
 
@@ -64,7 +60,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T get(final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         return DomainObjectUtils.get(dataSource, clazz, id);
     }
 
@@ -74,7 +70,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<? extends DomainObject> clazz) throws RocksDBException, ReflectiveOperationException {
-        return new IteratorEntity(dataSource, clazz);
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws RocksDBException, ReflectiveOperationException {
+        return new IteratorEntity<>(dataSource, clazz);
     }
 }

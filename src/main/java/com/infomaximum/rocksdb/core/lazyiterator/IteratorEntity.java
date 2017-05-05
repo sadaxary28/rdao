@@ -18,12 +18,12 @@ import java.util.NoSuchElementException;
 public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iterable<E> {
 
     private final DataSource dataSource;
-    private final Class<? extends DomainObject> clazz;
+    private final Class<E> clazz;
     private final String columnFamily;
 
     private E nextElement;
 
-    public IteratorEntity(DataSource dataSource, Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
+    public IteratorEntity(DataSource dataSource, Class<E> clazz) throws ReflectiveOperationException, RocksDBException {
         this.dataSource = dataSource;
         this.clazz = clazz;
 

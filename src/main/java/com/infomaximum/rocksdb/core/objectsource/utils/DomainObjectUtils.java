@@ -29,7 +29,7 @@ public class DomainObjectUtils {
     private static final Map<Class<? extends DomainObject>, MethodHandler> methodHandlers = new HashMap<Class<? extends DomainObject>, MethodHandler>();
 
 
-    public static <T extends DomainObject> T create(DataSource dataSource, final Transaction transaction, final Class<? extends DomainObject> clazz) throws ReflectiveOperationException, RocksDBException {
+    public static <T extends DomainObject> T create(DataSource dataSource, final Transaction transaction, final Class<T> clazz) throws ReflectiveOperationException, RocksDBException {
         if (transaction==null) throw new IllegalArgumentException("Transaction is empty");
 
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
@@ -45,7 +45,7 @@ public class DomainObjectUtils {
         return domainObject;
     }
 
-    public static <T extends DomainObject> T get(DataSource dataSource, final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public static <T extends DomainObject> T get(DataSource dataSource, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
@@ -55,7 +55,7 @@ public class DomainObjectUtils {
         return createDomainObject(dataSource, clazz, entitySource);
     }
 
-    public static <T extends DomainObject> T edit(DataSource dataSource, final Transaction transaction, final Class<? extends DomainObject> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public static <T extends DomainObject> T edit(DataSource dataSource, final Transaction transaction, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
@@ -70,7 +70,7 @@ public class DomainObjectUtils {
         return domainObject;
     }
 
-    public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<? extends DomainObject> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();
         factory.setSuperclass(clazz);
         factory.setFilter(getMethodFilter(clazz));

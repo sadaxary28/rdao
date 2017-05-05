@@ -3,6 +3,7 @@ package com.infomaximum.rocksdb.test.iterator;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
+import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
 import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.domain.Department;
@@ -55,7 +56,7 @@ public class IteratorEntityTest extends RocksDataTest {
         //Итератором пробегаемся
         int count = 0;
         long prevId=0;
-        for (DomainObject department: domainObjectSource.iterator(Department.class)) {
+        for (Department department: domainObjectSource.iterator(Department.class)) {
             count++;
 
             if (prevId==department.getId()) Assert.fail("Fail next object");
