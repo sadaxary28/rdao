@@ -24,11 +24,4 @@ public interface EngineTransaction {
      */
     public void execute(final Monad operation);
 
-
-    /**
-     * Внутренняя реализация операции с данными.
-     *
-     * @param operation Выполняемая операция.
-     */
-    public void execute(final Monad operation, int retries);
 }

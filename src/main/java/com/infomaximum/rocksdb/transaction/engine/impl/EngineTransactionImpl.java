@@ -20,18 +20,9 @@ public class EngineTransactionImpl implements EngineTransaction {
     /**
      * Внутренняя реализация операции с данными.
      *
-     * @param monad Выполняемая операция.
-     */
-    public void execute(final Monad monad) {
-        execute(monad, DEFAULT_RETRIES);
-    }
-
-    /**
-     * Внутренняя реализация операции с данными.
-     *
      * @param operation Выполняемая операция.
      */
-    public void execute(final Monad operation, int retries) {
+    public void execute(final Monad operation) {
         final Transaction transaction = dataSource.createTransaction();
         int attempt = 0;
         do {
@@ -48,7 +39,7 @@ public class EngineTransactionImpl implements EngineTransaction {
             } catch (Exception ex) {
                 throw new RuntimeException("Exception execute transaction", ex);
             }
-        } while (attempt<retries);
+        } while (attempt < DEFAULT_RETRIES);
         throw new RuntimeException("Exception execute transaction");
     }
 
