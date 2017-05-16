@@ -43,6 +43,9 @@ public class MethodHandlerImpl implements MethodHandler {
         if ("save".equals(thisMethod.getName())) {
             saveDomainObject(domainObject);
             return null;
+        } else if ("remove".equals(thisMethod.getName())) {
+            removeDomainObject(domainObject);
+            return null;
         } else if (structEntity.isLazyGetterMethod(thisMethod.getName())) {
             Field field = structEntity.getFieldByLazyGetterMethod(thisMethod.getName());
             return getLazyValue(domainObject, field);
@@ -57,13 +60,29 @@ public class MethodHandlerImpl implements MethodHandler {
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
         //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
-        transaction.put(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId()));
+        transaction.update(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId()));
         for (String fieldName: HashStructEntities.getStructEntity(clazz).getFieldNames()) {
             Field field = HashStructEntities.getStructEntity(clazz).getField(fieldName);
 
             String key = new KeyField(self.getId(), fieldName).pack();
             byte[] value = DomainObjectFieldValueUtils.packValue(self, field);
-            transaction.put(columnFamily, key, value);
+            transaction.update(columnFamily, key, value);
+        }
+    }
+
+    private void removeDomainObject(DomainObject self) throws NoSuchFieldException, IllegalAccessException {
+        Field transactionField = HashStructEntities.getTransactionField();
+        Transaction transaction = (Transaction) transactionField.get(self);
+        if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
+
+
+        transaction.update(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId()));
+        for (String fieldName: HashStructEntities.getStructEntity(clazz).getFieldNames()) {
+            Field field = HashStructEntities.getStructEntity(clazz).getField(fieldName);
+
+            String key = new KeyField(self.getId(), fieldName).pack();
+            byte[] value = DomainObjectFieldValueUtils.packValue(self, field);
+            transaction.update(columnFamily, key, value);
         }
     }
 

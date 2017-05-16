@@ -9,7 +9,7 @@ public interface Transaction {
 
     boolean isActive();
 
-    void put(String columnFamily, String key, byte[] value);
+    void update(String columnFamily, String key, byte[] value);
 
     void commit() throws RocksDBException;
 }

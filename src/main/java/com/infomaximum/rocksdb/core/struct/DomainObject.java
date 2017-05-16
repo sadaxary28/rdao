@@ -39,5 +39,7 @@ public abstract class DomainObject {
     }
 
     public void save(){}
+
+    public void remove(){}
 }
 

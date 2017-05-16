@@ -35,7 +35,7 @@ public class TransactionImpl implements Transaction {
     }
 
     @Override
-    public void put(String columnFamily, String key, byte[] value) {
+    public void update(String columnFamily, String key, byte[] value) {
         Map<String, Optional<byte[]>> columnFamilyItem = queue.get(columnFamily);
         if (columnFamilyItem==null) {
             synchronized (queue) {
