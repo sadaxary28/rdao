@@ -39,16 +39,19 @@ public class Transaction {
     }
 
     public void update(String columnFamily, DomainObject self, Set<Field> fields) throws IllegalAccessException {
-        pull(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId()));
+        Map<String, Optional<byte[]>> columnFamilyItem = getColumnFamilyItem(columnFamily);
+
+        columnFamilyItem.put(new KeyAvailability(self.getId()).pack(), Optional.of(TypeConvertRocksdb.pack(self.getId())));
         for (Field field: fields) {
             String formatFieldName = StructEntityUtils.getFormatFieldName(field);
             String key = new KeyField(self.getId(), formatFieldName).pack();
             byte[] value = DomainObjectFieldValueUtils.packValue(self, field);
-            pull(columnFamily, key, value);
+
+            columnFamilyItem.put(key, Optional.ofNullable(value));
         }
     }
 
-    private void pull(String columnFamily, String key, byte[] value) {
+    private Map<String, Optional<byte[]>> getColumnFamilyItem(String columnFamily) {
         Map<String, Optional<byte[]>> columnFamilyItem = queue.get(columnFamily);
         if (columnFamilyItem==null) {
             synchronized (queue) {
@@ -59,7 +62,7 @@ public class Transaction {
                 }
             }
         }
-        columnFamilyItem.put(key, Optional.ofNullable(value));
+        return columnFamilyItem;
     }
 
     public void commit() throws RocksDBException {
