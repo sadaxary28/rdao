@@ -8,7 +8,6 @@ import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.TypeKey;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.transaction.engine.impl.TransactionImpl;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
@@ -31,7 +30,7 @@ public class DataSourceImpl implements DataSource {
 
     @Override
     public Transaction createTransaction() {
-        return new TransactionImpl(rocksDataBase);
+        return new Transaction(rocksDataBase);
     }
 
     @Override

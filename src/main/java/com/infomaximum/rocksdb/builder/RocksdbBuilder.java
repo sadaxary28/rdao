@@ -24,6 +24,8 @@ public class RocksdbBuilder {
 	private List<IMigrationItem> migrationItems;
 
 	public RocksdbBuilder() {
+        RocksDB.loadLibrary();
+
 		this.dbOptions = new DBOptions();
 		this.dbOptions.setCreateIfMissing(true);
 	}
@@ -39,8 +41,6 @@ public class RocksdbBuilder {
 	}
 
 	public RocksDataBase build() throws Exception {
-		RocksDB.loadLibrary();
-
 		//Загружаем список columnFamilyName
 		Options options = new Options().setCreateIfMissing(true);
 		List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<ColumnFamilyDescriptor>();

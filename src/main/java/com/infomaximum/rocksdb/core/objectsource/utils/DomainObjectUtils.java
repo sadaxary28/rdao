@@ -49,7 +49,7 @@ public class DomainObjectUtils {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        EntitySource entitySource = dataSource.getObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
+        EntitySource entitySource = dataSource.getObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
         return createDomainObject(dataSource, clazz, entitySource);
@@ -59,7 +59,7 @@ public class DomainObjectUtils {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        EntitySource entitySource = dataSource.lockObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFieldNames());
+        EntitySource entitySource = dataSource.lockObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
         T domainObject = createDomainObject(dataSource, clazz, entitySource);
@@ -89,7 +89,7 @@ public class DomainObjectUtils {
         if (data!=null) {
             StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
 
-            for (String fieldName: structEntity.getFieldNames()) {
+            for (String fieldName: structEntity.getFormatFieldNames()) {
                 Field field = HashStructEntities.getStructEntity(clazz).getField(fieldName);
                 if (data.containsKey(fieldName)) {
                     byte[] value = data.get(fieldName);

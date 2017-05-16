@@ -13,11 +13,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface EntityField {
 
-    /**
-     * (Optional) The name of the column. Defaults to
-     * the property or field name.
-     */
-    String name() default "";
-
     boolean lazy() default true;
 }

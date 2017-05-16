@@ -64,5 +64,7 @@ public class IteratorEntityTest extends RocksDataTest {
             prevId=department.getId();
         }
         Assert.assertEquals(size, count);
+
+        rocksDataBase.destroy();
     }
 }

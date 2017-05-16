@@ -18,7 +18,7 @@ dependencies {
 
     compile 'org.javassist:javassist:3.22.0-CR1'
 
-    compile 'org.rocksdb:rocksdbjni:5.2.1'
+    compile 'org.rocksdb:rocksdbjni:5.1.4'
 
     compile 'com.google.guava:guava:21.0'
 

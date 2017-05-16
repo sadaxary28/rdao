@@ -42,5 +42,7 @@ public class EmptyDependenceTest extends RocksDataTest {
         Assert.assertNotNull(departmentCheckSave);
         Assert.assertEquals(name, departmentCheckSave.getName());
         Assert.assertNull(departmentCheckSave.getParent());
+
+        rocksDataBase.destroy();
     }
 }
