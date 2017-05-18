@@ -51,8 +51,7 @@ public class Transaction {
     }
 
     public void remove(String columnFamily, DomainObject self) {
-        String removeKeys = new StringBuilder().append(Key.packId(self.getId())).append(".*").toString();
-        queue.add(new ModifierRemove(columnFamily, removeKeys));
+        queue.add(ModifierRemove.removeDomainObject(columnFamily, self.getId()));
     }
 
     public void commit() throws RocksDBException {

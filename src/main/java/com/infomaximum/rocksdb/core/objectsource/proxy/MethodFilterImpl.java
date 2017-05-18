@@ -25,6 +25,9 @@ public class MethodFilterImpl implements MethodFilter {
         if ("save".equals(method.getName())) {
             //Вот save мы ловим ставим свой обработчик
             return true;
+        } else if ("remove".equals(method.getName())) {
+            //Вот remove мы ловим ставим свой обработчик
+            return true;
         } else if (structEntity.isLazyGetterMethod(method.getName())) {
             //Ловим getter'ы для lazy полей
             return true;

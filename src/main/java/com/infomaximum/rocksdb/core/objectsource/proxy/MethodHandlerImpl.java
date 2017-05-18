@@ -63,7 +63,6 @@ public class MethodHandlerImpl implements MethodHandler {
         Transaction transaction = (Transaction) transactionField.get(self);
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
-
         //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
         Set<Field> fields = new HashSet<>();
         for (String formatFieldName: HashStructEntities.getStructEntity(clazz).getFormatFieldNames()) {
@@ -77,8 +76,7 @@ public class MethodHandlerImpl implements MethodHandler {
         Field transactionField = HashStructEntities.getTransactionField();
         Transaction transaction = (Transaction) transactionField.get(self);
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
-
-        throw new RuntimeException("Not implemented");
+        transaction.remove(columnFamily, self);
     }
 
     private Object getLazyValue(DomainObject domainObject, Field field) throws ReflectiveOperationException, RocksDBException {

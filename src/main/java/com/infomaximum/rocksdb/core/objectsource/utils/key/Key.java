@@ -19,7 +19,7 @@ public abstract class Key {
 
     public abstract String pack();
 
-    public static String packId(long id){
+    protected static String packId(long id){
         return String.format("%017d", id);
     }
 
@@ -36,5 +36,9 @@ public abstract class Key {
         } else {
             throw new RuntimeException("Not support type enum");
         }
+    }
+
+    public static String getPatternObject(long id) {
+        return new StringBuilder().append(Key.packId(id)).append('.').toString();
     }
 }

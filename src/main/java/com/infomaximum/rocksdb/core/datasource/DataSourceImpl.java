@@ -147,7 +147,21 @@ public class DataSourceImpl implements DataSource {
                     writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key));
                 } else {
                     //Удаляются все записи попадающие под этот патерн
-                    throw new RuntimeException("not implemented");
+                    String patternKey = key.substring(0, key.length()-1);
+                    try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                        rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
+                        while (true) {
+                            if (!rocksIterator.isValid()) break;
+                            byte[] findKey = rocksIterator.key();
+                            String sFindKey = TypeConvertRocksdb.getString(findKey);
+                            if (sFindKey.startsWith(patternKey)) {
+                                writeBatch.remove(columnFamilyHandle, findKey);
+                            } else {
+                                break;
+                            }
+                            rocksIterator.next();
+                        }
+                    }
                 }
             } else {
                 throw new RuntimeException("Not support type modifier: " + modifier.getClass());
