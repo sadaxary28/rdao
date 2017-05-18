@@ -8,12 +8,14 @@ import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.TypeKey;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
+import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
+import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
+import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
-import org.rocksdb.ColumnFamilyHandle;
-import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
+import org.rocksdb.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,11 +28,6 @@ public class DataSourceImpl implements DataSource {
 
     public DataSourceImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        return new Transaction(rocksDataBase);
     }
 
     @Override
@@ -132,7 +129,31 @@ public class DataSourceImpl implements DataSource {
         } else {
             return null;
         }
+    }
 
+    @Override
+    public void commit(List<Modifier> modifiers) throws RocksDBException {
+        WriteBatch writeBatch = new WriteBatch();
+        for (Modifier modifier: modifiers) {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(modifier.columnFamily);
+
+            if (modifier instanceof ModifierSet) {
+                ModifierSet modifierSet = (ModifierSet) modifier;
+                writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
+            } else if (modifier instanceof ModifierRemove) {
+                String key = modifier.key;
+                if (key.charAt(key.length()-1) != '*') {
+                    //Удаляется только одна запись
+                    writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key));
+                } else {
+                    //Удаляются все записи попадающие под этот патерн
+                    throw new RuntimeException("not implemented");
+                }
+            } else {
+                throw new RuntimeException("Not support type modifier: " + modifier.getClass());
+            }
+        }
+        rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
     }
 
 }

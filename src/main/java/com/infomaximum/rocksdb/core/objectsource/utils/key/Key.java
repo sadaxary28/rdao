@@ -19,7 +19,7 @@ public abstract class Key {
 
     public abstract String pack();
 
-    protected static String packId(long id){
+    public static String packId(long id){
         return String.format("%017d", id);
     }
 

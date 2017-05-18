@@ -23,7 +23,7 @@ public class EngineTransactionImpl implements EngineTransaction {
      * @param operation Выполняемая операция.
      */
     public void execute(final Monad operation) {
-        final Transaction transaction = dataSource.createTransaction();
+        final Transaction transaction = new Transaction(dataSource);
         int attempt = 0;
         do {
             // пытаемся выполнить операцию некоторое количество раз

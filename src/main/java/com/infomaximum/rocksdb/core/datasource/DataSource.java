@@ -3,6 +3,7 @@ package com.infomaximum.rocksdb.core.datasource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
+import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
 import org.rocksdb.RocksDBException;
 
 import java.util.List;
@@ -14,8 +15,6 @@ import java.util.Set;
  */
 public interface DataSource {
 
-    public Transaction createTransaction();
-
     public long nextId(String columnFamily) throws RocksDBException;
 
     public byte[] getField(String columnFamily, long id, String field) throws RocksDBException;
@@ -26,5 +25,5 @@ public interface DataSource {
 
     public EntitySource next(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
 
-//    public
+    public void commit(List<Modifier> modifiers) throws RocksDBException;
 }
