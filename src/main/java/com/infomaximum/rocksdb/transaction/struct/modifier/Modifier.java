@@ -1,9 +1,11 @@
 package com.infomaximum.rocksdb.transaction.struct.modifier;
 
+import java.io.Serializable;
+
 /**
  * Created by kris on 18.05.17.
  */
-public abstract class Modifier {
+public abstract class Modifier implements Serializable {
 
     public final String columnFamily;
     public final String key;
