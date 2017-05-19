@@ -40,7 +40,7 @@ public class RocksdbBuilder {
 		return this;
 	}
 
-	public RocksDataBase build() throws Exception {
+	public RocksDataBase build() throws RocksDBException {
 		//Загружаем список columnFamilyName
 		Options options = new Options().setCreateIfMissing(true);
 		List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<ColumnFamilyDescriptor>();
