@@ -13,6 +13,7 @@ import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
 import com.infomaximum.rocksdb.transaction.engine.impl.EngineTransactionImpl;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import javassist.bytecode.CodeAttribute;
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
@@ -45,6 +46,16 @@ public class DomainObjectSource {
     }
 
     /**
+     * load object to readonly
+     * @param id
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+        return DomainObjectUtils.get(dataSource, clazz, id);
+    }
+
+    /**
      * load object abd lockObject object to write
      * @param id
      * @param <T>
@@ -55,14 +66,14 @@ public class DomainObjectSource {
     }
 
     /**
-     * load object to readonly
-     * @param id
+     * find object to readonly
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
-        return DomainObjectUtils.get(dataSource, clazz, id);
+    public <T extends DomainObject> T find(final Class<T> clazz, String index, Object value) throws ReflectiveOperationException, RocksDBException {
+        throw new RuntimeException("Not implemented");
     }
+
 
     /**
      * Возврощаем итератор по объектам

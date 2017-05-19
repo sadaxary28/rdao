@@ -7,7 +7,10 @@ import com.infomaximum.rocksdb.core.struct.DomainObject;
 /**
  * Created by user on 19.04.2017.
  */
-@Entity(columnFamily = "com.infomaximum.StoreFile")
+@Entity(
+        columnFamily = "com.infomaximum.StoreFile",
+        indexes = {}
+)
 public class StoreFile extends DomainObject {
 
     @EntityField

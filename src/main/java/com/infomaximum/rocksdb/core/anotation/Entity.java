@@ -14,4 +14,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Entity {
 
     String columnFamily();
+
+    /**
+     * (Optional) Indexes for the table. These are only used if table generation is in effect.  Defaults to no
+     * additional indexes.
+     *
+     * @return The indexes
+     */
+    Index[] indexes() default {};
 }
