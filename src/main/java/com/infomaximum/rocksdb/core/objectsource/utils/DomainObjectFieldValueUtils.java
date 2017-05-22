@@ -40,11 +40,7 @@ public class DomainObjectFieldValueUtils {
             Field dataSourceField = HashStructEntities.getDataSourceField();
             DataSource dataSource = (DataSource) dataSourceField.get(self);
 
-            if (transaction==null) {
-                return DomainObjectUtils.get(dataSource, type, id);
-            } else {
-                return DomainObjectUtils.edit(dataSource, transaction, type, id);
-            }
+            return DomainObjectUtils.get(dataSource, transaction, type, id);
         } else {
             return TypeConvertRocksdb.get(field.getType(), value);
         }

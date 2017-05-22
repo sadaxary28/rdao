@@ -38,7 +38,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
     private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Long prevId = (isFirst)?null:nextElement.getId();
 
-        EntitySource entitySource = dataSource.next(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.nextEntitySource(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) {
             nextElement = null;
         } else {

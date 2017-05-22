@@ -45,30 +45,23 @@ public class DomainObjectUtils {
         return domainObject;
     }
 
-    public static <T extends DomainObject> T get(DataSource dataSource, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public static <T extends DomainObject> T get(DataSource dataSource, final Transaction transaction, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        EntitySource entitySource = dataSource.getObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
-        if (entitySource==null) return null;
-
-        return createDomainObject(dataSource, clazz, entitySource);
-    }
-
-    public static <T extends DomainObject> T edit(DataSource dataSource, final Transaction transaction, final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
-        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
-        if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
-
-        EntitySource entitySource = dataSource.lockObject(entityAnnotation.columnFamily(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.columnFamily(), id, (transaction != null), HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
         T domainObject = createDomainObject(dataSource, clazz, entitySource);
 
-        //Указываем транзакцию
-        HashStructEntities.getTransactionField().set(domainObject, transaction);
+        if (transaction!=null) {
+            //Указываем транзакцию
+            HashStructEntities.getTransactionField().set(domainObject, transaction);
+        }
 
         return domainObject;
     }
+
 
     public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();

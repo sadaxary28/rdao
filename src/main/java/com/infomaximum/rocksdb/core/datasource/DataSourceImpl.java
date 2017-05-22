@@ -42,7 +42,11 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource getObject(String columnFamily, long id, Set<String> fields) throws RocksDBException {
+    public EntitySource getEntitySource(String columnFamily, long id, boolean isTransaction, Set<String> fields) throws RocksDBException {
+        if (isTransaction) {
+            //TODO надо лочить объект!
+        }
+
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
         boolean availability = false;
@@ -79,13 +83,7 @@ public class DataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource lockObject(String columnFamily, long id, Set<String> fields) throws RocksDBException {
-        //TODO надо лочить объект!
-        return getObject(columnFamily, id, fields);
-    }
-
-    @Override
-    public EntitySource next(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException {
+    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
         KeyAvailability keyAvailability=null;

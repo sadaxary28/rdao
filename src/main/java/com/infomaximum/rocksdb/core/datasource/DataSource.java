@@ -19,11 +19,9 @@ public interface DataSource {
 
     public byte[] getField(String columnFamily, long id, String field) throws RocksDBException;
 
-    public EntitySource getObject(String columnFamily, long id, Set<String> fields) throws RocksDBException;
+    public EntitySource getEntitySource(String columnFamily, long id, boolean isTransaction, Set<String> fields) throws RocksDBException;
 
-    public EntitySource lockObject(String columnFamily, long id, Set<String> fields) throws RocksDBException;
-
-    public EntitySource next(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
+    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
 
     public void commit(List<Modifier> modifiers) throws RocksDBException;
 }
