@@ -1,11 +1,9 @@
 package com.infomaximum.rocksdb.core.objectsource.utils.structentity;
 
-import com.google.common.base.CaseFormat;
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.anotation.EntityField;
 import com.infomaximum.rocksdb.core.anotation.Index;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
-import javafx.embed.swt.CustomTransferBuilder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
