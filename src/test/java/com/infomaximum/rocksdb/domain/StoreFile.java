@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.domain;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.anotation.EntityField;
+import com.infomaximum.rocksdb.core.anotation.Index;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 
 /**
@@ -9,7 +10,9 @@ import com.infomaximum.rocksdb.core.struct.DomainObject;
  */
 @Entity(
         columnFamily = "com.infomaximum.StoreFile",
-        indexes = {}
+        indexes = {
+                @Index(name = "size", fieldNames = {"size"})
+        }
 )
 public class StoreFile extends DomainObject {
 

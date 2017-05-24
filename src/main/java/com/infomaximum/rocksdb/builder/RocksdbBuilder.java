@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.builder;
 
+import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.migration.struct.IMigrationItem;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
@@ -8,10 +9,7 @@ import org.rocksdb.*;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by kris on 07.10.16.
@@ -21,7 +19,7 @@ public class RocksdbBuilder {
 	private DBOptions dbOptions;
 	private Path path;
 
-	private List<IMigrationItem> migrationItems;
+	private Set<Class<? extends DomainObject>> maintenanceClasses = new HashSet<>();
 
 	public RocksdbBuilder() {
         RocksDB.loadLibrary();
@@ -37,6 +35,11 @@ public class RocksdbBuilder {
 
 	public RocksdbBuilder withPath(Path path) {
 		this.path = path;
+		return this;
+	}
+
+	public RocksdbBuilder addMaintenanceClass(Class<? extends DomainObject> clazz) {
+		maintenanceClasses.add(clazz);
 		return this;
 	}
 
@@ -71,7 +74,7 @@ public class RocksdbBuilder {
 //		migrationWorker.work();
 
 		//Теперь можно создавать соединение с базой данной
-		return new RocksDataBase(rocksDB, dbOptions, columnFamilies);
+		return new RocksDataBase(rocksDB, dbOptions, columnFamilies, maintenanceClasses);
 	}
 
 }

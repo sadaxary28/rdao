@@ -49,7 +49,7 @@ public class DomainObjectUtils {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.columnFamily(), id, (transaction != null), HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.columnFamily(), (transaction != null), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
         T domainObject = createDomainObject(dataSource, clazz, entitySource);
@@ -62,6 +62,23 @@ public class DomainObjectUtils {
         return domainObject;
     }
 
+
+    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String index, Object value) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
+        if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
+
+        EntitySource entitySource = dataSource.findEntitySource(entityAnnotation.columnFamily(), (transaction != null), index, value.toString(), HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        if (entitySource==null) return null;
+
+        T domainObject = createDomainObject(dataSource, clazz, entitySource);
+
+        if (transaction!=null) {
+            //Указываем транзакцию
+            HashStructEntities.getTransactionField().set(domainObject, transaction);
+        }
+
+        return domainObject;
+    }
 
     public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         ProxyFactory factory = new ProxyFactory();

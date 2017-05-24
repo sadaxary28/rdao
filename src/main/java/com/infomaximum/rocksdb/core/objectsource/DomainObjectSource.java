@@ -2,7 +2,7 @@ package com.infomaximum.rocksdb.core.objectsource;
 
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
-import com.infomaximum.rocksdb.core.objectsource.index.IndexEngine;
+import com.infomaximum.rocksdb.core.datasource.index.IndexEngine;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.transaction.Transaction;
@@ -16,12 +16,10 @@ import org.rocksdb.RocksDBException;
 public class DomainObjectSource {
 
     private final DataSource dataSource;
-    private final IndexEngine indexEngine;
     private final EngineTransaction engineTransaction;
 
     public DomainObjectSource(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.indexEngine = new IndexEngine(this);
         this.engineTransaction = new EngineTransactionImpl(dataSource);
     }
 
@@ -64,7 +62,7 @@ public class DomainObjectSource {
      * @return
      */
     public <T extends DomainObject> T find(final Class<T> clazz, String index, Object value) throws ReflectiveOperationException, RocksDBException {
-        throw new RuntimeException("Not implemented");
+        return DomainObjectUtils.find(dataSource, null, clazz, index, value);
     }
 
 

@@ -19,7 +19,9 @@ public interface DataSource {
 
     public byte[] getField(String columnFamily, long id, String field) throws RocksDBException;
 
-    public EntitySource getEntitySource(String columnFamily, long id, boolean isTransaction, Set<String> fields) throws RocksDBException;
+    public EntitySource getEntitySource(String columnFamily, boolean isTransaction, long id, Set<String> fields) throws RocksDBException;
+
+    public EntitySource findEntitySource(String columnFamily, boolean isTransaction, String index, String value, Set<String> fields) throws RocksDBException;
 
     public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
 

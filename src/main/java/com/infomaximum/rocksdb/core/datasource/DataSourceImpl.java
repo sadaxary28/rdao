@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.core.datasource;
 
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
+import com.infomaximum.rocksdb.core.datasource.index.IndexEngine;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
@@ -25,9 +26,11 @@ import java.util.Set;
 public class DataSourceImpl implements DataSource {
 
     private final RocksDataBase rocksDataBase;
+    private final IndexEngine indexEngine;
 
     public DataSourceImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
+        this.indexEngine = new IndexEngine(this);
     }
 
     @Override
@@ -41,8 +44,18 @@ public class DataSourceImpl implements DataSource {
         return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyField(id, field).pack()));
     }
 
+
     @Override
-    public EntitySource getEntitySource(String columnFamily, long id, boolean isTransaction, Set<String> fields) throws RocksDBException {
+    public EntitySource findEntitySource(String columnFamily, boolean isTransaction, String index, String value, Set<String> fields) throws RocksDBException {
+        //TODO ищем
+        throw new RuntimeException("Not implemented");
+//        long id = 1;
+//
+//        return getEntitySource(columnFamily, isTransaction, id, fields);
+    }
+
+    @Override
+    public EntitySource getEntitySource(String columnFamily, boolean isTransaction, long id, Set<String> fields) throws RocksDBException {
         if (isTransaction) {
             //TODO надо лочить объект!
         }
