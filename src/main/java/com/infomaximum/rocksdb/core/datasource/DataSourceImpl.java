@@ -3,10 +3,7 @@ package com.infomaximum.rocksdb.core.datasource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.datasource.index.IndexEngine;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.TypeKey;
+import com.infomaximum.rocksdb.core.objectsource.utils.key.*;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
@@ -46,12 +43,29 @@ public class DataSourceImpl implements DataSource {
 
 
     @Override
-    public EntitySource findEntitySource(String columnFamily, boolean isTransaction, String index, String value, Set<String> fields) throws RocksDBException {
-        //TODO ищем
-        throw new RuntimeException("Not implemented");
-//        long id = 1;
-//
-//        return getEntitySource(columnFamily, isTransaction, id, fields);
+    public EntitySource findEntitySource(String columnFamily, boolean isTransaction, String index, int hash, Set<String> fields) throws RocksDBException {
+        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+
+        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+            rocksIterator.seek(TypeConvertRocksdb.pack(KeyIndex.prifix(index, hash)));
+            while (true) {
+                if (!rocksIterator.isValid()) break;
+
+                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                if (key.getTypeKey() != TypeKey.INDEX) break;
+
+                KeyIndex keyIndex = (KeyIndex) key;
+                if (!keyIndex.getIndex().equals(index)) break;
+                if (keyIndex.getHash() != hash) break;
+
+                long id = key.getId();
+
+                return getEntitySource(columnFamily, isTransaction, id, fields);
+
+//                rocksIterator.next();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -80,6 +94,8 @@ public class DataSourceImpl implements DataSource {
                     if (fields.contains(fieldName)) {
                         fieldValues.put(fieldName, rocksIterator.value());
                     }
+                } else if (typeKey == TypeKey.INDEX) {
+                    break;
                 } else {
                     throw new RuntimeException("Not support type key: " + typeKey);
                 }

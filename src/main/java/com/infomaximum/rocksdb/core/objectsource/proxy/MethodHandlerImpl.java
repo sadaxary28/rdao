@@ -28,21 +28,20 @@ import java.util.Set;
  */
 public class MethodHandlerImpl implements MethodHandler {
 
-    private final Class<? extends DomainObject> clazz;
+    private final StructEntity structEntity;
 
     private final String columnFamily;
 
     public MethodHandlerImpl(Class<? extends DomainObject> clazz) {
-        this.clazz = clazz;
+        this.structEntity = HashStructEntities.getStructEntity(clazz);
 
-        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
-        this.columnFamily = entityAnnotation.columnFamily();
+        Entity annotationEntity = clazz.getAnnotation(Entity.class);
+        this.columnFamily = annotationEntity.columnFamily();
     }
 
     @Override
     public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
         DomainObject domainObject = (DomainObject) self;
-        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
 
         if ("save".equals(thisMethod.getName())) {
             saveDomainObject(domainObject);
@@ -65,11 +64,11 @@ public class MethodHandlerImpl implements MethodHandler {
 
         //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
         Set<Field> fields = new HashSet<>();
-        for (String formatFieldName: HashStructEntities.getStructEntity(clazz).getFormatFieldNames()) {
-            Field field = HashStructEntities.getStructEntity(clazz).getField(formatFieldName);
+        for (String formatFieldName: structEntity.getFormatFieldNames()) {
+            Field field = structEntity.getFieldByFormatName(formatFieldName);
             fields.add(field);
         }
-        transaction.update(columnFamily, self, fields);
+        transaction.update(structEntity, self, fields);
     }
 
     private void removeDomainObject(DomainObject self) throws NoSuchFieldException, IllegalAccessException {
@@ -89,12 +88,10 @@ public class MethodHandlerImpl implements MethodHandler {
             return field.get(domainObject);
         } else {
             //Требуется загрузка
-            Entity entityAnnotation = clazz.getAnnotation(Entity.class);
-
             String formatFieldName = StructEntityUtils.getFormatFieldName(field);
 
             DataSource dataSource = (DataSource) HashStructEntities.getDataSourceField().get(domainObject);
-            byte[] bValue = dataSource.getField(entityAnnotation.columnFamily(), domainObject.getId(), formatFieldName);
+            byte[] bValue = dataSource.getField(structEntity.annotationEntity.columnFamily(), domainObject.getId(), formatFieldName);
             Object value = DomainObjectFieldValueUtils.unpackValue(domainObject, field, bValue);
 
             field.set(domainObject, value);

@@ -24,17 +24,28 @@ public abstract class Key {
     }
 
     public static Key parse(String sKey) {
-        String[] keySplit = sKey.split("\\.", 3);
+        if (sKey.startsWith(KeyIndex.PREFIX)) {
+            //Индексы у нас обрабатываются по другому
+            String[] keySplit = sKey.split("\\.", 4);
 
-        long id = Long.parseLong(keySplit[0]);
-        TypeKey typeKey = TypeKey.get(Integer.parseInt(keySplit[1]));
+            long id = Long.parseLong(keySplit[3]);
+            String index = keySplit[1];
+            int hash = Integer.parseInt(keySplit[2]);
 
-        if (typeKey==TypeKey.AVAILABILITY) {
-            return new KeyAvailability(id);
-        } else if (typeKey==TypeKey.FIELD) {
-            return new KeyField(id, keySplit[2]);
+            return new KeyIndex(id, index, hash);
         } else {
-            throw new RuntimeException("Not support type enum");
+            String[] keySplit = sKey.split("\\.", 3);
+
+            long id = Long.parseLong(keySplit[0]);
+            TypeKey typeKey = TypeKey.get(Integer.parseInt(keySplit[1]));
+
+            if (typeKey==TypeKey.AVAILABILITY) {
+                return new KeyAvailability(id);
+            } else if (typeKey==TypeKey.FIELD) {
+                return new KeyField(id, keySplit[2]);
+            } else {
+                throw new RuntimeException("Not support type enum");
+            }
         }
     }
 

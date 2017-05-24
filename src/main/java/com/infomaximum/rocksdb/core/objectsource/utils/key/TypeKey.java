@@ -7,7 +7,9 @@ public enum TypeKey {
 
     AVAILABILITY(1),
 
-    FIELD(2);
+    FIELD(2),
+
+    INDEX(3);
 
     private final int id;
 

@@ -8,6 +8,7 @@ import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
+import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
@@ -63,11 +64,11 @@ public class DomainObjectUtils {
     }
 
 
-    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String index, Object value) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String nameIndex, int hash) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
-        EntitySource entitySource = dataSource.findEntitySource(entityAnnotation.columnFamily(), (transaction != null), index, value.toString(), HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.findEntitySource(entityAnnotation.columnFamily(), (transaction != null), nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
         T domainObject = createDomainObject(dataSource, clazz, entitySource);
@@ -99,10 +100,10 @@ public class DomainObjectUtils {
         if (data!=null) {
             StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
 
-            for (String fieldName: structEntity.getFormatFieldNames()) {
-                Field field = HashStructEntities.getStructEntity(clazz).getField(fieldName);
-                if (data.containsKey(fieldName)) {
-                    byte[] value = data.get(fieldName);
+            for (String formatFieldName: structEntity.getFormatFieldNames()) {
+                Field field = HashStructEntities.getStructEntity(clazz).getFieldByFormatName(formatFieldName);
+                if (data.containsKey(formatFieldName)) {
+                    byte[] value = data.get(formatFieldName);
                     field.set(domainObject, TypeConvertRocksdb.get(field.getType(), value));
                 } else {
                     Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
