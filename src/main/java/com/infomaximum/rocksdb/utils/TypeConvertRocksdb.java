@@ -67,6 +67,8 @@ public class TypeConvertRocksdb {
             return getString(value);
         } else if (type == Long.class || type == long.class) {
             return getLong(value);
+        } else if (type == byte[].class) {
+            return value;
         } else {
             throw new RuntimeException("Not support type: " + type);
         }
@@ -77,6 +79,8 @@ public class TypeConvertRocksdb {
             return pack((String) value);
         } else if (type == Long.class || type == long.class) {
             return pack((Long) value);
+        } else if (type == byte[].class) {
+            return (byte[]) value;
         } else {
             throw new RuntimeException("Not support type: " + type);
         }
