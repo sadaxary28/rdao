@@ -60,21 +60,20 @@ public class MethodHandlerImpl implements MethodHandler {
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
         //Смотрим какие поля не загружены и не отредактированы - такие не стоит перезаписывать
-        Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
-        Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(self);
+        Field updatesField = HashStructEntities.getUpdatesField();
+        Set<Field> updates = (Set<Field>) updatesField.get(self);
 
-        //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
         Set<Field> fields = new HashSet<>();
-        for (String formatFieldName: structEntity.getFormatFieldNames()) {
-            Field field = structEntity.getFieldByFormatName(formatFieldName);
-
-            if (lazyLoads!=null && lazyLoads.contains(field)) {
-                //Это поле даже не загружено - не трогаем его
-            } else {
-                fields.add(field);
+        if (updates != null) {
+            for (String formatFieldName: structEntity.getFormatFieldNames()) {
+                Field field = structEntity.getFieldByFormatName(formatFieldName);
+                if (updates.contains(field)) fields.add(field);
             }
         }
         transaction.update(structEntity, self, fields);
+
+        //Сносим флаги, что поля были отредактированы
+        updatesField.set(self, null);
     }
 
     private void removeDomainObject(DomainObject self) throws NoSuchFieldException, IllegalAccessException {
@@ -111,13 +110,27 @@ public class MethodHandlerImpl implements MethodHandler {
 
 
     private void setValue(DomainObject self, Field field, Object value) throws IllegalAccessException {
-        //Снамае флаг, что поле не загружено
+        Field transactionField = HashStructEntities.getTransactionField();
+        Transaction transaction = (Transaction) transactionField.get(self);
+        if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
+
+        //Снимаем флаг, что поле не загружено
         Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
         Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(self);
         if (lazyLoads!=null) {
             lazyLoads.remove(field);
             if (lazyLoads.isEmpty()) lazyLoadsField.set(self, null);
         }
+
+        //Устанавливаем флаг, что поле было изменено
+        Field updatesField = HashStructEntities.getUpdatesField();
+        Set<Field> updates = (Set<Field>) updatesField.get(self);
+        if (updates==null) {
+            updates = new HashSet<Field>();
+            updatesField.set(self, updates);
+        }
+        updates.add(field);
+
 
         //Пишем значение
         field.set(self, value);

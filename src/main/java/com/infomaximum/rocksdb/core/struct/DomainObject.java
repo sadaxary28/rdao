@@ -16,7 +16,16 @@ public abstract class DomainObject {
     private DataSource dataSource = null;
     private Transaction transaction = null;
 
+    /**
+     * Внутренне состояние - содержит поля которые не были загружены
+     */
     private Set<Field> lazyLoads=null;
+
+    /**
+     * Внутренне состояние - содержит поля которые были отредактированы в рамках транзакции
+     */
+    private Set<Field> updatesField=null;
+
 
     public DomainObject(long id) {
         this.id = id;

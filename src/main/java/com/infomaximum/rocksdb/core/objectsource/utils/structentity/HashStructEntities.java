@@ -3,6 +3,7 @@ package com.infomaximum.rocksdb.core.objectsource.utils.structentity;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,20 @@ public class HashStructEntities {
     }
     public static Field getLazyLoadsField(){
         return lazyLoadsField;
+    }
+
+
+    private static Field updatesField;
+    static {
+        try {
+            updatesField = DomainObject.class.getDeclaredField("updatesField");
+            updatesField.setAccessible(true);
+        } catch (Exception e) {
+            log.error("Exception find field: updateFields");
+        }
+    }
+    public static Field getUpdatesField(){
+        return updatesField;
     }
 
 
