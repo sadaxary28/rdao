@@ -5,7 +5,6 @@ import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.datasource.index.IndexEngine;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.*;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
@@ -43,11 +42,17 @@ public class DataSourceImpl implements DataSource {
 
 
     @Override
-    public EntitySource findEntitySource(String columnFamily, boolean isTransaction, String index, int hash, Set<String> fields) throws RocksDBException {
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, boolean isTransaction, String index, int hash, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
         try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-            rocksIterator.seek(TypeConvertRocksdb.pack(KeyIndex.prifix(index, hash)));
+            if (prevId==null) {
+                rocksIterator.seek(TypeConvertRocksdb.pack(KeyIndex.prifix(index, hash)));
+            } else {
+                //TODO Не реализовано
+                throw new RuntimeException("Not implemented");
+            }
+
             while (true) {
                 if (!rocksIterator.isValid()) break;
 

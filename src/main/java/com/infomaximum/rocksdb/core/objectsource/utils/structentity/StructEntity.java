@@ -29,7 +29,9 @@ public class StructEntity {
 
     public StructEntity(Class<? extends DomainObject> clazz) {
         this.clazz = clazz;
+
         this.annotationEntity = clazz.getAnnotation(Entity.class);
+        if (annotationEntity==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
 
         fieldsToNames = new HashMap<String, Field>();
         fieldsToFormatNames = new HashMap<String, Field>();

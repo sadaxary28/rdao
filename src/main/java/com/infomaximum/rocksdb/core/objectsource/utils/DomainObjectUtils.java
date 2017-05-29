@@ -6,6 +6,7 @@ import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
+import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
@@ -19,7 +20,10 @@ import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by kris on 28.04.17.
@@ -64,14 +68,26 @@ public class DomainObjectUtils {
     }
 
 
-    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String nameIndex, int hash) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
-        if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
+    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String fieldName, Object value) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
+        Field field = structEntity.getFieldByName(fieldName);
+        if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
+        String nameIndex = StructEntityIndex.buildNameIndex(field);
 
-        EntitySource entitySource = dataSource.findEntitySource(entityAnnotation.columnFamily(), (transaction != null), nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
-        if (entitySource==null) return null;
+        int hash = IndexUtils.calcHashValue(value);
 
-        T domainObject = createDomainObject(dataSource, clazz, entitySource);
+        T domainObject;
+        while (true) {
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), null, (transaction != null), nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            if (entitySource==null) return null;
+
+            domainObject = createDomainObject(dataSource, clazz, entitySource);
+
+            //TODO НЕобходима проверка параметров!!!
+//            if (domainObject.)
+            break;
+        }
+
 
         if (transaction!=null) {
             //Указываем транзакцию
