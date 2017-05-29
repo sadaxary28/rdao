@@ -4,6 +4,7 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
 import java.nio.charset.Charset;
+import java.util.Date;
 
 /**
  * Created by kris on 23.03.17.
@@ -44,6 +45,15 @@ public class TypeConvertRocksdb {
         }
     }
 
+    public static Date getDate(byte[] value){
+        if (value==null) {
+            return null;
+        } else {
+            return new Date(getLong(value));
+        }
+    }
+
+
     public static byte[] pack(String value){
         return value.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET);
     }
@@ -60,6 +70,9 @@ public class TypeConvertRocksdb {
         return new byte[] { (value)? (byte)1 :(byte)0 };
     }
 
+    public static byte[] pack(Date value){
+        return pack(value.getTime());
+    }
 
 
     public static Object get(Class<?> type, byte[] value){
@@ -69,6 +82,8 @@ public class TypeConvertRocksdb {
             return getLong(value);
         } else if (type == byte[].class) {
             return value;
+        } else if (type == Date.class) {
+            return getDate(value);
         } else {
             throw new RuntimeException("Not support type: " + type);
         }
@@ -81,6 +96,8 @@ public class TypeConvertRocksdb {
             return pack((Long) value);
         } else if (type == byte[].class) {
             return (byte[]) value;
+        } else if (type == Date.class) {
+            return pack((Date)value);
         } else {
             throw new RuntimeException("Not support type: " + type);
         }
