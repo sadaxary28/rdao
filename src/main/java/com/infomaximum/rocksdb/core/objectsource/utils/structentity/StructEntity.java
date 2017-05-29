@@ -22,6 +22,9 @@ public class StructEntity {
     private final Map<String, Field> fieldsToFormatNames;
     private final Set<String> eagerFormatFieldNames;
 
+    private final Map<Field, Method> lazySetterFieldToMethods;
+    private final Map<Method, Field> lazySetterMethodToFields;
+
     private final Map<Field, Method> lazyGetterFieldToMethods;
     private final Map<Method, Field> lazyGetterMethodToFields;
 
@@ -38,6 +41,9 @@ public class StructEntity {
 
         Set<String> modifiableEagerFormatFieldNames = new HashSet<String>();
         eagerFormatFieldNames = Collections.unmodifiableSet(modifiableEagerFormatFieldNames);
+
+        lazySetterFieldToMethods = new HashMap<Field, Method>();
+        lazySetterMethodToFields = new HashMap<Method, Field>();
 
         lazyGetterFieldToMethods = new HashMap<Field, Method>();
         lazyGetterMethodToFields = new HashMap<Method, Field>();
@@ -60,8 +66,16 @@ public class StructEntity {
                 modifiableEagerFormatFieldNames.add(formatFieldName);
             }
 
-            //Теперь ищем lazy getter'ы методы
             if (annotationEntityField.lazy()) {
+
+                //Теперь ищем lazy setter'ы методы
+                Method methodSetter = StructEntityUtils.findSetterMethod(clazz, field);
+                if (methodSetter!=null) {
+                    lazySetterFieldToMethods.put(field, methodSetter);
+                    lazySetterMethodToFields.put(methodSetter, field);
+                }
+
+                //Теперь ищем lazy getter'ы методы
                 Method methodGetter = StructEntityUtils.findGetterMethod(clazz, field);
                 if (methodGetter!=null) {
                     lazyGetterFieldToMethods.put(field, methodGetter);
@@ -94,6 +108,13 @@ public class StructEntity {
         return fieldsToFormatNames.get(formatFieldName);
     }
 
+    public boolean isLazySetterMethod(String methodName) {
+        for (Method method: lazySetterMethodToFields.keySet()) {
+            if (method.getName().equals(methodName)) return true;
+        }
+        return false;
+    }
+
     public boolean isLazyGetterMethod(String methodName) {
         for (Method method: lazyGetterMethodToFields.keySet()) {
             if (method.getName().equals(methodName)) return true;
@@ -109,4 +130,11 @@ public class StructEntity {
         return null;
     }
 
+    public Field getFieldByLazySetterMethod(String methodName) {
+        for (Map.Entry<Method, Field> entry: lazySetterMethodToFields.entrySet()) {
+            Method method = entry.getKey();
+            if (method.getName().equals(methodName)) return entry.getValue();
+        }
+        return null;
+    }
 }

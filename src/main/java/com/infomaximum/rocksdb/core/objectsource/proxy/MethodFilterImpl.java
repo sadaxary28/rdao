@@ -31,6 +31,9 @@ public class MethodFilterImpl implements MethodFilter {
         } else if (structEntity.isLazyGetterMethod(method.getName())) {
             //Ловим getter'ы для lazy полей
             return true;
+        } else if (structEntity.isLazySetterMethod(method.getName())) {
+            //Ловим setter'ы для lazy полей
+            return true;
         } else {
             return false;
         }

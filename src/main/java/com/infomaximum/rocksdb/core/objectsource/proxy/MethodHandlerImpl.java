@@ -1,26 +1,19 @@
 package com.infomaximum.rocksdb.core.objectsource.proxy;
 
-import com.google.common.base.CaseFormat;
 import com.infomaximum.rocksdb.core.anotation.Entity;
-import com.infomaximum.rocksdb.core.anotation.EntityField;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectFieldValueUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityUtils;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import javassist.util.proxy.MethodHandler;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -52,6 +45,10 @@ public class MethodHandlerImpl implements MethodHandler {
         } else if (structEntity.isLazyGetterMethod(thisMethod.getName())) {
             Field field = structEntity.getFieldByLazyGetterMethod(thisMethod.getName());
             return getLazyValue(domainObject, field);
+        } else if (structEntity.isLazySetterMethod(thisMethod.getName())) {
+            Field field = structEntity.getFieldByLazySetterMethod(thisMethod.getName());
+            setValue(domainObject, field, args[0]);
+            return null;
         } else {
             throw new RuntimeException("Not handler method: " + thisMethod.getName());
         }
@@ -62,11 +59,20 @@ public class MethodHandlerImpl implements MethodHandler {
         Transaction transaction = (Transaction) transactionField.get(self);
         if (transaction==null || !transaction.isActive()) throw new RuntimeException("DomainObject: " + self + " load in readonly mode");
 
+        //Смотрим какие поля не загружены и не отредактированы - такие не стоит перезаписывать
+        Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
+        Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(self);
+
         //TODO необходима оптимизация, в настоящий момент если поле не изменилось, мы все равно его перезаписываем
         Set<Field> fields = new HashSet<>();
         for (String formatFieldName: structEntity.getFormatFieldNames()) {
             Field field = structEntity.getFieldByFormatName(formatFieldName);
-            fields.add(field);
+
+            if (lazyLoads!=null && lazyLoads.contains(field)) {
+                //Это поле даже не загружено - не трогаем его
+            } else {
+                fields.add(field);
+            }
         }
         transaction.update(structEntity, self, fields);
     }
@@ -78,28 +84,42 @@ public class MethodHandlerImpl implements MethodHandler {
         transaction.remove(columnFamily, self);
     }
 
-    private Object getLazyValue(DomainObject domainObject, Field field) throws ReflectiveOperationException, RocksDBException {
+    private Object getLazyValue(DomainObject self, Field field) throws ReflectiveOperationException, RocksDBException {
         //Проверяем загружено ли это поле
         Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
-        Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(domainObject);
+        Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(self);
         boolean isNeedLazyLoadingValue = (lazyLoads==null)?false:lazyLoads.contains(field);
 
         if (!isNeedLazyLoadingValue) {
-            return field.get(domainObject);
+            return field.get(self);
         } else {
             //Требуется загрузка
             String formatFieldName = StructEntityUtils.getFormatFieldName(field);
 
-            DataSource dataSource = (DataSource) HashStructEntities.getDataSourceField().get(domainObject);
-            byte[] bValue = dataSource.getField(structEntity.annotationEntity.columnFamily(), domainObject.getId(), formatFieldName);
-            Object value = DomainObjectFieldValueUtils.unpackValue(domainObject, field, bValue);
+            DataSource dataSource = (DataSource) HashStructEntities.getDataSourceField().get(self);
+            byte[] bValue = dataSource.getField(structEntity.annotationEntity.columnFamily(), self.getId(), formatFieldName);
+            Object value = DomainObjectFieldValueUtils.unpackValue(self, field, bValue);
 
-            field.set(domainObject, value);
+            field.set(self, value);
 
             lazyLoads.remove(field);
-            if (lazyLoads.isEmpty()) lazyLoadsField.set(domainObject, null);
+            if (lazyLoads.isEmpty()) lazyLoadsField.set(self, null);
 
             return value;
         }
+    }
+
+
+    private void setValue(DomainObject self, Field field, Object value) throws IllegalAccessException {
+        //Снамае флаг, что поле не загружено
+        Field lazyLoadsField = HashStructEntities.getLazyLoadsField();
+        Set<Field> lazyLoads = (Set<Field>) lazyLoadsField.get(self);
+        if (lazyLoads!=null) {
+            lazyLoads.remove(field);
+            if (lazyLoads.isEmpty()) lazyLoadsField.set(self, null);
+        }
+
+        //Пишем значение
+        field.set(self, value);
     }
 }
