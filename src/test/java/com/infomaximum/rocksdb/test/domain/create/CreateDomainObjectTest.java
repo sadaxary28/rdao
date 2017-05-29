@@ -1,14 +1,11 @@
-package com.infomaximum.rocksdb.test.domain;
+package com.infomaximum.rocksdb.test.domain.create;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.anotation.EntityField;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
 import com.infomaximum.rocksdb.domain.StoreFile;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.Monad;
 import org.junit.Assert;
@@ -19,9 +16,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by kris on 22.04.17.
  */
-public class DomainObjectTest extends RocksDataTest {
+public class CreateDomainObjectTest extends RocksDataTest {
 
-    private final static Logger log = LoggerFactory.getLogger(DomainObjectTest.class);
+    private final static Logger log = LoggerFactory.getLogger(CreateDomainObjectTest.class);
 
     @Test
     public void run() throws Exception {

@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.test.dependence;
+package com.infomaximum.rocksdb.test.domain.dependence;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;

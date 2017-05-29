@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.test.remove;
+package com.infomaximum.rocksdb.test.domain.remove;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;

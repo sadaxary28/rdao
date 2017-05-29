@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.test.index;
+package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;

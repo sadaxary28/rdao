@@ -1,11 +1,10 @@
-package com.infomaximum.rocksdb.test.dependence;
+package com.infomaximum.rocksdb.test.domain.dependence;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
 import com.infomaximum.rocksdb.domain.Department;
-import com.infomaximum.rocksdb.domain.StoreFile;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.Monad;

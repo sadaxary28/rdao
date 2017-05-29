@@ -1,20 +1,19 @@
-package com.infomaximum.rocksdb.test.iterator;
+package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
 import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.domain.Department;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.test.domain.DomainObjectTest;
+import com.infomaximum.rocksdb.test.domain.create.CreateDomainObjectTest;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.Monad;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -23,7 +22,7 @@ import java.util.NoSuchElementException;
  */
 public class IteratorEntityTest extends RocksDataTest {
 
-    private final static Logger log = LoggerFactory.getLogger(DomainObjectTest.class);
+    private final static Logger log = LoggerFactory.getLogger(CreateDomainObjectTest.class);
 
     @Test
     public void run() throws Exception {
