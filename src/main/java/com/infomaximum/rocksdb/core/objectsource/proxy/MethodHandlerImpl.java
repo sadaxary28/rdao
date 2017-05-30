@@ -42,11 +42,11 @@ public class MethodHandlerImpl implements MethodHandler {
         } else if ("remove".equals(thisMethod.getName())) {
             removeDomainObject(domainObject);
             return null;
-        } else if (structEntity.isLazyGetterMethod(thisMethod.getName())) {
-            Field field = structEntity.getFieldByLazyGetterMethod(thisMethod.getName());
+        } else if (structEntity.isGetterMethod(thisMethod.getName())) {
+            Field field = structEntity.getFieldByGetterMethod(thisMethod.getName());
             return getLazyValue(domainObject, field);
-        } else if (structEntity.isLazySetterMethod(thisMethod.getName())) {
-            Field field = structEntity.getFieldByLazySetterMethod(thisMethod.getName());
+        } else if (structEntity.isSetterMethod(thisMethod.getName())) {
+            Field field = structEntity.getFieldBySetterMethod(thisMethod.getName());
             setValue(domainObject, field, args[0]);
             return null;
         } else {

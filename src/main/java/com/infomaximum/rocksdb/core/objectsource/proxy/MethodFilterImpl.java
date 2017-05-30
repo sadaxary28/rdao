@@ -28,10 +28,10 @@ public class MethodFilterImpl implements MethodFilter {
         } else if ("remove".equals(method.getName())) {
             //Вот remove мы ловим ставим свой обработчик
             return true;
-        } else if (structEntity.isLazyGetterMethod(method.getName())) {
+        } else if (structEntity.isGetterMethod(method.getName())) {
             //Ловим getter'ы для lazy полей
             return true;
-        } else if (structEntity.isLazySetterMethod(method.getName())) {
+        } else if (structEntity.isSetterMethod(method.getName())) {
             //Ловим setter'ы для lazy полей
             return true;
         } else {

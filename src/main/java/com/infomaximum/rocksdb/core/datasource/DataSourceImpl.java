@@ -49,28 +49,35 @@ public class DataSourceImpl implements DataSource {
             if (prevId==null) {
                 rocksIterator.seek(TypeConvertRocksdb.pack(KeyIndex.prifix(index, hash)));
             } else {
-                //TODO Не реализовано
-                throw new RuntimeException("Not implemented");
+                rocksIterator.seek(TypeConvertRocksdb.pack(new KeyIndex(prevId, index, hash).pack()));
             }
 
             while (true) {
-                if (!rocksIterator.isValid()) break;
+                if (!rocksIterator.isValid()) return null;
 
                 Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
-                if (key.getTypeKey() != TypeKey.INDEX) break;
+                if (key.getTypeKey() != TypeKey.INDEX) return null;
 
                 KeyIndex keyIndex = (KeyIndex) key;
-                if (!keyIndex.getIndex().equals(index)) break;
-                if (keyIndex.getHash() != hash) break;
+                if (!keyIndex.getIndex().equals(index)) return null;
+                if (keyIndex.getHash() != hash) return null;
 
                 long id = key.getId();
 
-                return getEntitySource(columnFamily, isTransaction, id, fields);
+                if (prevId!=null && id==prevId) {
+                    rocksIterator.next();
+                    continue;
+                }
 
-//                rocksIterator.next();
+                EntitySource entitySource = getEntitySource(columnFamily, isTransaction, id, fields);
+                if (entitySource!=null) {
+                    return entitySource;
+                } else {
+                    //Сломанный индекс - этого объекта уже нет...
+                    rocksIterator.next();
+                }
             }
         }
-        return null;
     }
 
     @Override
