@@ -18,7 +18,7 @@ public interface DataSource {
 
     public EntitySource getEntitySource(String columnFamily, boolean isTransaction, long id, Set<String> fields) throws RocksDBException;
 
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, boolean isTransaction, String index, int hash, Set<String> fields) throws RocksDBException;
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws RocksDBException;
 
     public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException;
 

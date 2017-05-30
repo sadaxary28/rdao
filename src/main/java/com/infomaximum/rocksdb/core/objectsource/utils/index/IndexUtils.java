@@ -1,11 +1,9 @@
 package com.infomaximum.rocksdb.core.objectsource.utils.index;
 
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 
-import java.lang.reflect.Field;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Created by kris on 24.05.17.
@@ -24,7 +22,7 @@ public class IndexUtils {
         return Math.abs(hash(string.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET), 1));
     }
 
-    public static int calcHashValues(Object[] values) {
+    public static int calcHashValues(Collection<Object> values) {
         StringBuilder sBuilder = new StringBuilder();
         for (Object value: values) {
             if (value==null) continue;

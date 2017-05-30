@@ -11,7 +11,8 @@ import com.infomaximum.rocksdb.core.struct.DomainObject;
 @Entity(
         columnFamily = "com.infomaximum.StoreFile",
         indexes = {
-                @Index(fieldNames = {"size"})
+                @Index(fieldNames = {"size"}),
+                @Index(fieldNames = {"size", "fileName"})
         }
 )
 public class StoreFile extends DomainObject {

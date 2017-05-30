@@ -9,7 +9,6 @@ import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Struct;
 import java.util.*;
 
 /**
@@ -38,11 +37,17 @@ public class StructEntityIndex {
         //Сортируем, что бы хеш не ломался при перестановки местами полей
         Collections.sort(modifiableIndexFields, (o1, o2) -> o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase()));
 
-        this.name = buildNameIndex(modifiableIndexFields);
+        this.name = buildNameIndexToSortFields(modifiableIndexFields);
         this.indexFieldsSort = Collections.unmodifiableList(modifiableIndexFields);
     }
 
-    public static String buildNameIndex(List<Field> sortIndexFields){
+    public static String buildNameIndex(Collection<Field> indexFields){
+        List<Field> sortIndexFields = new ArrayList<>(indexFields);
+        Collections.sort(sortIndexFields, (o1, o2) -> o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase()));
+        return buildNameIndexToSortFields(sortIndexFields);
+    }
+
+    private static String buildNameIndexToSortFields(Collection<Field> sortIndexFields){
         StringJoiner fieldJoiner = new StringJoiner(".");
         for (Field field: sortIndexFields) {
             fieldJoiner.add(field.getName());
@@ -50,6 +55,7 @@ public class StructEntityIndex {
 
         return buildNameIndex(fieldJoiner.toString());
     }
+
 
     public static String buildNameIndex(Field field){
         return buildNameIndex(field.getName().toString());

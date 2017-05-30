@@ -3,11 +3,9 @@ package com.infomaximum.rocksdb.transaction;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectFieldValueUtils;
 import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyIndex;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityUtils;
@@ -17,8 +15,11 @@ import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.RocksDBException;
+
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -72,10 +73,9 @@ public class Transaction {
 
 
             //Вычисляем новый хеш
-            Object[] newValues = new Object[structEntityIndex.indexFieldsSort.size()];
-            for (int i=0 ; i<newValues.length; i++) {
-                Field iField = structEntityIndex.indexFieldsSort.get(i);
-                newValues[i] = iField.get(self);
+            List<Object> newValues = new ArrayList();
+            for (Field field: structEntityIndex.indexFieldsSort) {
+                newValues.add(field.get(self));
             }
 
             int newHash = IndexUtils.calcHashValues(newValues);

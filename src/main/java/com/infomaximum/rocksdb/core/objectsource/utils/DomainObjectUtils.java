@@ -67,13 +67,8 @@ public class DomainObjectUtils {
     }
 
 
-    public static <T extends DomainObject> T find(DataSource dataSource, Transaction transaction, Class<T> clazz, String fieldName, Object value) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        IteratorFindEntity iteratorFindEntity = new IteratorFindEntity(dataSource, clazz, fieldName, value);
-        return (T) iteratorFindEntity.next();
-    }
-
-    public static <T extends DomainObject> IteratorFindEntity<T> findAll(DataSource dataSource, Class<T> clazz, String fieldName, Object value) throws NoSuchMethodException, InstantiationException, RocksDBException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
-        return new IteratorFindEntity(dataSource, clazz, fieldName, value);
+    public static <T extends DomainObject> IteratorFindEntity<T> findAll(DataSource dataSource, Class<T> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, RocksDBException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
+        return new IteratorFindEntity(dataSource, clazz, filters);
     }
 
     public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {

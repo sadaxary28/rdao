@@ -10,6 +10,9 @@ import com.infomaximum.rocksdb.transaction.engine.EngineTransaction;
 import com.infomaximum.rocksdb.transaction.engine.impl.EngineTransactionImpl;
 import org.rocksdb.RocksDBException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by user on 19.04.2017.
  */
@@ -62,7 +65,8 @@ public class DomainObjectSource {
      * @return
      */
     public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
-        return DomainObjectUtils.find(dataSource, null, clazz, fieldName, value);
+        IteratorFindEntity iteratorFindEntity = DomainObjectUtils.findAll(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
+        return (T) iteratorFindEntity.next();
     }
 
     /**
@@ -71,9 +75,27 @@ public class DomainObjectSource {
      * @return
      */
     public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
-        return DomainObjectUtils.findAll(dataSource, clazz, fieldName, value);
+        return DomainObjectUtils.findAll(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
     }
 
+    /**
+     * find object to readonly
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
+        IteratorFindEntity iteratorFindEntity = DomainObjectUtils.findAll(dataSource, clazz, filters);
+        return (T) iteratorFindEntity.next();
+    }
+
+    /**
+     * find object to readonly
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
+        return DomainObjectUtils.findAll(dataSource, clazz, filters);
+    }
 
     /**
      * Возврощаем итератор по объектам

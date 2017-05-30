@@ -39,7 +39,7 @@ public class DataSourceImpl implements DataSource {
 
 
     @Override
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, boolean isTransaction, String index, int hash, Set<String> fields) throws RocksDBException {
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
         try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
@@ -66,7 +66,7 @@ public class DataSourceImpl implements DataSource {
                     continue;
                 }
 
-                EntitySource entitySource = getEntitySource(columnFamily, isTransaction, id, fields);
+                EntitySource entitySource = getEntitySource(columnFamily, false, id, fields);
                 if (entitySource!=null) {
                     return entitySource;
                 } else {

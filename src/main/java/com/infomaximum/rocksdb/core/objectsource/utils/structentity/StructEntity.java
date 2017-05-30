@@ -82,12 +82,11 @@ public class StructEntity {
             }
         }
 
-        Map<String, StructEntityIndex> modifiableIndexs = new HashMap<>();
+        indexs = new HashMap<>();
         for (Index index: annotationEntity.indexes()) {
             StructEntityIndex structEntityIndex = new StructEntityIndex(this, index);
-            modifiableIndexs.put(structEntityIndex.name, structEntityIndex);
+            indexs.put(structEntityIndex.name, structEntityIndex);
         }
-        indexs = Collections.unmodifiableMap(modifiableIndexs);
     }
 
     public Set<String> getFormatFieldNames() {

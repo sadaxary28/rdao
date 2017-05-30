@@ -14,8 +14,7 @@ import org.rocksdb.RocksDBException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Created by kris on 30.04.17.
@@ -25,29 +24,37 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
     private final DataSource dataSource;
     private final Class<E> clazz;
     private final StructEntity structEntity;
-    private final Method getterToField;
 
     private final String nameIndex;
     private final int hash;
-    private final Object value;
+
+    private final Map<Method, Object> getterFilters;
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, String fieldName, Object value) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
+//    public <E extends DomainObject> IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
         this.dataSource = dataSource;
-        this.clazz=clazz;
+        this.clazz = clazz;
 
         this.structEntity = HashStructEntities.getStructEntity(clazz);
 
-        Field field = structEntity.getFieldByName(fieldName);
-        if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
-        if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
-        this.getterToField = structEntity.getGetterMethodByField(field);
+        this.getterFilters = new HashMap<Method, Object>();
+        List<Field> indexFields = new ArrayList<Field>();
+        for (Map.Entry<String, Object> filter: filters.entrySet()) {
+            String fieldName = filter.getKey();
+            Object value = filter.getValue();
 
-        this.nameIndex = StructEntityIndex.buildNameIndex(field);
+            Field field = structEntity.getFieldByName(fieldName);
+            if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
+            if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
 
-        this.value = value;
-        this.hash = IndexUtils.calcHashValue(value);
+            indexFields.add(field);
+            getterFilters.put(structEntity.getGetterMethodByField(field), value);
+        }
+
+        this.nameIndex = StructEntityIndex.buildNameIndex(indexFields);
+        this.hash = IndexUtils.calcHashValues(filters.values());
 
         nextElement = loadNextElement(true);
     }
@@ -58,14 +65,25 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
         E domainObject = null;
         while (true) {
-            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), prevFindId, false, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), prevFindId, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
             domainObject = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);
 
             //Необходима дополнительная проверка, так как нельзя исключать сломанный индекс или коллизии хеша
-            Object iValue = getterToField.invoke(domainObject);
-            if (EqualsUtils.equals(iValue, value)) {
+            boolean isFullCoincidence = true;
+            for (Map.Entry<Method, Object> entry: getterFilters.entrySet()) {
+                Method getterToField = entry.getKey();
+                Object value = entry.getValue();
+
+                Object iValue = getterToField.invoke(domainObject);
+                if (!EqualsUtils.equals(iValue, value)) {
+                    //Промахнулись с индексом
+                    isFullCoincidence=false;
+                    break;
+                }
+            }
+            if (isFullCoincidence) {
                 //Все хорошо, совпадение полное - выходим
                 break;
             } else {
