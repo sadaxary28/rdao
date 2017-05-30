@@ -51,7 +51,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
         }
 
         //Ищем объекты по size
-        for (int size=1; size<=100; size++) {
+        for (long size=1; size<=100; size++) {
             StoreFile storeFile = domainObjectSource.find(StoreFile.class, "size", size);
             Assert.assertNotNull(storeFile);
             Assert.assertEquals(size, storeFile.getSize());
