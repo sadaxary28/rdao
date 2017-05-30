@@ -4,6 +4,7 @@ import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
+import com.infomaximum.rocksdb.core.iterator.IteratorFindEntity;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodFilterImpl;
 import com.infomaximum.rocksdb.core.objectsource.proxy.MethodHandlerImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
@@ -108,6 +109,46 @@ public class DomainObjectUtils {
         }
 
         return domainObject;
+    }
+
+    public static <T extends DomainObject> IteratorFindEntity<T> findAll(DataSource dataSource, Transaction transaction, Class<T> clazz, String fieldName, Object value) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
+
+        Field field = structEntity.getFieldByName(fieldName);
+        if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
+        if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
+        Method getterToField = structEntity.getGetterMethodByField(field);
+
+        String nameIndex = StructEntityIndex.buildNameIndex(field);
+
+        int hash = IndexUtils.calcHashValue(value);
+
+        Long prevId = null;
+        T domainObject;
+        while (true) {
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), prevId, (transaction != null), nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            if (entitySource==null) return null;
+
+            domainObject = createDomainObject(dataSource, clazz, entitySource);
+
+            //Необходима дополнительная проверка, так как нельзя исключать сломанный индекс или коллизии хеша
+            Object iValue = getterToField.invoke(domainObject);
+            if (EqualsUtils.equals(iValue, value)) {
+                //Все хорошо, совпадение полное - выходим
+                break;
+            } else {
+                //Промахнулись с индексом - уходим на повторный круг
+                prevId = domainObject.getId();
+            }
+        }
+
+
+        if (transaction!=null) {
+            //Указываем транзакцию
+            HashStructEntities.getTransactionField().set(domainObject, transaction);
+        }
+
+        return null;
     }
 
     public static <T extends DomainObject> T createDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {

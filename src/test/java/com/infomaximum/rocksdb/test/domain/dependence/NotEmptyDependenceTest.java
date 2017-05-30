@@ -53,6 +53,21 @@ public class NotEmptyDependenceTest extends RocksDataTest {
         Assert.assertEquals(name, departmentCheckSave.getName());
         Assert.assertEquals(1L, departmentCheckSave.getParent().getId());
 
+
+        //Удаляем parent
+        domainObjectSource.getEngineTransaction().execute(new Monad() {
+            @Override
+            public void action(Transaction transaction) throws Exception {
+                Department department2 = domainObjectSource.edit(transaction, Department.class, 2L);
+                department2.setParent(null);
+                department2.save();
+            }
+        });
+
+        Department departmentRemoveParent = domainObjectSource.get(Department.class, 2L);
+        Assert.assertNotNull(departmentRemoveParent);
+        Assert.assertNull(departmentRemoveParent.getParent());
+
         rocksDataBase.destroy();
     }
 }

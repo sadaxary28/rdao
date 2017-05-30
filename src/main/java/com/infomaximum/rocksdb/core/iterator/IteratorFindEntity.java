@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.core.lazyiterator;
+package com.infomaximum.rocksdb.core.iterator;
 
 import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 /**
  * Created by kris on 30.04.17.
  */
-public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iterable<E> {
+public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, Iterable<E> {
 
     private final DataSource dataSource;
     private final Class<E> clazz;
@@ -23,7 +23,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
 
     private E nextElement;
 
-    public IteratorEntity(DataSource dataSource, Class<E> clazz) throws ReflectiveOperationException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz) throws ReflectiveOperationException, RocksDBException {
         this.dataSource = dataSource;
         this.clazz = clazz;
 

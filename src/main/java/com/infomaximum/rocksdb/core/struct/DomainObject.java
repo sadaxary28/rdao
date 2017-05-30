@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.core.struct;
 
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.transaction.Transaction;
+import com.infomaximum.rocksdb.utils.EqualsUtils;
 
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -50,5 +51,19 @@ public abstract class DomainObject {
     public void save(){}
 
     public void remove(){}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!DomainObject.class.isAssignableFrom(o.getClass())) return false;
+        if (o == null || EqualsUtils.getProxySuperClass(getClass()) != EqualsUtils.getProxySuperClass((Class<? extends DomainObject>) o.getClass())) return false;
+        DomainObject that = (DomainObject) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (id ^ (id >>> 32));
+    }
 }
 

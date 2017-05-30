@@ -183,7 +183,7 @@ public class DataSourceImpl implements DataSource {
                 String key = modifier.key;
                 if (key.charAt(key.length()-1) != '*') {
                     //Удаляется только одна запись
-                    writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key));
+                    writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
                 } else {
                     //Удаляются все записи попадающие под этот патерн
                     String patternKey = key.substring(0, key.length()-1);

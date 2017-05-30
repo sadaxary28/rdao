@@ -1,7 +1,8 @@
 package com.infomaximum.rocksdb.core.objectsource;
 
 import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.core.lazyiterator.IteratorEntity;
+import com.infomaximum.rocksdb.core.iterator.IteratorEntity;
+import com.infomaximum.rocksdb.core.iterator.IteratorFindEntity;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.transaction.Transaction;
@@ -62,6 +63,15 @@ public class DomainObjectSource {
      */
     public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
         return DomainObjectUtils.find(dataSource, null, clazz, fieldName, value);
+    }
+
+    /**
+     * find object to readonly
+     * @param <T>
+     * @return
+     */
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
+        return DomainObjectUtils.findAll(dataSource, null, clazz, fieldName, value);
     }
 
 
