@@ -1,14 +1,19 @@
 package com.infomaximum.rocksdb.core.iterator;
 
-import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
+import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
+import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
+import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.rocksdb.utils.EqualsUtils;
 import org.rocksdb.RocksDBException;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -19,30 +24,60 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private final DataSource dataSource;
     private final Class<E> clazz;
-    private final String columnFamily;
+    private final StructEntity structEntity;
+    private final Method getterToField;
+
+    private final String nameIndex;
+    private final int hash;
+    private final Object value;
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz) throws ReflectiveOperationException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
         this.dataSource = dataSource;
-        this.clazz = clazz;
+        this.clazz=clazz;
 
-        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
-        if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
-        this.columnFamily = entityAnnotation.columnFamily();
+        this.structEntity = HashStructEntities.getStructEntity(clazz);
+
+        Field field = structEntity.getFieldByName(fieldName);
+        if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
+        if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
+        this.getterToField = structEntity.getGetterMethodByField(field);
+
+        this.nameIndex = StructEntityIndex.buildNameIndex(field);
+
+        this.value = value;
+        this.hash = IndexUtils.calcHashValue(value);
 
         nextElement = loadNextElement(true);
     }
 
     /** Загружаем следующий элемент */
     private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        Long prevId = (isFirst)?null:nextElement.getId();
+        Long prevFindId = (isFirst)?null:nextElement.getId();
 
-        EntitySource entitySource = dataSource.nextEntitySource(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
-        if (entitySource==null) {
+        E domainObject = null;
+        while (true) {
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), prevFindId, false, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            if (entitySource==null) break;
+
+            domainObject = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);
+
+            //Необходима дополнительная проверка, так как нельзя исключать сломанный индекс или коллизии хеша
+            Object iValue = getterToField.invoke(domainObject);
+            if (EqualsUtils.equals(iValue, value)) {
+                //Все хорошо, совпадение полное - выходим
+                break;
+            } else {
+                //Промахнулись с индексом - уходим на повторный круг
+                prevFindId = domainObject.getId();
+            }
+        }
+
+        if (domainObject==null) {
             nextElement = null;
         } else {
-            nextElement = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);
+            nextElement = domainObject;
         }
         return nextElement;
     }
