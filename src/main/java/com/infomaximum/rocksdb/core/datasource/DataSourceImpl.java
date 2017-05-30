@@ -2,7 +2,6 @@ package com.infomaximum.rocksdb.core.datasource;
 
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
-import com.infomaximum.rocksdb.core.datasource.index.IndexEngine;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.*;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
@@ -22,11 +21,9 @@ import java.util.Set;
 public class DataSourceImpl implements DataSource {
 
     private final RocksDataBase rocksDataBase;
-    private final IndexEngine indexEngine;
 
     public DataSourceImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
-        this.indexEngine = new IndexEngine(this);
     }
 
     @Override

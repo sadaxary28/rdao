@@ -33,7 +33,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, String fieldName, Object value) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
         this.dataSource = dataSource;
         this.clazz=clazz;
 

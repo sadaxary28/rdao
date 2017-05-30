@@ -71,7 +71,7 @@ public class DomainObjectSource {
      * @return
      */
     public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
-        return DomainObjectUtils.findAll(dataSource, null, clazz, fieldName, value);
+        return DomainObjectUtils.findAll(dataSource, clazz, fieldName, value);
     }
 
 
