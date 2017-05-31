@@ -66,7 +66,11 @@ public class DomainObjectSource {
      */
     public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
         IteratorFindEntity iteratorFindEntity = DomainObjectUtils.findAll(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
-        return (T) iteratorFindEntity.next();
+        if (iteratorFindEntity.hasNext()) {
+            return (T) iteratorFindEntity.next();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -85,7 +89,11 @@ public class DomainObjectSource {
      */
     public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
         IteratorFindEntity iteratorFindEntity = DomainObjectUtils.findAll(dataSource, clazz, filters);
-        return (T) iteratorFindEntity.next();
+        if (iteratorFindEntity.hasNext()) {
+            return (T) iteratorFindEntity.next();
+        } else {
+            return null;
+        }
     }
 
     /**

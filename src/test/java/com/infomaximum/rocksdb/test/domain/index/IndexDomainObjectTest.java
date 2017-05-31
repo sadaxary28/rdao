@@ -29,9 +29,11 @@ public class IndexDomainObjectTest extends RocksDataTest {
         DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
 
         //Проверяем, что таких объектов нет в базе
-        for (long id=1; id<=100; id++) {
-            Assert.assertNull(domainObjectSource.get(StoreFile.class, id));
+        for (long i=1; i<=100; i++) {
+            Assert.assertNull(domainObjectSource.get(StoreFile.class, i));
+            Assert.assertNull(domainObjectSource.find(StoreFile.class, "size", i));
         }
+
 
         //Добавляем объекты
         domainObjectSource.getEngineTransaction().execute(new Monad() {
