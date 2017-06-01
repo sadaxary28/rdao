@@ -54,7 +54,7 @@ public class StructEntity {
             if (annotationEntityField==null) continue;
 
             //Обязательно проверяем что поле приватное
-            if (!Modifier.isPrivate(field.getModifiers())) throw new RuntimeException("Field: " + field.getName() + " is not private");
+            if (!Modifier.isPrivate(field.getModifiers())) throw new RuntimeException("In class: " + clazz + " field: " + field.getName() + " is not private");
             field.setAccessible(true);
 
             fieldsToNames.put(field.getName(), field);
