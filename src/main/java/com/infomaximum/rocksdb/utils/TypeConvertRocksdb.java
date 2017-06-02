@@ -80,6 +80,10 @@ public class TypeConvertRocksdb {
             return getString(value);
         } else if (type == Long.class || type == long.class) {
             return getLong(value);
+        } else if (type == Integer.class || type == int.class) {
+            return getInteger(value);
+        } else if (type == Boolean.class || type == boolean.class) {
+            return getBoolean(value);
         } else if (type == byte[].class) {
             return value;
         } else if (type == Date.class) {
@@ -94,6 +98,10 @@ public class TypeConvertRocksdb {
             return pack((String) value);
         } else if (type == Long.class || type == long.class) {
             return pack((Long) value);
+        } else if (type == Integer.class || type == int.class) {
+            return pack((Integer) value);
+        } else if (type == Boolean.class || type == boolean.class) {
+            return pack((Boolean) value);
         } else if (type == byte[].class) {
             return (byte[]) value;
         } else if (type == Date.class) {
