@@ -55,6 +55,10 @@ public class StructEntity {
 
             //Обязательно проверяем что поле приватное
             if (!Modifier.isPrivate(field.getModifiers())) throw new RuntimeException("In class: " + clazz + " field: " + field.getName() + " is not private");
+
+            //Проверяем, что поле имеет "правильное" наименование
+            StructEntityUtils.validateField(clazz, field);
+
             field.setAccessible(true);
 
             fieldsToNames.put(field.getName(), field);
@@ -76,7 +80,9 @@ public class StructEntity {
 
             //Теперь ищем getter'ы методы
             Method methodGetter = StructEntityUtils.findGetterMethod(clazz, field);
-            if (methodGetter!=null) {
+            if (methodGetter == null ) {
+                if (annotationEntityField.lazy()) throw new RuntimeException("In class: " + clazz + " to field: " + field.getName() + " not found getter");
+            } else {
                 getterFieldToMethods.put(field, methodGetter);
                 getterMethodToFields.put(methodGetter, field);
             }

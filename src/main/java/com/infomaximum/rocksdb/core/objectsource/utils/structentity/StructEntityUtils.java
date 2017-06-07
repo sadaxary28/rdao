@@ -20,7 +20,7 @@ public class StructEntityUtils {
         boolean isBooleanType = (type == boolean.class || type == boolean.class);
 
         String fieldName = field.getName();
-        String methodName = (isBooleanType)?"is":"get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        String methodName = ((isBooleanType)?"is":"get") + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
         try {
             return clazz.getDeclaredMethod(methodName);
         } catch (NoSuchMethodException e) {
@@ -35,6 +35,18 @@ public class StructEntityUtils {
             return clazz.getDeclaredMethod(methodName, field.getType());
         } catch (NoSuchMethodException e) {
             return null;
+        }
+    }
+
+    public static void validateField(Class clazz, Field field){
+        Class type = field.getType();
+        boolean isBooleanType = (type == boolean.class || type == boolean.class);
+
+        if (isBooleanType) {
+            String fieldName = field.getName();
+            if (fieldName.startsWith("is") && Character.isUpperCase(fieldName.charAt(2))) {
+                throw new RuntimeException("In class: " + clazz + " field: " + fieldName + " is not valid name");
+            }
         }
     }
 }

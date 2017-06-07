@@ -26,6 +26,9 @@ public class StoreFile extends DomainObject {
     @EntityField
     private long size;
 
+    @EntityField
+    private boolean single;
+
     public StoreFile(long id) {
         super(id);
     }
@@ -51,4 +54,11 @@ public class StoreFile extends DomainObject {
         this.size = size;
     }
 
+
+    public boolean isSingle() {
+        return single;
+    }
+    public void setSingle(boolean single) {
+        this.single = single;
+    }
 }
