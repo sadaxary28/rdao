@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by kris on 22.04.17.
  */
-public class IndexRemoveDomainObjectTest extends RocksDataTest {
+public class IndexRemove2DomainObjectTest extends RocksDataTest {
 
-    private final static Logger log = LoggerFactory.getLogger(IndexRemoveDomainObjectTest.class);
+    private final static Logger log = LoggerFactory.getLogger(IndexRemove2DomainObjectTest.class);
 
     @Test
     public void run() throws Exception {
@@ -30,21 +30,18 @@ public class IndexRemoveDomainObjectTest extends RocksDataTest {
 
         //Проверяем, что таких объектов нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFile.class, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFile.class, 2L));
 
-        //Добавляем объекты
+        //Добавляем объект
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
-                for (int i=1; i<=2; i++) {
                     StoreFile storeFile = domainObjectSource.create(transaction, StoreFile.class);
                     storeFile.setSize(100);
                     storeFile.save();
-                }
             }
         });
 
-        //Редактируем 1-й объект
+        //Редактируем объект
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
@@ -57,8 +54,7 @@ public class IndexRemoveDomainObjectTest extends RocksDataTest {
 
         //Ищем объекты по size
         StoreFile storeFile = domainObjectSource.find(StoreFile.class, "size", 100L);
-        Assert.assertNotNull(storeFile);
-        Assert.assertEquals(100, storeFile.getSize());
+        Assert.assertNull(storeFile);
 
         rocksDataBase.destroy();
     }

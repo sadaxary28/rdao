@@ -89,6 +89,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
             } else {
                 //Промахнулись с индексом - уходим на повторный круг
                 prevFindId = domainObject.getId();
+                domainObject = null;
             }
         }
 
