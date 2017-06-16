@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import com.infomaximum.rocksdb.core.struct.enums.PersistentEnumId;
 
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -88,6 +89,19 @@ public class TypeConvertRocksdb {
             return value;
         } else if (type == Date.class) {
             return getDate(value);
+        } else if (type.isEnum()) {
+            if (PersistentEnumId.class.isAssignableFrom(type)) {
+                int id = getInteger(value);
+                for(PersistentEnumId iEnum : ((Class<? extends PersistentEnumId>)type).getEnumConstants()) {
+                    if(id == iEnum.getId()) {
+                        return iEnum;
+                    }
+                }
+                throw new RuntimeException("not found enum: " + type + ", id: " + id);
+            } else {
+                String name = getString(value);
+                return Enum.valueOf((Class<? extends Enum>) type, name);
+            }
         } else {
             throw new RuntimeException("Not support type: " + type);
         }
@@ -105,7 +119,13 @@ public class TypeConvertRocksdb {
         } else if (type == byte[].class) {
             return (byte[]) value;
         } else if (type == Date.class) {
-            return pack((Date)value);
+            return pack((Date) value);
+        } else if (type.isEnum()) {
+            if (PersistentEnumId.class.isAssignableFrom(type)) {
+                return pack(((PersistentEnumId) value).getId());
+            } else {
+                return pack(((Enum)value).name());
+            }
         } else {
             throw new RuntimeException("Not support type: " + type);
         }

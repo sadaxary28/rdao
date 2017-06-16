@@ -4,6 +4,7 @@ import com.infomaximum.rocksdb.core.anotation.Entity;
 import com.infomaximum.rocksdb.core.anotation.EntityField;
 import com.infomaximum.rocksdb.core.anotation.Index;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**
  * Created by user on 19.04.2017.
@@ -28,6 +29,9 @@ public class StoreFile extends DomainObject {
 
     @EntityField
     private boolean single;
+
+    @EntityField
+    private FormatType format;
 
     public StoreFile(long id) {
         super(id);
@@ -60,5 +64,13 @@ public class StoreFile extends DomainObject {
     }
     public void setSingle(boolean single) {
         this.single = single;
+    }
+
+
+    public FormatType getFormat() {
+        return format;
+    }
+    public void setFormat(FormatType format) {
+        this.format = format;
     }
 }

@@ -44,7 +44,7 @@ public abstract class Key {
             } else if (typeKey==TypeKey.FIELD) {
                 return new KeyField(id, keySplit[2]);
             } else {
-                throw new RuntimeException("Not support type enum");
+                throw new RuntimeException("Not support type key: " + typeKey);
             }
         }
     }

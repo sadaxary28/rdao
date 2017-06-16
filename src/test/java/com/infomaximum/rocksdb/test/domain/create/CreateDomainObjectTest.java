@@ -5,6 +5,7 @@ import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
 import com.infomaximum.rocksdb.domain.StoreFile;
+import com.infomaximum.rocksdb.domain.type.FormatType;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.transaction.Transaction;
 import com.infomaximum.rocksdb.transaction.engine.Monad;
@@ -34,6 +35,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         String fileName="application/json";
         String contentType="info.json";
         long size=1000L;
+        FormatType format = FormatType.B;
 
         //Добавляем объект
         domainObjectSource.getEngineTransaction().execute(new Monad() {
@@ -43,6 +45,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
                 storeFile.setContentType(contentType);
                 storeFile.setFileName(fileName);
                 storeFile.setSize(size);
+                storeFile.setFormat(format);
                 storeFile.save();
             }
         });
@@ -53,6 +56,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(fileName, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
         Assert.assertEquals(size, storeFileCheckSave.getSize());
+        Assert.assertEquals(format, storeFileCheckSave.getFormat());
 
         rocksDataBase.destroy();
     }
