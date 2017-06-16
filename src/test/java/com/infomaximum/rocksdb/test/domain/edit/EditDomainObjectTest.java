@@ -76,6 +76,26 @@ public class EditDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(size, editFileCheckSave.getSize());
         Assert.assertEquals(true, editFileCheckSave.isSingle());
 
+
+        //Повторно редактируем сохраненый объект
+        domainObjectSource.getEngineTransaction().execute(new Monad() {
+            @Override
+            public void action(Transaction transaction) throws Exception {
+                StoreFile storeFile = domainObjectSource.edit(transaction, StoreFile.class, 1L);
+                storeFile.setFileName(fileName1);
+                storeFile.setSingle(false);
+                storeFile.save();
+            }
+        });
+
+
+        StoreFile storeFileCheckSave2 = domainObjectSource.get(StoreFile.class, 1L);
+        Assert.assertNotNull(storeFileCheckSave2);
+        Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
+        Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());
+        Assert.assertEquals(size, storeFileCheckSave2.getSize());
+        Assert.assertEquals(false, storeFileCheckSave2.isSingle());
+
         rocksDataBase.destroy();
     }
 
