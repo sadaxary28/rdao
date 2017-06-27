@@ -11,7 +11,8 @@ import com.infomaximum.rocksdb.core.struct.DomainObject;
 @Entity(
         columnFamily = "com.infomaximum.subsystem.employee.Department",
         indexes = {
-                @Index(fieldNames = {"parent"})
+                @Index(fieldNames = {"parent"}),
+                @Index(fieldNames = {"parent","name"})
         }
 )
 public class Department extends DomainObject {

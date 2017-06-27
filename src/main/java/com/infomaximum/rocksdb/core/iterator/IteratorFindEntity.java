@@ -14,10 +14,7 @@ import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Created by kris on 30.04.17.
@@ -57,7 +54,13 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
         }
 
         this.nameIndex = structEntityIndex.name;
-        this.hash = IndexUtils.calcHashValues(filters.values());
+
+        //Сортируем поля и вычисляем хеш
+        List<Object> sortFilterValues = new ArrayList();
+        for (Field field: structEntityIndex.indexFieldsSort) {
+            sortFilterValues.add(filters.get(field.getName()));
+        }
+        this.hash = IndexUtils.calcHashValues(sortFilterValues);
 
         nextElement = loadNextElement(true);
     }
