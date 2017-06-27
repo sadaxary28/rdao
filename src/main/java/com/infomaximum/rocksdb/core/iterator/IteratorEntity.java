@@ -8,7 +8,6 @@ import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEn
 import com.infomaximum.rocksdb.core.struct.DomainObject;
 import org.rocksdb.RocksDBException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -35,7 +34,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, ReflectiveOperationException {
         Long prevId = (isFirst)?null:nextElement.getId();
 
         EntitySource entitySource = dataSource.nextEntitySource(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());

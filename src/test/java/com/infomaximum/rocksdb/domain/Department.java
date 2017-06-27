@@ -19,7 +19,7 @@ public class Department extends DomainObject {
     @EntityField
     private String name;
 
-    @EntityField()
+    @EntityField(lazy = true)
     private Department parent;
 
     public Department(long id) {

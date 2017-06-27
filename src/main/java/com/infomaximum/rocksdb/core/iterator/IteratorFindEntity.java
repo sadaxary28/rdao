@@ -13,7 +13,6 @@ import com.infomaximum.rocksdb.utils.EqualsUtils;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,7 +35,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
         this.dataSource = dataSource;
         this.clazz = clazz;
 
@@ -64,7 +63,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, ReflectiveOperationException {
         Long prevFindId = (isFirst)?null:nextElement.getId();
 
         E domainObject = null;
