@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by kris on 24.05.17.
@@ -37,22 +38,24 @@ public class StructEntityIndex {
         //Сортируем, что бы хеш не ломался при перестановки местами полей
         Collections.sort(modifiableIndexFields, (o1, o2) -> o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase()));
 
-        this.name = buildNameIndexToSortFields(modifiableIndexFields);
+        //Вычисляем имя индекса
+        List<String> sortIndexFields = modifiableIndexFields.stream().map(Field::getName).collect(Collectors.toList());
+        this.name = buildNameIndexToSortFields(sortIndexFields);
+
         this.indexFieldsSort = Collections.unmodifiableList(modifiableIndexFields);
     }
 
-    public static String buildNameIndex(Collection<Field> indexFields){
-        List<Field> sortIndexFields = new ArrayList<>(indexFields);
-        Collections.sort(sortIndexFields, (o1, o2) -> o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase()));
+    public static String buildNameIndex(Collection<String> nameIndexFields){
+        List<String> sortIndexFields = new ArrayList<>(nameIndexFields);
+        Collections.sort(sortIndexFields, (o1, o2) -> o1.toLowerCase().compareTo(o2.toLowerCase()));
         return buildNameIndexToSortFields(sortIndexFields);
     }
 
-    private static String buildNameIndexToSortFields(Collection<Field> sortIndexFields){
+    private static String buildNameIndexToSortFields(Collection<String> sortNameIndexFields){
         StringJoiner fieldJoiner = new StringJoiner(".");
-        for (Field field: sortIndexFields) {
-            fieldJoiner.add(field.getName());
+        for (String nameField: sortNameIndexFields) {
+            fieldJoiner.add(nameField);
         }
-
         return buildNameIndex(fieldJoiner.toString());
     }
 

@@ -144,4 +144,9 @@ public class StructEntity {
     public Method getGetterMethodByField(Field field) {
         return getterFieldToMethods.get(field);
     }
+
+    public StructEntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
+        String nameIndex = StructEntityIndex.buildNameIndex(nameIndexFields);
+        return indexs.get(nameIndex);
+    }
 }

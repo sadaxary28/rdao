@@ -8,13 +8,17 @@ import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEn
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
 import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.rocksdb.exception.NotFoundIndexException;
 import com.infomaximum.rocksdb.utils.EqualsUtils;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Created by kris on 30.04.17.
@@ -32,15 +36,16 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private E nextElement;
 
-//    public <E extends DomainObject> IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
     public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws NoSuchMethodException, InstantiationException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, RocksDBException {
         this.dataSource = dataSource;
         this.clazz = clazz;
 
         this.structEntity = HashStructEntities.getStructEntity(clazz);
 
+        StructEntityIndex structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
+        if (structEntityIndex==null) throw new NotFoundIndexException(clazz, filters.keySet());
+
         this.getterFilters = new HashMap<Method, Object>();
-        List<Field> indexFields = new ArrayList<Field>();
         for (Map.Entry<String, Object> filter: filters.entrySet()) {
             String fieldName = filter.getKey();
             Object value = filter.getValue();
@@ -49,11 +54,10 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
             if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
             if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
 
-            indexFields.add(field);
             getterFilters.put(structEntity.getGetterMethodByField(field), value);
         }
 
-        this.nameIndex = StructEntityIndex.buildNameIndex(indexFields);
+        this.nameIndex = structEntityIndex.name;
         this.hash = IndexUtils.calcHashValues(filters.values());
 
         nextElement = loadNextElement(true);
