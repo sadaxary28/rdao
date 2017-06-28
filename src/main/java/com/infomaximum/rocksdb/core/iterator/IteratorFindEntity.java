@@ -48,7 +48,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
             Field field = structEntity.getFieldByName(fieldName);
             if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
-            if (!EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
+            if (value!=null && !EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
 
             getterFilters.put(structEntity.getGetterMethodByField(field), value);
         }
