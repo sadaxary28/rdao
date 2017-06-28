@@ -18,6 +18,8 @@ public class StructEntity {
     public final Class<? extends DomainObject> clazz;
     public final Entity annotationEntity;
 
+    private final Set<Field> fields;
+
     private final Map<String, Field> fieldsToNames;
     private final Map<String, Field> fieldsToFormatNames;
     private final Set<String> eagerFormatFieldNames;
@@ -35,6 +37,9 @@ public class StructEntity {
 
         this.annotationEntity = clazz.getAnnotation(Entity.class);
         if (annotationEntity==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
+
+        Set<Field> modifiableFields = new HashSet<Field>();
+        this.fields = Collections.unmodifiableSet(modifiableFields);
 
         fieldsToNames = new HashMap<String, Field>();
         fieldsToFormatNames = new HashMap<String, Field>();
@@ -60,6 +65,8 @@ public class StructEntity {
             StructEntityUtils.validateField(clazz, field);
 
             field.setAccessible(true);
+
+            modifiableFields.add(field);
 
             fieldsToNames.put(field.getName(), field);
 
@@ -93,6 +100,10 @@ public class StructEntity {
             StructEntityIndex structEntityIndex = new StructEntityIndex(this, index);
             indexs.put(structEntityIndex.name, structEntityIndex);
         }
+    }
+
+    public Set<Field> getFields() {
+        return fields;
     }
 
     public Set<String> getFormatFieldNames() {

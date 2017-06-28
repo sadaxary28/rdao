@@ -41,6 +41,9 @@ public class DomainObjectUtils {
 
         T domainObject = createDomainObject(dataSource, clazz, new EntitySourceImpl(id, null));
 
+        //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
+        HashStructEntities.getUpdatesField().set(domainObject, new HashSet<>(HashStructEntities.getStructEntity(clazz).getFields()));
+
         //Указываем транзакцию
         HashStructEntities.getTransactionField().set(domainObject, transaction);
 
