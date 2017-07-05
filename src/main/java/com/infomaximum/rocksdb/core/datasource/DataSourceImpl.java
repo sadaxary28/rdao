@@ -175,41 +175,42 @@ public class DataSourceImpl implements DataSource {
     @Override
     public void commit(List<Modifier> modifiers) throws RocksDBException {
         try {
-            WriteBatch writeBatch = new WriteBatch();
-            for (Modifier modifier : modifiers) {
-                ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(modifier.columnFamily);
+            try(WriteBatch writeBatch = new WriteBatch()) {
+                for (Modifier modifier : modifiers) {
+                    ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(modifier.columnFamily);
 
-                if (modifier instanceof ModifierSet) {
-                    ModifierSet modifierSet = (ModifierSet) modifier;
-                    writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
-                } else if (modifier instanceof ModifierRemove) {
-                    String key = modifier.key;
-                    if (key.charAt(key.length() - 1) != '*') {
-                        //Удаляется только одна запись
-                        writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
-                    } else {
-                        //Удаляются все записи попадающие под этот патерн
-                        String patternKey = key.substring(0, key.length() - 1);
-                        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-                            rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
-                            while (true) {
-                                if (!rocksIterator.isValid()) break;
-                                byte[] findKey = rocksIterator.key();
-                                String sFindKey = TypeConvertRocksdb.getString(findKey);
-                                if (sFindKey.startsWith(patternKey)) {
-                                    writeBatch.remove(columnFamilyHandle, findKey);
-                                } else {
-                                    break;
+                    if (modifier instanceof ModifierSet) {
+                        ModifierSet modifierSet = (ModifierSet) modifier;
+                        writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
+                    } else if (modifier instanceof ModifierRemove) {
+                        String key = modifier.key;
+                        if (key.charAt(key.length() - 1) != '*') {
+                            //Удаляется только одна запись
+                            writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
+                        } else {
+                            //Удаляются все записи попадающие под этот патерн
+                            String patternKey = key.substring(0, key.length() - 1);
+                            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                                rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
+                                while (true) {
+                                    if (!rocksIterator.isValid()) break;
+                                    byte[] findKey = rocksIterator.key();
+                                    String sFindKey = TypeConvertRocksdb.getString(findKey);
+                                    if (sFindKey.startsWith(patternKey)) {
+                                        writeBatch.remove(columnFamilyHandle, findKey);
+                                    } else {
+                                        break;
+                                    }
+                                    rocksIterator.next();
                                 }
-                                rocksIterator.next();
                             }
                         }
+                    } else {
+                        throw new RuntimeException("Not support type modifier: " + modifier.getClass());
                     }
-                } else {
-                    throw new RuntimeException("Not support type modifier: " + modifier.getClass());
                 }
+                rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
             }
-            rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
         } catch (RocksDBException e) {
             log.error("Error commit, modifiers: [{}]", modifiers.stream().map(Object::toString).collect(Collectors.joining(", ")), e);
             throw e;
