@@ -14,4 +14,11 @@ public abstract class Modifier implements Serializable {
         this.columnFamily = columnFamily;
         this.key = key;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append(getClass().getSimpleName())
+                .append(':').append(columnFamily).append(':')
+                .append(key).toString();
+    }
 }

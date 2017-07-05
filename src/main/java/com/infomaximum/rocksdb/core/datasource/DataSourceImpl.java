@@ -8,7 +8,10 @@ import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import com.sun.deploy.util.StringUtils;
 import org.rocksdb.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,8 @@ import java.util.Set;
  * Created by user on 20.04.2017.
  */
 public class DataSourceImpl implements DataSource {
+
+    private final static Logger log = LoggerFactory.getLogger(DataSourceImpl.class);
 
     private final RocksDataBase rocksDataBase;
 
@@ -169,41 +174,46 @@ public class DataSourceImpl implements DataSource {
 
     @Override
     public void commit(List<Modifier> modifiers) throws RocksDBException {
-        WriteBatch writeBatch = new WriteBatch();
-        for (Modifier modifier: modifiers) {
-            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(modifier.columnFamily);
+        try {
+            WriteBatch writeBatch = new WriteBatch();
+            for (Modifier modifier : modifiers) {
+                ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(modifier.columnFamily);
 
-            if (modifier instanceof ModifierSet) {
-                ModifierSet modifierSet = (ModifierSet) modifier;
-                writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
-            } else if (modifier instanceof ModifierRemove) {
-                String key = modifier.key;
-                if (key.charAt(key.length()-1) != '*') {
-                    //Удаляется только одна запись
-                    writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
-                } else {
-                    //Удаляются все записи попадающие под этот патерн
-                    String patternKey = key.substring(0, key.length()-1);
-                    try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-                        rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
-                        while (true) {
-                            if (!rocksIterator.isValid()) break;
-                            byte[] findKey = rocksIterator.key();
-                            String sFindKey = TypeConvertRocksdb.getString(findKey);
-                            if (sFindKey.startsWith(patternKey)) {
-                                writeBatch.remove(columnFamilyHandle, findKey);
-                            } else {
-                                break;
+                if (modifier instanceof ModifierSet) {
+                    ModifierSet modifierSet = (ModifierSet) modifier;
+                    writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
+                } else if (modifier instanceof ModifierRemove) {
+                    String key = modifier.key;
+                    if (key.charAt(key.length() - 1) != '*') {
+                        //Удаляется только одна запись
+                        writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
+                    } else {
+                        //Удаляются все записи попадающие под этот патерн
+                        String patternKey = key.substring(0, key.length() - 1);
+                        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                            rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
+                            while (true) {
+                                if (!rocksIterator.isValid()) break;
+                                byte[] findKey = rocksIterator.key();
+                                String sFindKey = TypeConvertRocksdb.getString(findKey);
+                                if (sFindKey.startsWith(patternKey)) {
+                                    writeBatch.remove(columnFamilyHandle, findKey);
+                                } else {
+                                    break;
+                                }
+                                rocksIterator.next();
                             }
-                            rocksIterator.next();
                         }
                     }
+                } else {
+                    throw new RuntimeException("Not support type modifier: " + modifier.getClass());
                 }
-            } else {
-                throw new RuntimeException("Not support type modifier: " + modifier.getClass());
             }
+            rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
+        } catch (RocksDBException e) {
+            log.error("Error commit, modifiers: [{}]", StringUtils.join(modifiers, ", "), e);
+            throw e;
         }
-        rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
     }
 
 }
