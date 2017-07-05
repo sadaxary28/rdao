@@ -8,7 +8,6 @@ import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
-import com.sun.deploy.util.StringUtils;
 import org.rocksdb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by user on 20.04.2017.
@@ -211,7 +211,7 @@ public class DataSourceImpl implements DataSource {
             }
             rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
         } catch (RocksDBException e) {
-            log.error("Error commit, modifiers: [{}]", StringUtils.join(modifiers, ", "), e);
+            log.error("Error commit, modifiers: [{}]", modifiers.stream().map(Object::toString).collect(Collectors.joining(", ")), e);
             throw e;
         }
     }
