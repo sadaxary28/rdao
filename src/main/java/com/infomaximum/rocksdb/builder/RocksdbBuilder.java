@@ -1,12 +1,11 @@
 package com.infomaximum.rocksdb.builder;
 
 import com.infomaximum.rocksdb.core.struct.DomainObject;
-import com.infomaximum.rocksdb.migration.struct.IMigrationItem;
+import com.infomaximum.rocksdb.loadlibrary.RocksDBLoadLibrary;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -22,7 +21,7 @@ public class RocksdbBuilder {
 	private Set<Class<? extends DomainObject>> maintenanceClasses = new HashSet<>();
 
 	public RocksdbBuilder() {
-        RocksDB.loadLibrary();
+		RocksDBLoadLibrary.loadLibrary();
 
 		this.dbOptions = new DBOptions();
 		this.dbOptions.setCreateIfMissing(true);
