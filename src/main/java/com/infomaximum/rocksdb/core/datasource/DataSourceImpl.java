@@ -209,7 +209,12 @@ public class DataSourceImpl implements DataSource {
                         throw new RuntimeException("Not support type modifier: " + modifier.getClass());
                     }
                 }
-                rocksDataBase.getRocksDB().write(new WriteOptions().setSync(true), writeBatch);
+
+                //Коммитим
+                try( WriteOptions writeOptions = new WriteOptions() ) {
+                    writeOptions.setSync(true);
+                    rocksDataBase.getRocksDB().write(writeOptions, writeBatch);
+                }
             }
         } catch (RocksDBException e) {
             log.error("Error commit, modifiers: [{}]", modifiers.stream().map(Object::toString).collect(Collectors.joining(", ")), e);

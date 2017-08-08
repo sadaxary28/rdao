@@ -51,6 +51,8 @@ public class RocksDataBase {
     }
 
     public void destroy() {
+        //TODO необходимо дестроить все columnFamilyHandle
+
         dbOptions.close();
         rocksDB.close();
     }
