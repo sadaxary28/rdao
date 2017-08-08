@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by kris on 08.08.17.
@@ -23,18 +26,24 @@ public class RocksDBLoadLibrary {
 
         if (isWindows()) {
             if ("64".equals(arch)) {
-                loadLibrary("/libs/natives/windows/x64/rpcrt4.dll");
-                loadLibrary("/libs/natives/windows/x64/msvcp140.dll");
-                loadLibrary("/libs/natives/windows/x64/vcruntime140.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-runtime-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-stdio-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-string-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-convert-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-time-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-environment-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-filesystem-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-math-l1-1-0.dll");
-                loadLibrary("/libs/natives/windows/x64/api-ms-win-crt-heap-l1-1-0.dll");
+                try {
+                    loadLibraries(new ArrayList<String>(){{
+                        add("/libs/natives/windows/x64/rpcrt4.dll");
+                        add("/libs/natives/windows/x64/msvcp140.dll");
+                        add("/libs/natives/windows/x64/vcruntime140.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-runtime-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-stdio-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-string-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-convert-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-time-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-environment-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-filesystem-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-math-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-heap-l1-1-0.dll");
+                    }});
+                }  catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 throw new RuntimeException("Not support arch");
             }
@@ -49,12 +58,32 @@ public class RocksDBLoadLibrary {
         return (os.indexOf("win") >= 0);
     }
 
-    private static void loadLibrary(String path) {
-        try {
-            File file = extractLibraryFromJar(path);
-            System.load(file.getAbsolutePath());
-        } catch (Throwable e) {
-            log.error("Error load library: {}", path, e);
+    private static void loadLibraries(List<String> paths) throws IOException {
+        List<File> files = new ArrayList<>();
+        for (String path: paths) {
+            files.add(extractLibraryFromJar(path));
+        }
+
+        while (!files.isEmpty()) {
+            boolean isLoadLibrary=false;
+
+            for (File file: files) {
+                try {
+                    //Пробуем загрузить
+                    System.load(file.getAbsolutePath());
+
+                    //Фига себе загрузилось!
+                    files.remove(file);
+                    isLoadLibrary=true;
+                    break;
+                } catch (Throwable e) {}
+            }
+
+            if (!isLoadLibrary) {
+                //В итоге ни одна библиотека загрузилась - все плохо..
+                log.error("Error load libraries: [{}]", files.stream().map(File::getName).collect(Collectors.joining(",")));
+                break;
+            }
         }
     }
 
