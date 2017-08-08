@@ -40,6 +40,10 @@ public class RocksDBLoadLibrary {
                         add("/libs/natives/windows/x64/api-ms-win-crt-filesystem-l1-1-0.dll");
                         add("/libs/natives/windows/x64/api-ms-win-crt-math-l1-1-0.dll");
                         add("/libs/natives/windows/x64/api-ms-win-crt-heap-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-locale-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-multibyte-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/api-ms-win-crt-utility-l1-1-0.dll");
+                        add("/libs/natives/windows/x64/concrt140.dll");
                     }});
                 }  catch (IOException e) {
                     throw new RuntimeException(e);
