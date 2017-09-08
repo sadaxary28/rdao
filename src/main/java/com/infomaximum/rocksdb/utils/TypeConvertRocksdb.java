@@ -2,7 +2,7 @@ package com.infomaximum.rocksdb.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.rocksdb.core.struct.enums.PersistentEnumId;
+import com.infomaximum.database.struct.enums.PersistentEnumId;
 
 import java.nio.charset.Charset;
 import java.util.Date;

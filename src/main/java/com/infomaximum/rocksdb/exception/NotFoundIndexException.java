@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.exception;
 
-import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.database.domainobject.DomainObject;
 
 import java.util.Collection;
 

@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
 import org.rocksdb.RocksDBException;
 
 import java.util.List;

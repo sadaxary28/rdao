@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.core.objectsource.proxy;
 
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
-import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.database.core.structentity.HashStructEntities;
+import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.domainobject.DomainObject;
 import javassist.util.proxy.MethodFilter;
 
 import java.lang.reflect.Method;
@@ -22,20 +22,20 @@ public class MethodFilterImpl implements MethodFilter {
     public boolean isHandled(Method method) {
         StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
 
-        if ("save".equals(method.getName())) {
-            //Вот save мы ловим ставим свой обработчик
-            return true;
-        } else if ("remove".equals(method.getName())) {
-            //Вот remove мы ловим ставим свой обработчик
-            return true;
-        } else if (structEntity.isGetterMethod(method.getName())) {
-            //Ловим getter'ы для lazy полей
-            return true;
-        } else if (structEntity.isSetterMethod(method.getName())) {
-            //Ловим setter'ы для lazy полей
-            return true;
-        } else {
+//        if ("save".equals(method.getName())) {
+//            //Вот save мы ловим ставим свой обработчик
+//            return true;
+//        } else if ("remove".equals(method.getName())) {
+//            //Вот remove мы ловим ставим свой обработчик
+//            return true;
+//        } else if (structEntity.isGetterMethod(method.getName())) {
+//            //Ловим getter'ы для lazy полей
+//            return true;
+//        } else if (structEntity.isSetterMethod(method.getName())) {
+//            //Ловим setter'ы для lazy полей
+//            return true;
+//        } else {
             return false;
-        }
+//        }
     }
 }

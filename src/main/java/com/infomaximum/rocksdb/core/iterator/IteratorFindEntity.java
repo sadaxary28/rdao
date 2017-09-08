@@ -1,20 +1,22 @@
 package com.infomaximum.rocksdb.core.iterator;
 
+import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.structentity.HashStructEntities;
+import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.core.structentity.StructEntityIndex;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntity;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.StructEntityIndex;
-import com.infomaximum.rocksdb.core.struct.DomainObject;
 import com.infomaximum.rocksdb.exception.NotFoundIndexException;
 import com.infomaximum.rocksdb.utils.EqualsUtils;
 import org.rocksdb.RocksDBException;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Created by kris on 30.04.17.
@@ -48,19 +50,20 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
             Field field = structEntity.getFieldByName(fieldName);
             if (field==null) throw new RuntimeException("Not found field " + fieldName + ", to " + clazz.getName());
-            if (value!=null && !EqualsUtils.equalsType(field.getType(), value.getClass())) throw new RuntimeException("Not equals type field " + field.getType() + " and type value " + value.getClass());
 
-            getterFilters.put(structEntity.getGetterMethodByField(field), value);
+//            getterFilters.put(structEntity.getGetterMethodByField(field), value);
         }
 
         this.nameIndex = structEntityIndex.name;
 
         //Сортируем поля и вычисляем хеш
-        List<Object> sortFilterValues = new ArrayList();
-        for (Field field: structEntityIndex.indexFieldsSort) {
-            sortFilterValues.add(filters.get(field.getName()));
-        }
-        this.hash = IndexUtils.calcHashValues(sortFilterValues);
+        //TODO мигрировать
+        this.hash = 0;
+//        List<Object> sortFilterValues = new ArrayList();
+//        for (Field field: structEntityIndex.indexFieldsSort) {
+//            sortFilterValues.add(filters.get(field.getName()));
+//        }
+//        this.hash = IndexUtils.calcHashValues(sortFilterValues);
 
         nextElement = loadNextElement(true);
     }
@@ -71,7 +74,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
         E domainObject = null;
         while (true) {
-            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.columnFamily(), prevFindId, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
             domainObject = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);

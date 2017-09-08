@@ -1,12 +1,12 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
+import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
+import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.rocksdb.core.objectsource.utils.key.*;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.transaction.struct.modifier.Modifier;
-import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierRemove;
-import com.infomaximum.rocksdb.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 import org.slf4j.Logger;

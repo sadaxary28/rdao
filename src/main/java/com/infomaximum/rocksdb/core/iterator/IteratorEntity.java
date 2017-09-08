@@ -1,11 +1,11 @@
 package com.infomaximum.rocksdb.core.iterator;
 
-import com.infomaximum.rocksdb.core.anotation.Entity;
+import com.infomaximum.database.core.anotation.Entity;
+import com.infomaximum.database.core.structentity.HashStructEntities;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.core.objectsource.utils.DomainObjectUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.structentity.HashStructEntities;
-import com.infomaximum.rocksdb.core.struct.DomainObject;
 import org.rocksdb.RocksDBException;
 
 import java.util.Iterator;
@@ -28,7 +28,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
 
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) throw new RuntimeException("Not found 'Entity' annotation in class: " + clazz);
-        this.columnFamily = entityAnnotation.columnFamily();
+        this.columnFamily = entityAnnotation.name();
 
         nextElement = loadNextElement(true);
     }

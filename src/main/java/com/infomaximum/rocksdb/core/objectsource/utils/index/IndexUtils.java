@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.core.objectsource.utils.index;
 
-import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.rocksdb.core.struct.DomainObjectOLD;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 
 import java.util.Collection;
@@ -14,8 +14,8 @@ public class IndexUtils {
         String string;
         if (value==null) {
             string = "";
-        } else if (value instanceof DomainObject) {
-            string = String.valueOf( ((DomainObject) value).getId() );
+        } else if (value instanceof DomainObjectOLD) {
+            string = String.valueOf( ((DomainObjectOLD) value).getId() );
         } else {
             string = value.toString();
         }
@@ -26,8 +26,8 @@ public class IndexUtils {
         StringBuilder sBuilder = new StringBuilder();
         for (Object value: values) {
             if (value==null) continue;
-            if (value instanceof DomainObject) {
-                sBuilder.append(((DomainObject) value).getId());
+            if (value instanceof DomainObjectOLD) {
+                sBuilder.append(((DomainObjectOLD) value).getId());
             } else {
                 sBuilder.append(value.toString());
             }
