@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.core.objectsource.utils.key;
+package com.infomaximum.database.domainobject.key;
 
 /**
  * Created by kris on 27.04.17.

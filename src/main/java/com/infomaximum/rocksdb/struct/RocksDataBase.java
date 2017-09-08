@@ -2,7 +2,7 @@ package com.infomaximum.rocksdb.struct;
 
 import com.infomaximum.database.core.sequence.ManagerSequence;
 import com.infomaximum.database.core.sequence.Sequence;
-import com.infomaximum.rocksdb.core.struct.DomainObjectOLD;
+import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 
@@ -19,7 +19,7 @@ public class RocksDataBase {
     private final Map<String, ColumnFamilyHandle> columnFamilies;
     private final ManagerSequence managerSequence;
 
-    public RocksDataBase(RocksDB rocksDB, DBOptions dbOptions, Map<String, ColumnFamilyHandle> columnFamilies, Set<Class<? extends DomainObjectOLD>> classMaintenancies) throws RocksDBException {
+    public RocksDataBase(RocksDB rocksDB, DBOptions dbOptions, Map<String, ColumnFamilyHandle> columnFamilies, Set<Class<? extends DomainObject>> classMaintenancies) throws RocksDBException {
         this.rocksDB = rocksDB;
         this.dbOptions=dbOptions;
         this.columnFamilies=columnFamilies;

@@ -1,17 +1,17 @@
 package com.infomaximum.database.core.transaction;
 
 import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.index.IndexUtils;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.key.KeyAvailability;
+import com.infomaximum.database.domainobject.key.KeyField;
+import com.infomaximum.database.domainobject.key.KeyIndex;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyIndex;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.RocksDBException;
 

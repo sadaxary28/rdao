@@ -1,6 +1,7 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.index.IndexUtils;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
@@ -8,7 +9,6 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.core.objectsource.utils.index.IndexUtils;
 import com.infomaximum.rocksdb.exception.NotFoundIndexException;
 import com.infomaximum.rocksdb.utils.EqualsUtils;
 import org.rocksdb.RocksDBException;

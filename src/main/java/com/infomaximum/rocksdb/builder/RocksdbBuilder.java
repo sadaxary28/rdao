@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.builder;
 
-import com.infomaximum.rocksdb.core.struct.DomainObjectOLD;
+import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
@@ -17,7 +17,7 @@ public class RocksdbBuilder {
 	private DBOptions dbOptions;
 	private Path path;
 
-	private Set<Class<? extends DomainObjectOLD>> maintenanceClasses = new HashSet<>();
+	private Set<Class<? extends DomainObject>> maintenanceClasses = new HashSet<>();
 
 	public RocksdbBuilder() {
 		RocksDB.loadLibrary();
@@ -36,7 +36,7 @@ public class RocksdbBuilder {
 		return this;
 	}
 
-	public RocksdbBuilder addMaintenanceClass(Class<? extends DomainObjectOLD> clazz) {
+	public RocksdbBuilder addMaintenanceClass(Class<? extends DomainObject> clazz) {
 		maintenanceClasses.add(clazz);
 		return this;
 	}

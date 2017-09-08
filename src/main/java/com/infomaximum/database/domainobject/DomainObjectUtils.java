@@ -4,12 +4,9 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import javassist.util.proxy.MethodFilter;
-import javassist.util.proxy.MethodHandler;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,8 +14,8 @@ import java.util.Map;
  */
 public class DomainObjectUtils {
 
-    private static final Map<Class<? extends DomainObject>, MethodFilter> methodFilters = new HashMap<Class<? extends DomainObject>, MethodFilter>();
-    private static final Map<Class<? extends DomainObject>, MethodHandler> methodHandlers = new HashMap<Class<? extends DomainObject>, MethodHandler>();
+//    private static final Map<Class<? extends DomainObject>, MethodFilter> methodFilters = new HashMap<Class<? extends DomainObject>, MethodFilter>();
+//    private static final Map<Class<? extends DomainObject>, MethodHandler> methodHandlers = new HashMap<Class<? extends DomainObject>, MethodHandler>();
 
 
 //    public static <T extends DomainObject & DomainObjectEditable> T create(DataSource dataSource, final Class<T> clazz) throws ReflectiveOperationException, RocksDBException {

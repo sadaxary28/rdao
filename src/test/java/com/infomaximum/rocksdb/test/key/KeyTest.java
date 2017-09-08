@@ -1,9 +1,9 @@
 package com.infomaximum.rocksdb.test.key;
 
-import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyIndex;
+import com.infomaximum.database.domainobject.key.Key;
+import com.infomaximum.database.domainobject.key.KeyAvailability;
+import com.infomaximum.database.domainobject.key.KeyField;
+import com.infomaximum.database.domainobject.key.KeyIndex;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;

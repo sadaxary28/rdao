@@ -6,7 +6,6 @@ import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.utils.DomainObjectFieldValueUtils;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.utils.ProxyDomainObjectUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -121,9 +120,9 @@ public abstract class DomainObject {
 
     @Override
     public boolean equals(Object o) {
+        if (o == null) return false;
         if (this == o) return true;
         if (!DomainObject.class.isAssignableFrom(o.getClass())) return false;
-        if (o == null || ProxyDomainObjectUtils.getProxySuperClass(getClass()) != ProxyDomainObjectUtils.getProxySuperClass((Class<? extends DomainObject>) o.getClass())) return false;
         DomainObject that = (DomainObject) o;
         return id == that.id;
     }
