@@ -58,12 +58,12 @@ public class DomainObjectSource {
         }
     }
 
-    public <T extends DomainObject & DomainObjectEditable> void save(final Transaction transaction, final T domainObject) {
+    public <T extends DomainObject & DomainObjectEditable> void save(final T domainObject, final Transaction transaction) {
         transaction.update(domainObject.getStructEntity(), domainObject, domainObject.getLoadValues(), domainObject.writeValues());
         domainObject.flush();
     }
 
-    public <T extends DomainObject & DomainObjectEditable> void remove(final Transaction transaction, final T domainObject) {
+    public <T extends DomainObject & DomainObjectEditable> void remove(final T domainObject, final Transaction transaction) {
         transaction.remove(domainObject.getStructEntity(), domainObject);
     }
 

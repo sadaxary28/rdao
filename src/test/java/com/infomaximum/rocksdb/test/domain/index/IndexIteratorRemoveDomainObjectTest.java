@@ -36,7 +36,7 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
                 for (int i=1; i<=10; i++) {
                     StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
                     storeFile.setSize(100);
-                    domainObjectSource.save(transaction, storeFile);
+                    domainObjectSource.save(storeFile, transaction);
                 }
             }
         });
@@ -47,7 +47,7 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
             public void action(Transaction transaction) throws Exception {
                 StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setSize(99);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 

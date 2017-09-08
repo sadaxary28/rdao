@@ -19,7 +19,6 @@ import com.infomaximum.database.utils.TypeConvert;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by user on 23.04.2017.
@@ -28,16 +27,10 @@ public class Transaction {
 
     private final DataSource dataSource;
     private List<Modifier> queue;
-    private volatile AtomicBoolean active;
 
     public Transaction(DataSource dataSource) {
         this.dataSource = dataSource;
         this.queue = new ArrayList<Modifier>();
-        this.active = new AtomicBoolean(true);
-    }
-
-    public boolean isActive() {
-        return active.get();
     }
 
     public void update(StructEntity structEntity, DomainObject self, Map<Field, Object> loadValues, Map<Field, Object> writeValues) {
@@ -91,7 +84,7 @@ public class Transaction {
 
     public void commit() throws TransactionDatabaseException, DataSourceDatabaseException {
         //Ставим флаг, что транзакция больше не активна
-        if (!active.compareAndSet(true, false)) throw new TransactionDatabaseException("Transaction is not active: is commited");
+        if (queue==null) throw new TransactionDatabaseException("Transaction is not active: is commited");
 
         //Комитим
         dataSource.commit(queue);

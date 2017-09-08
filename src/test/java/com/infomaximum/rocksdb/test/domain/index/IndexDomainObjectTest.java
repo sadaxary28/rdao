@@ -43,7 +43,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
                 for (int i=1; i<=100; i++) {
                     StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
                     storeFile.setSize(i);
-                    domainObjectSource.save(transaction, storeFile);
+                    domainObjectSource.save(storeFile, transaction);
                 }
             }
         });

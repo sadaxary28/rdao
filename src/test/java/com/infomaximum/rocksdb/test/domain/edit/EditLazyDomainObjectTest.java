@@ -45,7 +45,7 @@ public class EditLazyDomainObjectTest extends RocksDataTest {
                 storeFile.setFileName(fileName1);
                 storeFile.setContentType(contentType);
                 storeFile.setSize(size);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 
@@ -55,7 +55,7 @@ public class EditLazyDomainObjectTest extends RocksDataTest {
             public void action(Transaction transaction) throws Exception {
                 StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setFileName(fileName2);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 

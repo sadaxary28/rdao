@@ -39,7 +39,7 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
                     StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
                     storeFile.setFileName((i%2==0)?"2":"1");
                     storeFile.setSize(100);
-                    domainObjectSource.save(transaction, storeFile);
+                    domainObjectSource.save(storeFile, transaction);
                 }
             }
         });
@@ -50,7 +50,7 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
             public void action(Transaction transaction) throws Exception {
                 StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setSize(99);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 

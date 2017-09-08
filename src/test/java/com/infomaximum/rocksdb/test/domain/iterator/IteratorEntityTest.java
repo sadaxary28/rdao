@@ -47,7 +47,7 @@ public class IteratorEntityTest extends RocksDataTest {
             @Override
             public void action(Transaction transaction) throws Exception {
                 for (int i=0; i< size; i++) {
-                    domainObjectSource.save(transaction, domainObjectSource.create(StoreFileEditable.class));
+                    domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
                 }
             }
         });

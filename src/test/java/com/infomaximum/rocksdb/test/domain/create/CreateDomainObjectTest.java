@@ -47,7 +47,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
                 storeFile.setFileName(fileName);
                 storeFile.setSize(size);
                 storeFile.setFormat(format);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 

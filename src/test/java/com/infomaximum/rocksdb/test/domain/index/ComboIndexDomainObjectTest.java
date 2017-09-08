@@ -41,7 +41,7 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
                 ExchangeFolderEditable exchangeFolder = domainObjectSource.create(ExchangeFolderEditable.class);
                 exchangeFolder.setUuid(uuid);
                 exchangeFolder.setUserEmail(userEmail);
-                domainObjectSource.save(transaction, exchangeFolder);
+                domainObjectSource.save(exchangeFolder, transaction);
             }
         });
 

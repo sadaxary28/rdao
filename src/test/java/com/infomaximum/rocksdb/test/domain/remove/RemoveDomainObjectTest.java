@@ -39,9 +39,9 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
-                domainObjectSource.save(transaction, domainObjectSource.create(StoreFileEditable.class));
-                domainObjectSource.save(transaction, domainObjectSource.create(StoreFileEditable.class));
-                domainObjectSource.save(transaction, domainObjectSource.create(StoreFileEditable.class));
+                domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
+                domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
+                domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
             }
         });
 
@@ -54,7 +54,7 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
-                domainObjectSource.remove(transaction, domainObjectSource.get(StoreFileEditable.class, 2L));
+                domainObjectSource.remove(domainObjectSource.get(StoreFileEditable.class, 2L), transaction);
             }
         });
 

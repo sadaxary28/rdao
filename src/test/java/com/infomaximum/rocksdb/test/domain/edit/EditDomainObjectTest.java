@@ -44,7 +44,7 @@ public class EditDomainObjectTest extends RocksDataTest {
         storeFile.setContentType(contentType);
         storeFile.setSize(size);
         storeFile.setSingle(false);
-        domainObjectSource.save(transaction1, storeFile);
+        domainObjectSource.save(storeFile, transaction1);
         transaction1.commit();
 
 
@@ -63,7 +63,7 @@ public class EditDomainObjectTest extends RocksDataTest {
                 StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setFileName(fileName2);
                 storeFile.setSingle(true);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 
@@ -83,7 +83,7 @@ public class EditDomainObjectTest extends RocksDataTest {
                 StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setFileName(fileName1);
                 storeFile.setSingle(false);
-                domainObjectSource.save(transaction, storeFile);
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 
