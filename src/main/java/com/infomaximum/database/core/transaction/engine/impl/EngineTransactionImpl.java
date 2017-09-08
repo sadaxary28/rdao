@@ -4,6 +4,7 @@ import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.exeption.TransactionDatabaseException;
 
 /**
  * Created by user on 23.04.2017.
@@ -36,10 +37,10 @@ public class EngineTransactionImpl implements EngineTransaction {
                     Thread.sleep(RETRY_TIMEOUT*attempt);
                 } catch (InterruptedException ignored) {}
             } catch (Exception ex) {
-                throw new RuntimeException("Exception execute transaction", ex);
+                throw new TransactionDatabaseException("Exception execute transaction", ex);
             }
         } while (attempt < DEFAULT_RETRIES);
-        throw new RuntimeException("Exception execute transaction");
+        throw new TransactionDatabaseException("Exception execute transaction");
     }
 
     @Override

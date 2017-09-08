@@ -5,7 +5,7 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.utils.DomainObjectFieldValueUtils;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -71,7 +71,7 @@ public abstract class DomainObject {
     private <T> T loadField(Class<T> type, String fieldName) throws DatabaseException {
         try {
             byte[] bValue = dataSource.getField(structEntity.annotationEntity.name(), id, fieldName);
-            return DomainObjectFieldValueUtils.unpackValue(dataSource, type, bValue);
+            return (T) TypeConvert.get(type, bValue);
         } catch (Exception e) {
             throw new DatabaseException(e);
         }

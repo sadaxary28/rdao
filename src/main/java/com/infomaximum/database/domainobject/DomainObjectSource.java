@@ -13,10 +13,7 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.utils.TypeConvert;
-import org.rocksdb.RocksDBException;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +45,7 @@ public class DomainObjectSource {
 
             long id = dataSource.nextId(entityAnnotation.name());
 
-            T domainObject = createDomainObject(clazz, new EntitySourceImpl(id, null));
+            T domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySourceImpl(id, null));
 
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (Field field: entityAnnotation.fields()) {
@@ -66,7 +63,7 @@ public class DomainObjectSource {
         domainObject.flush();
     }
 
-    public <T extends DomainObject & DomainObjectEditable> void remove(final Transaction transaction, final T domainObject) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject & DomainObjectEditable> void remove(final Transaction transaction, final T domainObject) {
         transaction.remove(domainObject.getStructEntity(), domainObject);
     }
 
@@ -76,13 +73,13 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
 
-        EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.name(), false, id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.name(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) return null;
 
-        T domainObject = createDomainObject(clazz, entitySource);
+        T domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
 
         return domainObject;
     }
@@ -92,7 +89,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) {
         IteratorFindEntity iteratorFindEntity = new IteratorFindEntity(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
         if (iteratorFindEntity.hasNext()) {
             return (T) iteratorFindEntity.next();
@@ -106,7 +103,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) {
         return new IteratorFindEntity(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
     }
 
@@ -115,7 +112,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) {
         IteratorFindEntity iteratorFindEntity = new IteratorFindEntity(dataSource, clazz, filters);
         if (iteratorFindEntity.hasNext()) {
             return (T) iteratorFindEntity.next();
@@ -129,7 +126,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) {
         return new IteratorFindEntity(dataSource, clazz, filters);
     }
 
@@ -139,33 +136,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws RocksDBException, ReflectiveOperationException {
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) {
         return new IteratorEntity<>(dataSource, clazz);
-    }
-
-    private <T extends DomainObject> T createDomainObject(final Class<T> clazz, EntitySource entitySource) throws ReflectiveOperationException, RocksDBException {
-        Constructor<T> constructor = clazz.getConstructor(long.class);
-
-        T domainObject = constructor.newInstance(entitySource.getId());
-
-        //Устанавливаем dataSource
-        HashStructEntities.getDataSourceField().set(domainObject, dataSource);
-
-        //Загружаем поля
-        Map<String, byte[]> data = entitySource.getFields();
-        if (data!=null) {
-            StructEntity structEntity = domainObject.getStructEntity();
-
-            for (Field field: structEntity.getFields()) {
-                String fieldName = field.name();
-                if (data.containsKey(fieldName)) {
-                    byte[] bValue = data.get(fieldName);
-                    Object value = TypeConvert.get(field.type(), bValue);
-                    domainObject.set(fieldName, value);
-                }
-            }
-        }
-
-        return domainObject;
     }
 }

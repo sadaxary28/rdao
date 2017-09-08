@@ -11,7 +11,6 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.exeption.index.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
-import org.rocksdb.RocksDBException;
 
 import java.util.*;
 
@@ -31,7 +30,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws ReflectiveOperationException, RocksDBException {
+    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) {
         this.dataSource = dataSource;
         this.clazz = clazz;
         this.filters=filters;
@@ -58,7 +57,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws RocksDBException, ReflectiveOperationException {
+    private synchronized E loadNextElement(boolean isFirst) {
         Long prevFindId = (isFirst)?null:nextElement.getId();
 
         E domainObject = null;
@@ -66,7 +65,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
             EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.name, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
-            domainObject = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);
+            domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
 
             //Необходима дополнительная проверка, так как нельзя исключать сломанный индекс или коллизии хеша
             boolean isFullCoincidence = true;

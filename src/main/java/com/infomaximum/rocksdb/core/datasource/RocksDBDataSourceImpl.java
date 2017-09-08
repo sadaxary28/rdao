@@ -7,6 +7,7 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.domainobject.key.*;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Created by user on 20.04.2017.
@@ -33,148 +33,164 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public long nextId(String sequenceName) throws RocksDBException {
-        return rocksDataBase.getSequence(sequenceName).next();
+    public long nextId(String sequenceName) {
+        try {
+            return rocksDataBase.getSequence(sequenceName).next();
+        } catch (Exception e) {
+            throw new DataSourceDatabaseException(e);
+        }
     }
 
     @Override
-    public byte[] getField(String columnFamily, long id, String field) throws RocksDBException {
-        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
-        return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvert.pack(new KeyField(id, field).pack()));
+    public byte[] getField(String columnFamily, long id, String field){
+        try {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+            return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvert.pack(new KeyField(id, field).pack()));
+        } catch (Exception e) {
+            throw new DataSourceDatabaseException(e);
+        }
     }
 
 
     @Override
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws RocksDBException {
-        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) {
+        try {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
-        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-            if (prevId==null) {
-                rocksIterator.seek(TypeConvert.pack(KeyIndex.prifix(index, hash)));
-            } else {
-                rocksIterator.seek(TypeConvert.pack(new KeyIndex(prevId, index, hash).pack()));
-            }
-
-            while (true) {
-                if (!rocksIterator.isValid()) return null;
-
-                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
-                if (key.getTypeKey() != TypeKey.INDEX) return null;
-
-                KeyIndex keyIndex = (KeyIndex) key;
-                if (!keyIndex.getIndex().equals(index)) return null;
-                if (keyIndex.getHash() != hash) return null;
-
-                long id = key.getId();
-
-                if (prevId!=null && id==prevId) {
-                    rocksIterator.next();
-                    continue;
-                }
-
-                EntitySource entitySource = getEntitySource(columnFamily, false, id, fields);
-                if (entitySource!=null) {
-                    return entitySource;
+            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                if (prevId==null) {
+                    rocksIterator.seek(TypeConvert.pack(KeyIndex.prifix(index, hash)));
                 } else {
-                    //Сломанный индекс - этого объекта уже нет...
-                    rocksIterator.next();
+                    rocksIterator.seek(TypeConvert.pack(new KeyIndex(prevId, index, hash).pack()));
                 }
-            }
-        }
-    }
 
-    @Override
-    public EntitySource getEntitySource(String columnFamily, boolean isTransaction, long id, Set<String> fields) throws RocksDBException {
-        if (isTransaction) {
-            //TODO надо лочить объект!
-        }
+                while (true) {
+                    if (!rocksIterator.isValid()) return null;
 
-        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+                    Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
+                    if (key.getTypeKey() != TypeKey.INDEX) return null;
 
-        boolean availability = false;
-        Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-            rocksIterator.seek(TypeConvert.pack(new KeyAvailability(id).pack()));
-            while (true) {
-                if (!rocksIterator.isValid()) break;
+                    KeyIndex keyIndex = (KeyIndex) key;
+                    if (!keyIndex.getIndex().equals(index)) return null;
+                    if (keyIndex.getHash() != hash) return null;
 
-                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
-                if (key.getId() != id) break;
+                    long id = key.getId();
 
-                TypeKey typeKey = key.getTypeKey();
-                if (typeKey == TypeKey.AVAILABILITY) {
-                    availability = true;
-                } else if (typeKey == TypeKey.FIELD) {
-                    String fieldName = ((KeyField) key).getFieldName();
-                    if (fields.contains(fieldName)) {
-                        fieldValues.put(fieldName, rocksIterator.value());
+                    if (prevId!=null && id==prevId) {
+                        rocksIterator.next();
+                        continue;
                     }
-                } else if (typeKey == TypeKey.INDEX) {
-                    break;
-                } else {
-                    throw new RuntimeException("Not support type key: " + typeKey);
+
+                    EntitySource entitySource = getEntitySource(columnFamily, id, fields);
+                    if (entitySource!=null) {
+                        return entitySource;
+                    } else {
+                        //Сломанный индекс - этого объекта уже нет...
+                        rocksIterator.next();
+                    }
                 }
-
-                rocksIterator.next();
             }
-        }
-
-        if (availability) {
-            return new EntitySourceImpl(id, fieldValues);
-        } else {
-            return null;
+        } catch (Exception e) {
+            throw new DataSourceDatabaseException(e);
         }
     }
 
     @Override
-    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws RocksDBException {
-        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+    public EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) {
+        try {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
-        KeyAvailability keyAvailability=null;
-        Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-        try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-            if (prevId==null) {
-                rocksIterator.seekToFirst();
-            } else {
-                rocksIterator.seek(TypeConvert.pack(new KeyAvailability(prevId).pack()));
-            }
-            while (true) {
-                if (!rocksIterator.isValid()) break;
+            boolean availability = false;
+            Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
+            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                rocksIterator.seek(TypeConvert.pack(new KeyAvailability(id).pack()));
+                while (true) {
+                    if (!rocksIterator.isValid()) break;
 
-                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
-                TypeKey typeKey = key.getTypeKey();
-                if (keyAvailability == null) {
+                    Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
+                    if (key.getId() != id) break;
+
+                    TypeKey typeKey = key.getTypeKey();
                     if (typeKey == TypeKey.AVAILABILITY) {
-                        if (prevId==null) {
-                            keyAvailability = (KeyAvailability) key;
-                        } else if (key.getId() != prevId) {
-                            keyAvailability = (KeyAvailability) key;
-                        }
-                    }
-                }
-
-                if (keyAvailability!=null) {
-                    if (typeKey == TypeKey.FIELD) {
+                        availability = true;
+                    } else if (typeKey == TypeKey.FIELD) {
                         String fieldName = ((KeyField) key).getFieldName();
                         if (fields.contains(fieldName)) {
                             fieldValues.put(fieldName, rocksIterator.value());
                         }
+                    } else if (typeKey == TypeKey.INDEX) {
+                        break;
+                    } else {
+                        throw new RuntimeException("Not support type key: " + typeKey);
                     }
+
+                    rocksIterator.next();
                 }
-
-                rocksIterator.next();
             }
-        }
 
-        if (keyAvailability!=null) {
-            return new EntitySourceImpl(keyAvailability.getId(), fieldValues);
-        } else {
-            return null;
+            if (availability) {
+                return new EntitySourceImpl(id, fieldValues);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            throw new DataSourceDatabaseException(e);
         }
     }
 
     @Override
-    public void commit(List<Modifier> modifiers) throws RocksDBException {
+    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) {
+        try {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+
+            KeyAvailability keyAvailability = null;
+            Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
+            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+                if (prevId == null) {
+                    rocksIterator.seekToFirst();
+                } else {
+                    rocksIterator.seek(TypeConvert.pack(new KeyAvailability(prevId).pack()));
+                }
+                while (true) {
+                    if (!rocksIterator.isValid()) break;
+
+                    Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
+                    TypeKey typeKey = key.getTypeKey();
+                    if (keyAvailability == null) {
+                        if (typeKey == TypeKey.AVAILABILITY) {
+                            if (prevId == null) {
+                                keyAvailability = (KeyAvailability) key;
+                            } else if (key.getId() != prevId) {
+                                keyAvailability = (KeyAvailability) key;
+                            }
+                        }
+                    }
+
+                    if (keyAvailability != null) {
+                        if (typeKey == TypeKey.FIELD) {
+                            String fieldName = ((KeyField) key).getFieldName();
+                            if (fields.contains(fieldName)) {
+                                fieldValues.put(fieldName, rocksIterator.value());
+                            }
+                        }
+                    }
+
+                    rocksIterator.next();
+                }
+            }
+
+            if (keyAvailability != null) {
+                return new EntitySourceImpl(keyAvailability.getId(), fieldValues);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void commit(List<Modifier> modifiers) {
         try {
             try(WriteBatch writeBatch = new WriteBatch()) {
                 for (Modifier modifier : modifiers) {
@@ -218,8 +234,7 @@ public class RocksDBDataSourceImpl implements DataSource {
                 }
             }
         } catch (RocksDBException e) {
-            log.error("Error commit, modifiers: [{}]", modifiers.stream().map(Object::toString).collect(Collectors.joining(", ")), e);
-            throw e;
+            throw new DataSourceDatabaseException(e);
         }
     }
 

@@ -12,8 +12,8 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.KeyAvailability;
 import com.infomaximum.database.domainobject.key.KeyField;
 import com.infomaximum.database.domainobject.key.KeyIndex;
+import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
-import org.rocksdb.RocksDBException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,6 @@ public class Transaction {
         return active.get();
     }
 
-    //    public void update(StructEntity structEntity, DomainObject self, Set<Field> fields, ConcurrentMap<String, Optional<Object>> loadFieldValues, ConcurrentMap<String, Optional<Object>> writeFieldValues) throws IllegalAccessException {
     public void update(StructEntity structEntity, DomainObject self, Map<Field, Object> loadValues, Map<Field, Object> writeValues) {
         String columnFamily = structEntity.annotationEntity.name();
 
@@ -89,9 +88,9 @@ public class Transaction {
         queue.add(ModifierRemove.removeDomainObject(columnFamily, self.getId()));
     }
 
-    public void commit() throws RocksDBException {
+    public void commit() {
         //Ставим флаг, что транзакция больше не активна
-        if (!active.compareAndSet(true, false)) throw new RuntimeException("Transaction is not active: is commited");
+        if (!active.compareAndSet(true, false)) throw new TransactionDatabaseException("Transaction is not active: is commited");
 
         //Комитим
         dataSource.commit(queue);
