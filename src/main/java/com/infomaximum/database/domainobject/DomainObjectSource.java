@@ -9,11 +9,11 @@ import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.impl.EngineTransactionImpl;
+import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.entitysource.EntitySource;
+import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Constructor;
@@ -160,7 +160,7 @@ public class DomainObjectSource {
                 String fieldName = field.name();
                 if (data.containsKey(fieldName)) {
                     byte[] bValue = data.get(fieldName);
-                    Object value = TypeConvertRocksdb.get(field.type(), bValue);
+                    Object value = TypeConvert.get(field.type(), bValue);
                     domainObject.set(fieldName, value);
                 }
             }

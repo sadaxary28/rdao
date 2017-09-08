@@ -3,7 +3,7 @@ package com.infomaximum.rocksdb.test.domain.index;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
@@ -26,7 +26,7 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         try {
             domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);

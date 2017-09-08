@@ -3,11 +3,12 @@ package com.infomaximum.rocksdb.core.datasource;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
+import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.entitysource.EntitySource;
+import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.domainobject.key.*;
-import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
-import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +22,13 @@ import java.util.stream.Collectors;
 /**
  * Created by user on 20.04.2017.
  */
-public class DataSourceImpl implements DataSource {
+public class RocksDBDataSourceImpl implements DataSource {
 
-    private final static Logger log = LoggerFactory.getLogger(DataSourceImpl.class);
+    private final static Logger log = LoggerFactory.getLogger(RocksDBDataSourceImpl.class);
 
     private final RocksDataBase rocksDataBase;
 
-    public DataSourceImpl(RocksDataBase rocksDataBase) {
+    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
     }
 
@@ -39,7 +40,7 @@ public class DataSourceImpl implements DataSource {
     @Override
     public byte[] getField(String columnFamily, long id, String field) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
-        return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvertRocksdb.pack(new KeyField(id, field).pack()));
+        return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvert.pack(new KeyField(id, field).pack()));
     }
 
 
@@ -49,15 +50,15 @@ public class DataSourceImpl implements DataSource {
 
         try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
             if (prevId==null) {
-                rocksIterator.seek(TypeConvertRocksdb.pack(KeyIndex.prifix(index, hash)));
+                rocksIterator.seek(TypeConvert.pack(KeyIndex.prifix(index, hash)));
             } else {
-                rocksIterator.seek(TypeConvertRocksdb.pack(new KeyIndex(prevId, index, hash).pack()));
+                rocksIterator.seek(TypeConvert.pack(new KeyIndex(prevId, index, hash).pack()));
             }
 
             while (true) {
                 if (!rocksIterator.isValid()) return null;
 
-                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
                 if (key.getTypeKey() != TypeKey.INDEX) return null;
 
                 KeyIndex keyIndex = (KeyIndex) key;
@@ -93,11 +94,11 @@ public class DataSourceImpl implements DataSource {
         boolean availability = false;
         Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
         try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-            rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(id).pack()));
+            rocksIterator.seek(TypeConvert.pack(new KeyAvailability(id).pack()));
             while (true) {
                 if (!rocksIterator.isValid()) break;
 
-                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
                 if (key.getId() != id) break;
 
                 TypeKey typeKey = key.getTypeKey();
@@ -135,12 +136,12 @@ public class DataSourceImpl implements DataSource {
             if (prevId==null) {
                 rocksIterator.seekToFirst();
             } else {
-                rocksIterator.seek(TypeConvertRocksdb.pack(new KeyAvailability(prevId).pack()));
+                rocksIterator.seek(TypeConvert.pack(new KeyAvailability(prevId).pack()));
             }
             while (true) {
                 if (!rocksIterator.isValid()) break;
 
-                Key key = Key.parse(TypeConvertRocksdb.getString(rocksIterator.key()));
+                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
                 TypeKey typeKey = key.getTypeKey();
                 if (keyAvailability == null) {
                     if (typeKey == TypeKey.AVAILABILITY) {
@@ -181,21 +182,21 @@ public class DataSourceImpl implements DataSource {
 
                     if (modifier instanceof ModifierSet) {
                         ModifierSet modifierSet = (ModifierSet) modifier;
-                        writeBatch.put(columnFamilyHandle, TypeConvertRocksdb.pack(modifier.key), modifierSet.getValue());
+                        writeBatch.put(columnFamilyHandle, TypeConvert.pack(modifier.key), modifierSet.getValue());
                     } else if (modifier instanceof ModifierRemove) {
                         String key = modifier.key;
                         if (key.charAt(key.length() - 1) != '*') {
                             //Удаляется только одна запись
-                            writeBatch.remove(columnFamilyHandle, TypeConvertRocksdb.pack(key));
+                            writeBatch.remove(columnFamilyHandle, TypeConvert.pack(key));
                         } else {
                             //Удаляются все записи попадающие под этот патерн
                             String patternKey = key.substring(0, key.length() - 1);
                             try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-                                rocksIterator.seek(TypeConvertRocksdb.pack(patternKey));
+                                rocksIterator.seek(TypeConvert.pack(patternKey));
                                 while (true) {
                                     if (!rocksIterator.isValid()) break;
                                     byte[] findKey = rocksIterator.key();
-                                    String sFindKey = TypeConvertRocksdb.getString(findKey);
+                                    String sFindKey = TypeConvert.getString(findKey);
                                     if (sFindKey.startsWith(patternKey)) {
                                         writeBatch.remove(columnFamilyHandle, findKey);
                                     } else {

@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.index;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Collection;
 
@@ -19,7 +19,7 @@ public class IndexUtils {
         } else {
             string = value.toString();
         }
-        return Math.abs(hash(string.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET), 1));
+        return Math.abs(hash(string.getBytes(TypeConvert.ROCKSDB_CHARSET), 1));
     }
 
     public static int calcHashValues(Collection<Object> values) {
@@ -33,7 +33,7 @@ public class IndexUtils {
             }
         }
 
-        return Math.abs(hash(sBuilder.toString().getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET), 1));
+        return Math.abs(hash(sBuilder.toString().getBytes(TypeConvert.ROCKSDB_CHARSET), 1));
     }
 
 

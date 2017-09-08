@@ -5,7 +5,7 @@ import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
@@ -27,7 +27,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         //Проверяем, что таких объектов нет в базе
         for (long i=1; i<=100; i++) {

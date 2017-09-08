@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.shard;
+package com.infomaximum.database.shard;
 
 /**
  * Алгоритм кодирования shardId основан на следующей идеи:

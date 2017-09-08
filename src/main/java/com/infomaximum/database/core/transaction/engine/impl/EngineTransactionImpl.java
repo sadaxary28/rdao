@@ -3,7 +3,7 @@ package com.infomaximum.database.core.transaction.engine.impl;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
+import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.rocksdb.exception.TimeoutLockException;
 
 /**

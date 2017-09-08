@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.sequence;
 
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 
@@ -32,7 +32,7 @@ public class ManagerSequence {
             synchronized (sequences) {
                 sequence = sequences.get(sequenceName);
                 if (sequence==null) {
-                    sequence = new Sequence(rocksDataBase, columnFamilyHandle, TypeConvertRocksdb.pack(sequenceName));
+                    sequence = new Sequence(rocksDataBase, columnFamilyHandle, TypeConvert.pack(sequenceName));
                     sequences.put(sequenceName, sequence);
                 }
             }

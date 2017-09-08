@@ -1,8 +1,7 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
@@ -27,11 +26,11 @@ public class DomainObjectFieldValueUtils {
     public static Object unpackValue(DomainObject self, Field field, byte[] value) throws ReflectiveOperationException, RocksDBException {
         Class type = field.getType();
         if (value == null) return null;
-        return TypeConvertRocksdb.get(field.getType(), value);
+        return TypeConvert.get(field.getType(), value);
     }
 
     public static <T> T unpackValue(DataSource dataSource, Class<T> type, byte[] value) throws ReflectiveOperationException, RocksDBException {
         if (value == null) return null;
-        return (T) TypeConvertRocksdb.get(type, value);
+        return (T) TypeConvert.get(type, value);
     }
 }

@@ -3,7 +3,7 @@ package com.infomaximum.database.core.structentity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.exeption.StructEntityDatabaseException;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import com.infomaximum.database.utils.TypeConvert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +65,7 @@ public class StructEntityIndex {
         try {
             MessageDigest m = MessageDigest.getInstance("MD5");
             m.reset();
-            m.update(value.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET));
+            m.update(value.getBytes(TypeConvert.ROCKSDB_CHARSET));
             byte[] digest = m.digest();
             BigInteger bigInt = new BigInteger(1, digest);
             StringBuilder h = new StringBuilder(bigInt.toString(16));

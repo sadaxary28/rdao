@@ -2,10 +2,10 @@ package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.structentity.HashStructEntities;
+import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import org.rocksdb.RocksDBException;
 
 import java.util.Iterator;

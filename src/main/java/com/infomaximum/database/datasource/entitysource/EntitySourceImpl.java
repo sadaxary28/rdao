@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.core.datasource.entitysource;
+package com.infomaximum.database.datasource.entitysource;
 
 import java.util.Map;
 

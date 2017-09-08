@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.utils;
+package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * Created by kris on 23.03.17.
  */
-public class TypeConvertRocksdb {
+public class TypeConvert {
 
     public static final Charset ROCKSDB_CHARSET = Charset.forName("UTF-8");
 
@@ -18,7 +18,7 @@ public class TypeConvertRocksdb {
         if (value==null) {
             return null;
         } else {
-            return new String(value, TypeConvertRocksdb.ROCKSDB_CHARSET);
+            return new String(value, TypeConvert.ROCKSDB_CHARSET);
         }
     }
 
@@ -56,7 +56,7 @@ public class TypeConvertRocksdb {
 
 
     public static byte[] pack(String value){
-        return value.getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET);
+        return value.getBytes(TypeConvert.ROCKSDB_CHARSET);
     }
 
     public static byte[] pack(int value){

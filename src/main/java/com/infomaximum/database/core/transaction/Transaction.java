@@ -7,12 +7,12 @@ import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
+import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.KeyAvailability;
 import com.infomaximum.database.domainobject.key.KeyField;
 import com.infomaximum.database.domainobject.key.KeyIndex;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
+import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.RocksDBException;
 
 import java.util.ArrayList;
@@ -43,14 +43,14 @@ public class Transaction {
     public void update(StructEntity structEntity, DomainObject self, Map<Field, Object> loadValues, Map<Field, Object> writeValues) {
         String columnFamily = structEntity.annotationEntity.name();
 
-        queue.add(new ModifierSet(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvertRocksdb.pack(self.getId())));
+        queue.add(new ModifierSet(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvert.pack(self.getId())));
         for (Map.Entry<Field, Object> writeEntry: writeValues.entrySet()) {
             Field field = writeEntry.getKey();
             Object value = writeEntry.getValue();
 
             String key = new KeyField(self.getId(), field.name()).pack();
             if (value!=null) {
-                byte[] bValue = TypeConvertRocksdb.packObject(value.getClass(), value);
+                byte[] bValue = TypeConvert.packObject(value.getClass(), value);
                 queue.add(new ModifierSet(columnFamily, key, bValue));
             } else {
                 queue.add(new ModifierRemove(columnFamily, key));
@@ -80,7 +80,7 @@ public class Transaction {
             }
 
             int newHash = IndexUtils.calcHashValues(newValues);
-            queue.add(new ModifierSet(columnFamily, new KeyIndex(self.getId(), structEntityIndex.name, newHash).pack(), TypeConvertRocksdb.pack(self.getId())));
+            queue.add(new ModifierSet(columnFamily, new KeyIndex(self.getId(), structEntityIndex.name, newHash).pack(), TypeConvert.pack(self.getId())));
         }
     }
 

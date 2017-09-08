@@ -3,9 +3,9 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.utils.DomainObjectFieldValueUtils;
-import com.infomaximum.rocksdb.core.datasource.DataSource;
 
 import java.util.Date;
 import java.util.HashMap;

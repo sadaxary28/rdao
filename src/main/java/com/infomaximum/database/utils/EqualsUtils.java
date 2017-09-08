@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.utils;
+package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Primitives;
 

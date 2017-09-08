@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.sequence;
 
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 
@@ -32,7 +32,7 @@ public class Sequence {
             increment.set(0);
             maxCacheIncrement=0;
         } else {
-            long lValue = TypeConvertRocksdb.getLong(value);
+            long lValue = TypeConvert.getLong(value);
             increment.set(lValue);
             maxCacheIncrement=lValue;
         }
@@ -42,7 +42,7 @@ public class Sequence {
     private synchronized void tryRefillCacheIncrement() throws RocksDBException {
         if (maxCacheIncrement - increment.get()>SIZE_CACHE) return;
         maxCacheIncrement += SIZE_CACHE;
-        rocksDataBase.getRocksDB().put(columnFamilyHandle, sequenceName, TypeConvertRocksdb.pack(maxCacheIncrement));
+        rocksDataBase.getRocksDB().put(columnFamilyHandle, sequenceName, TypeConvert.pack(maxCacheIncrement));
     }
 
     public long next() throws RocksDBException {
