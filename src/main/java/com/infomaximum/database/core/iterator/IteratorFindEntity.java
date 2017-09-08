@@ -27,8 +27,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
     private final StructEntity structEntity;
     private final StructEntityIndex structEntityIndex;
 
-    private final String nameIndex;
-    private final int hash;
+    private final int findHash;
 
     private E nextElement;
 
@@ -42,14 +41,18 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
         structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
         if (structEntityIndex==null) throw new NotFoundIndexException(clazz, filters.keySet());
 
-        this.nameIndex = structEntityIndex.name;
+        //Проверяем совпадение типов
+        for (Field field: structEntityIndex.indexFieldsSort) {
+            Object filterValue = filters.get(field.name());
+            if (filterValue!=null && !EqualsUtils.equalsType(field.type(), filterValue.getClass())) throw new RuntimeException("Not equals type field " + field.type() + " and type value " + filterValue.getClass());
+        }
 
         //Сортируем поля и вычисляем хеш
         List<Object> sortFilterValues = new ArrayList();
         for (Field field: structEntityIndex.indexFieldsSort) {
             sortFilterValues.add(filters.get(field.name()));
         }
-        this.hash = IndexUtils.calcHashValues(sortFilterValues);
+        this.findHash = IndexUtils.calcHashValues(sortFilterValues);
 
         nextElement = loadNextElement(true);
     }
@@ -60,7 +63,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
         E domainObject = null;
         while (true) {
-            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, nameIndex, hash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.name, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
             domainObject = DomainObjectUtils.createDomainObject(dataSource, clazz, entitySource);
