@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.domain;
 
 import com.infomaximum.database.domainobject.DomainObjectEditable;
+import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**
@@ -8,7 +9,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
  */
 public class StoreFileEditable extends StoreFileReadable implements DomainObjectEditable {
 
-    public StoreFileEditable(long id) {
+    public StoreFileEditable(long id) throws DatabaseException {
         super(id);
     }
 

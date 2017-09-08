@@ -23,7 +23,7 @@ public class StructEntityIndex {
     public final String name;
     public final List<Field> indexFieldsSort;
 
-    public StructEntityIndex(StructEntity structEntity, Index index) {
+    public StructEntityIndex(StructEntity structEntity, Index index) throws StructEntityDatabaseException {
         List<Field> modifiableIndexFields = new ArrayList<>();
         for (String fieldName: index.fields()) {
             Field field = structEntity.getFieldByName(fieldName);

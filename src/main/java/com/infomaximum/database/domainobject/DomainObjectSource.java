@@ -73,7 +73,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) {
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DatabaseException {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
 
         EntitySource entitySource = dataSource.getEntitySource(entityAnnotation.name(), id, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
@@ -89,7 +89,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) {
+    public <T extends DomainObject> T find(final Class<T> clazz, String fieldName, Object value) throws DatabaseException {
         IteratorFindEntity iteratorFindEntity = new IteratorFindEntity(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
         if (iteratorFindEntity.hasNext()) {
             return (T) iteratorFindEntity.next();
@@ -103,7 +103,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) {
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, String fieldName, Object value) throws DatabaseException {
         return new IteratorFindEntity(dataSource, clazz, new HashMap<String, Object>(){{ put(fieldName, value); }});
     }
 
@@ -112,7 +112,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) {
+    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
         IteratorFindEntity iteratorFindEntity = new IteratorFindEntity(dataSource, clazz, filters);
         if (iteratorFindEntity.hasNext()) {
             return (T) iteratorFindEntity.next();
@@ -126,7 +126,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) {
+    public <T extends DomainObject> IteratorFindEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
         return new IteratorFindEntity(dataSource, clazz, filters);
     }
 
@@ -136,7 +136,7 @@ public class DomainObjectSource {
      * @param <T>
      * @return
      */
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) {
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws DatabaseException {
         return new IteratorEntity<>(dataSource, clazz);
     }
 }

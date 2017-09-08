@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.domain;
 
 import com.infomaximum.database.domainobject.DomainObjectEditable;
+import com.infomaximum.database.exeption.DatabaseException;
 
 import java.util.Date;
 
@@ -10,23 +11,23 @@ import java.util.Date;
 public class ExchangeFolderEditable extends ExchangeFolderReadable implements DomainObjectEditable {
 
 
-    public ExchangeFolderEditable(long id) {
+    public ExchangeFolderEditable(long id) throws DatabaseException {
         super(id);
     }
 
-    public String getUuid() {
+    public String getUuid() throws DatabaseException {
         return getString(FIELD_UUID);
     }
 
-    public String getUserEmail() {
+    public String getUserEmail() throws DatabaseException {
         return getString(FIELD_USER_EMAIL);
     }
 
-    public Date getSyncDate() {
+    public Date getSyncDate() throws DatabaseException {
         return getDate(FIELD_SYNC_DATE);
     }
 
-    public String getSyncState() {
+    public String getSyncState() throws DatabaseException {
         return getString(FIELD_SYNC_STATE);
     }
 

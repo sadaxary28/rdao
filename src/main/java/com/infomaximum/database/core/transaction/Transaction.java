@@ -12,6 +12,7 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.KeyAvailability;
 import com.infomaximum.database.domainobject.key.KeyField;
 import com.infomaximum.database.domainobject.key.KeyIndex;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
@@ -88,7 +89,7 @@ public class Transaction {
         queue.add(ModifierRemove.removeDomainObject(columnFamily, self.getId()));
     }
 
-    public void commit() {
+    public void commit() throws TransactionDatabaseException, DataSourceDatabaseException {
         //Ставим флаг, что транзакция больше не активна
         if (!active.compareAndSet(true, false)) throw new TransactionDatabaseException("Transaction is not active: is commited");
 

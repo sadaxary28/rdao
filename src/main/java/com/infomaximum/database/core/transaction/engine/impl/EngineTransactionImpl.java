@@ -22,7 +22,7 @@ public class EngineTransactionImpl implements EngineTransaction {
      *
      * @param operation Выполняемая операция.
      */
-    public void execute(final Monad operation) {
+    public void execute(final Monad operation) throws TransactionDatabaseException {
         final Transaction transaction = new Transaction(dataSource);
         int attempt = 0;
         do {

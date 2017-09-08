@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class DomainObjectUtils {
 
-    public static <T extends DomainObject> T buildDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) {
+    public static <T extends DomainObject> T buildDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws ReflectionDatabaseException {
         try {
             Constructor<T> constructor = clazz.getConstructor(long.class);
 

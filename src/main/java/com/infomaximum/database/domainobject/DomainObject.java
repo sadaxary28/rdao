@@ -27,7 +27,7 @@ public abstract class DomainObject {
     private ConcurrentMap<String, Optional<Object>> fieldValues = null;
     private volatile ConcurrentMap<String, Optional<Object>> waitWriteFieldValues = null;
 
-    public DomainObject(long id) {
+    public DomainObject(long id) throws DatabaseException {
         this.id = id;
 
         this.structEntity = HashStructEntities.getStructEntity(this.getClass());
@@ -77,25 +77,25 @@ public abstract class DomainObject {
         }
     }
 
-    protected String getString(String fieldName) {
+    protected String getString(String fieldName) throws DatabaseException {
         return get(String.class, fieldName);
     }
 
-    protected Long getLong(String fieldName) {
+    protected Long getLong(String fieldName) throws DatabaseException {
         return get(Long.class, fieldName);
     }
 
-    protected Date getDate(String fieldName) {
+    protected Date getDate(String fieldName) throws DatabaseException {
         long timestamp = get(Long.class, fieldName);
         return new Date(timestamp);
     }
 
-    protected Boolean getBoolean(String fieldName) {
+    protected Boolean getBoolean(String fieldName) throws DatabaseException {
         return get(Boolean.class, fieldName);
     }
 
 
-    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) {
+    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) throws DatabaseException {
         return get(enumClass, fieldName);
     }
 

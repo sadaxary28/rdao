@@ -5,6 +5,7 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectReadable;
+import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**
@@ -34,29 +35,29 @@ public class StoreFileReadable extends DomainObject implements DomainObjectReada
 
 
 
-    public StoreFileReadable(long id) {
+    public StoreFileReadable(long id) throws DatabaseException {
         super(id);
     }
 
 
-    public String getFileName() {
+    public String getFileName() throws DatabaseException {
         return getString(FIELD_FILE_NAME);
     }
 
-    public String getContentType() {
+    public String getContentType() throws DatabaseException {
         return getString(FIELD_CONTENT_TYPE);
     }
 
-    public long getSize() {
+    public long getSize() throws DatabaseException {
         return getLong(FIELD_SIZE);
     }
 
-    public boolean isSingle() {
+    public boolean isSingle() throws DatabaseException {
         return getBoolean(FIELD_SINGLE);
     }
 
 
-    public FormatType getFormat() {
+    public FormatType getFormat() throws DatabaseException {
         return getEnum(FormatType.class, FIELD_FORMAT);
     }
 

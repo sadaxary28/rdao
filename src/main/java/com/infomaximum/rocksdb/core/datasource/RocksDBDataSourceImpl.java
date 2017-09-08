@@ -33,7 +33,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public long nextId(String sequenceName) {
+    public long nextId(String sequenceName) throws DataSourceDatabaseException {
         try {
             return rocksDataBase.getSequence(sequenceName).next();
         } catch (Exception e) {
@@ -42,7 +42,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public byte[] getField(String columnFamily, long id, String field){
+    public byte[] getField(String columnFamily, long id, String field) throws DataSourceDatabaseException {
         try {
             ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
             return rocksDataBase.getRocksDB().get(columnFamilyHandle, TypeConvert.pack(new KeyField(id, field).pack()));
@@ -53,7 +53,7 @@ public class RocksDBDataSourceImpl implements DataSource {
 
 
     @Override
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) {
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws DataSourceDatabaseException {
         try {
             ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
@@ -96,7 +96,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) {
+    public EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) throws DataSourceDatabaseException {
         try {
             ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
@@ -139,7 +139,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) {
+    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws DataSourceDatabaseException {
         try {
             ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
 
@@ -190,7 +190,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public void commit(List<Modifier> modifiers) {
+    public void commit(List<Modifier> modifiers) throws DataSourceDatabaseException {
         try {
             try(WriteBatch writeBatch = new WriteBatch()) {
                 for (Modifier modifier : modifiers) {

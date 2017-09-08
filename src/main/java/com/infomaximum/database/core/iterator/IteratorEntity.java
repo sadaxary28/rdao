@@ -7,6 +7,7 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
+import com.infomaximum.database.exeption.DatabaseException;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -22,7 +23,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
 
     private E nextElement;
 
-    public IteratorEntity(DataSource dataSource, Class<E> clazz) {
+    public IteratorEntity(DataSource dataSource, Class<E> clazz) throws DatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
 
@@ -34,7 +35,7 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) {
+    private synchronized E loadNextElement(boolean isFirst) throws DatabaseException {
         Long prevId = (isFirst)?null:nextElement.getId();
 
         EntitySource entitySource = dataSource.nextEntitySource(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
@@ -56,7 +57,12 @@ public class IteratorEntity<E extends DomainObject> implements Iterator<E>, Iter
         if (nextElement==null) throw new NoSuchElementException();
 
         E element = nextElement;
-        nextElement = loadNextElement(false);
+        try {
+            nextElement = loadNextElement(false);
+        } catch (DatabaseException e) {
+            //TODO Подумать
+            throw new RuntimeException(e);
+        }
 
         return element;
     }
