@@ -9,8 +9,8 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.index.NotFoundIndexDatabaseException;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
 
 import java.util.*;
@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * Created by kris on 30.04.17.
  */
-public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, Iterable<E> {
+public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataSource dataSource;
     private final Class<E> clazz;
@@ -31,7 +31,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
 
     private E nextElement;
 
-    public IteratorFindEntity(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws DatabaseException {
+    public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws DataSourceDatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
         this.filters=filters;
@@ -58,7 +58,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws DatabaseException {
+    private synchronized E loadNextElement(boolean isFirst) throws DataSourceDatabaseException {
         Long prevFindId = (isFirst)?null:nextElement.getId();
 
         E domainObject = null;

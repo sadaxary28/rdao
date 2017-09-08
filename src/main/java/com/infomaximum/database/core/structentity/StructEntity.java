@@ -4,8 +4,7 @@ import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.struct.StructEntityDatabaseException;
+import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 
 import java.util.*;
 
@@ -24,7 +23,7 @@ public class StructEntity {
 
     public final Map<String, StructEntityIndex> indexs;
 
-    public StructEntity(Class<? extends DomainObject> clazz) throws DatabaseException {
+    public StructEntity(Class<? extends DomainObject> clazz) {
         this.clazz = clazz;
 
         this.annotationEntity = StructEntity.getEntityAnnotation(clazz);
@@ -72,20 +71,20 @@ public class StructEntity {
         return indexs.get(nameIndex);
     }
 
-    public static Class<? extends DomainObject> getEntityClass(Class<? extends DomainObject> clazz) throws DatabaseException {
+    public static Class<? extends DomainObject> getEntityClass(Class<? extends DomainObject> clazz){
         Entity entityAnnotation = clazz.getAnnotation(Entity.class);
         if (entityAnnotation==null) {
             if (DomainObject.class.isAssignableFrom(clazz.getSuperclass())) {
                 return getEntityClass((Class<? extends DomainObject>) clazz.getSuperclass());
             } else {
-                throw new DatabaseException("Not found 'Entity' annotation in class: " + clazz);
+                throw new StructEntityDatabaseException("Not found 'Entity' annotation in class: " + clazz);
             }
         } else {
             return clazz;
         }
     }
 
-    public static Entity getEntityAnnotation(Class<? extends DomainObject> clazz) throws DatabaseException {
+    public static Entity getEntityAnnotation(Class<? extends DomainObject> clazz) {
         return getEntityClass(clazz).getAnnotation(Entity.class);
     }
 }

@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.database.exeption.index.NotFoundIndexDatabaseException;
+import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;

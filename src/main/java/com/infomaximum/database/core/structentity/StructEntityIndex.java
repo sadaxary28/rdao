@@ -2,7 +2,7 @@ package com.infomaximum.database.core.structentity;
 
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
-import com.infomaximum.database.exeption.struct.StructEntityDatabaseException;
+import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

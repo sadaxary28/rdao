@@ -1,7 +1,6 @@
 package com.infomaximum.database.core.structentity;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ public class HashStructEntities {
 
 
     private static Map<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
-    public static StructEntity getStructEntity(Class<? extends DomainObject> clazz) throws DatabaseException {
+    public static StructEntity getStructEntity(Class<? extends DomainObject> clazz) {
         Class<? extends DomainObject> entityClass = StructEntity.getEntityClass(clazz);
 
         StructEntity domainObjectFields = structEntities.get(entityClass);

@@ -4,7 +4,7 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Date;
@@ -27,7 +27,7 @@ public abstract class DomainObject {
     private ConcurrentMap<String, Optional<Object>> fieldValues = null;
     private volatile ConcurrentMap<String, Optional<Object>> waitWriteFieldValues = null;
 
-    public DomainObject(long id) throws DatabaseException {
+    public DomainObject(long id) {
         this.id = id;
 
         this.structEntity = HashStructEntities.getStructEntity(this.getClass());
@@ -39,7 +39,7 @@ public abstract class DomainObject {
         return id;
     }
 
-    public <T> T get(Class<T> type, String fieldName) throws DatabaseException {
+    public <T> T get(Class<T> type, String fieldName) throws DataSourceDatabaseException {
         if (waitWriteFieldValues!=null && waitWriteFieldValues.containsKey(fieldName)) {
             return (T) waitWriteFieldValues.get(fieldName).orElse(null);
         } else if (fieldValues.containsKey(fieldName)) {
@@ -68,34 +68,30 @@ public abstract class DomainObject {
         waitWriteFieldValues.put(field, Optional.ofNullable(value));
     }
 
-    private <T> T loadField(Class<T> type, String fieldName) throws DatabaseException {
-        try {
-            byte[] bValue = dataSource.getField(structEntity.annotationEntity.name(), id, fieldName);
-            return (T) TypeConvert.get(type, bValue);
-        } catch (Exception e) {
-            throw new DatabaseException(e);
-        }
+    private <T> T loadField(Class<T> type, String fieldName) throws DataSourceDatabaseException {
+        byte[] bValue = dataSource.getField(structEntity.annotationEntity.name(), id, fieldName);
+        return (T) TypeConvert.get(type, bValue);
     }
 
-    protected String getString(String fieldName) throws DatabaseException {
+    protected String getString(String fieldName) throws DataSourceDatabaseException {
         return get(String.class, fieldName);
     }
 
-    protected Long getLong(String fieldName) throws DatabaseException {
+    protected Long getLong(String fieldName) throws DataSourceDatabaseException {
         return get(Long.class, fieldName);
     }
 
-    protected Date getDate(String fieldName) throws DatabaseException {
+    protected Date getDate(String fieldName) throws DataSourceDatabaseException {
         long timestamp = get(Long.class, fieldName);
         return new Date(timestamp);
     }
 
-    protected Boolean getBoolean(String fieldName) throws DatabaseException {
+    protected Boolean getBoolean(String fieldName) throws DataSourceDatabaseException {
         return get(Boolean.class, fieldName);
     }
 
 
-    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) throws DatabaseException {
+    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) throws DataSourceDatabaseException {
         return get(enumClass, fieldName);
     }
 

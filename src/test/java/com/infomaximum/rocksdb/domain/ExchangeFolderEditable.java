@@ -11,7 +11,7 @@ import java.util.Date;
 public class ExchangeFolderEditable extends ExchangeFolderReadable implements DomainObjectEditable {
 
 
-    public ExchangeFolderEditable(long id) throws DatabaseException {
+    public ExchangeFolderEditable(long id){
         super(id);
     }
 

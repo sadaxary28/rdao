@@ -33,7 +33,9 @@ public class Transaction {
         this.queue = new ArrayList<Modifier>();
     }
 
-    public void update(StructEntity structEntity, DomainObject self, Map<Field, Object> loadValues, Map<Field, Object> writeValues) {
+    public void update(StructEntity structEntity, DomainObject self, Map<Field, Object> loadValues, Map<Field, Object> writeValues) throws TransactionDatabaseException {
+        validateTransaction();
+
         String columnFamily = structEntity.annotationEntity.name();
 
         queue.add(new ModifierSet(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvert.pack(self.getId())));
@@ -77,19 +79,19 @@ public class Transaction {
         }
     }
 
-    public void remove(StructEntity structEntity, DomainObject self) {
+    public void remove(StructEntity structEntity, DomainObject self) throws TransactionDatabaseException {
+        validateTransaction();
         String columnFamily = structEntity.annotationEntity.name();
         queue.add(ModifierRemove.removeDomainObject(columnFamily, self.getId()));
     }
 
     public void commit() throws TransactionDatabaseException, DataSourceDatabaseException {
-        //Ставим флаг, что транзакция больше не активна
-        if (queue==null) throw new TransactionDatabaseException("Transaction is not active: is commited");
-
-        //Комитим
+        validateTransaction();
         dataSource.commit(queue);
-
-        //Чистим
         queue = null;
+    }
+
+    private void validateTransaction() throws TransactionDatabaseException {
+        if (queue==null) throw new TransactionDatabaseException("Transaction already committed.");
     }
 }

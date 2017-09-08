@@ -5,7 +5,7 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
-import com.infomaximum.database.exeption.ReflectionDatabaseException;
+import com.infomaximum.database.exeption.runtime.ReflectionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;

@@ -35,7 +35,7 @@ public class StoreFileReadable extends DomainObject implements DomainObjectReada
 
 
 
-    public StoreFileReadable(long id) throws DatabaseException {
+    public StoreFileReadable(long id) {
         super(id);
     }
 

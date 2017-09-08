@@ -31,7 +31,7 @@ public class ExchangeFolderReadable extends DomainObject implements DomainObject
     public final static String FIELD_SYNC_DATE="sync_date";
     public final static String FIELD_SYNC_STATE="sync_state";
 
-    public ExchangeFolderReadable(long id) throws DatabaseException {
+    public ExchangeFolderReadable(long id){
         super(id);
     }
 
