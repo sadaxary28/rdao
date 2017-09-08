@@ -2,6 +2,8 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.core.iterator.IteratorFindEntity;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.transaction.Transaction;
@@ -11,8 +13,6 @@ import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.rocksdb.core.datasource.DataSource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySource;
 import com.infomaximum.rocksdb.core.datasource.entitysource.EntitySourceImpl;
-import com.infomaximum.rocksdb.core.iterator.IteratorEntity;
-import com.infomaximum.rocksdb.core.iterator.IteratorFindEntity;
 import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.RocksDBException;
 

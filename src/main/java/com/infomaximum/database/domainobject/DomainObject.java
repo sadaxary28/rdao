@@ -40,7 +40,7 @@ public abstract class DomainObject {
         return id;
     }
 
-    private <T> T get(Class<T> type, String fieldName) throws DatabaseException {
+    public <T> T get(Class<T> type, String fieldName) throws DatabaseException {
         if (waitWriteFieldValues!=null && waitWriteFieldValues.containsKey(fieldName)) {
             return (T) waitWriteFieldValues.get(fieldName).orElse(null);
         } else if (fieldValues.containsKey(fieldName)) {

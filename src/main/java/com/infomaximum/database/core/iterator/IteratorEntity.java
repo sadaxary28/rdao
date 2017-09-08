@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.core.iterator;
+package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.structentity.HashStructEntities;

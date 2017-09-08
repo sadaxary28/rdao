@@ -26,11 +26,11 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
 )
 public class StoreFileReadable extends DomainObject implements DomainObjectReadable {
 
-    protected final static String FIELD_FILE_NAME="file_name";
-    protected final static String FIELD_CONTENT_TYPE="content_type";
-    protected final static String FIELD_SIZE="size";
-    protected final static String FIELD_SINGLE="single";
-    protected final static String FIELD_FORMAT="format";
+    public final static String FIELD_FILE_NAME="file_name";
+    public final static String FIELD_CONTENT_TYPE="content_type";
+    public final static String FIELD_SIZE="size";
+    public final static String FIELD_SINGLE="single";
+    public final static String FIELD_FORMAT="format";
 
 
 

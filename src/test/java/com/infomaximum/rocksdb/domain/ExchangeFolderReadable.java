@@ -25,10 +25,10 @@ import java.util.Date;
 )
 public class ExchangeFolderReadable extends DomainObject implements DomainObjectReadable {
 
-    protected final static String FIELD_UUID="uuid";
-    protected final static String FIELD_USER_EMAIL="user_email";
-    protected final static String FIELD_SYNC_DATE="sync_date";
-    protected final static String FIELD_SYNC_STATE="sync_state";
+    public final static String FIELD_UUID="uuid";
+    public final static String FIELD_USER_EMAIL="user_email";
+    public final static String FIELD_SYNC_DATE="sync_date";
+    public final static String FIELD_SYNC_STATE="sync_state";
 
     public ExchangeFolderReadable(long id) {
         super(id);
@@ -50,20 +50,4 @@ public class ExchangeFolderReadable extends DomainObject implements DomainObject
         return getString(FIELD_SYNC_STATE);
     }
 
-//
-//    public void setUuid(String uuid) {
-//        this.uuid = uuid;
-//    }
-//
-//    public void setUserEmail(String userEmail) {
-//        this.userEmail = userEmail;
-//    }
-//
-//    public void setSyncDate(Date syncDate) {
-//        this.syncDate = syncDate;
-//    }
-//
-//    public void setSyncState(String syncState) {
-//        this.syncState = syncState;
-//    }
 }
