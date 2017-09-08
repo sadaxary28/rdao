@@ -1,4 +1,6 @@
-package com.infomaximum.database.exeption;
+package com.infomaximum.database.exeption.struct;
+
+import com.infomaximum.database.exeption.DatabaseException;
 
 /**
  * Created by kris on 07.09.17.

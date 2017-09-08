@@ -5,7 +5,7 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.StructEntityDatabaseException;
+import com.infomaximum.database.exeption.struct.StructEntityDatabaseException;
 
 import java.util.*;
 

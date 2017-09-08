@@ -4,7 +4,6 @@ import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.rocksdb.exception.TimeoutLockException;
 
 /**
  * Created by user on 23.04.2017.
@@ -31,7 +30,7 @@ public class EngineTransactionImpl implements EngineTransaction {
                 operation.action(transaction);
                 transaction.commit();
                 return;
-            } catch (TimeoutLockException ex) {
+            } catch (RuntimeException ex) {
                 attempt += 1;
                 try {
                     Thread.sleep(RETRY_TIMEOUT*attempt);

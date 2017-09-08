@@ -1,11 +1,11 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.exeption.index.NotFoundIndexDatabaseException;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
-import com.infomaximum.rocksdb.exception.NotFoundIndexException;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,7 +32,7 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
         try {
             domainObjectSource.find(ExchangeFolderReadable.class, "uuid", "");
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (NotFoundIndexDatabaseException ignore) {}
 
         try {
             domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>(){{
@@ -40,7 +40,7 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
                 put(ExchangeFolderReadable.FIELD_SYNC_DATE, "");
             }});
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (NotFoundIndexDatabaseException ignore) {}
 
         rocksDataBase.destroy();
     }

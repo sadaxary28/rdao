@@ -9,8 +9,8 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
+import com.infomaximum.database.exeption.index.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
-import com.infomaximum.rocksdb.exception.NotFoundIndexException;
 import org.rocksdb.RocksDBException;
 
 import java.util.*;
@@ -39,7 +39,7 @@ public class IteratorFindEntity<E extends DomainObject> implements Iterator<E>, 
         this.structEntity = HashStructEntities.getStructEntity(clazz);
 
         structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
-        if (structEntityIndex==null) throw new NotFoundIndexException(clazz, filters.keySet());
+        if (structEntityIndex==null) throw new NotFoundIndexDatabaseException(clazz, filters.keySet());
 
         //Проверяем совпадение типов
         for (Field field: structEntityIndex.indexFieldsSort) {
