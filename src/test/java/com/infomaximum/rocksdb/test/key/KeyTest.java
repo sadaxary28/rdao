@@ -50,16 +50,14 @@ public class KeyTest {
     public void testIndexKey() throws Exception {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
-            String index = UUID.randomUUID().toString().toLowerCase().replace("-", "");
             int hash = Math.abs(RandomUtil.random.nextInt());
 
-            KeyIndex key = new KeyIndex(id, index, hash);
+            KeyIndex key = new KeyIndex(id, hash);
 
             String sKey = key.pack();
 
             KeyIndex checkKey = (KeyIndex) Key.parse(sKey);
             Assert.assertEquals(id, checkKey.getId());
-            Assert.assertEquals(index, checkKey.getIndex());
             Assert.assertEquals(hash, checkKey.getHash());
         }
     }

@@ -53,15 +53,15 @@ public class RocksDBDataSourceImpl implements DataSource {
 
 
     @Override
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws DataSourceDatabaseException {
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException {
         try {
-            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+            ColumnFamilyHandle indexColumnFamilyHandle = rocksDataBase.getColumnFamilyHandle(indexColumnFamily);
 
-            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
+            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(indexColumnFamilyHandle)) {
                 if (prevId==null) {
-                    rocksIterator.seek(TypeConvert.pack(KeyIndex.prifix(index, hash)));
+                    rocksIterator.seek(TypeConvert.pack(KeyIndex.prifix(hash)));
                 } else {
-                    rocksIterator.seek(TypeConvert.pack(new KeyIndex(prevId, index, hash).pack()));
+                    rocksIterator.seek(TypeConvert.pack(new KeyIndex(prevId, hash).pack()));
                 }
 
                 while (true) {
@@ -71,7 +71,6 @@ public class RocksDBDataSourceImpl implements DataSource {
                     if (key.getTypeKey() != TypeKey.INDEX) return null;
 
                     KeyIndex keyIndex = (KeyIndex) key;
-                    if (!keyIndex.getIndex().equals(index)) return null;
                     if (keyIndex.getHash() != hash) return null;
 
                     long id = key.getId();

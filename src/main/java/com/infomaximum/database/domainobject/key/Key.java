@@ -26,13 +26,12 @@ public abstract class Key {
     public static Key parse(String sKey) {
         if (sKey.startsWith(KeyIndex.PREFIX)) {
             //Индексы у нас обрабатываются по другому
-            String[] keySplit = sKey.split("\\.", 4);
+            String[] keySplit = sKey.split("\\.", 3);
 
-            long id = Long.parseLong(keySplit[3]);
-            String index = keySplit[1];
-            int hash = Integer.parseInt(keySplit[2]);
+            long id = Long.parseLong(keySplit[2]);
+            int hash = Integer.parseInt(keySplit[1]);
 
-            return new KeyIndex(id, index, hash);
+            return new KeyIndex(id, hash);
         } else {
             String[] keySplit = sKey.split("\\.", 3);
 

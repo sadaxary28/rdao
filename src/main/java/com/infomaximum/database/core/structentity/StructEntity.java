@@ -7,6 +7,7 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by kris on 26.04.17.
@@ -21,7 +22,7 @@ public class StructEntity {
 
     private final Set<String> eagerFormatFieldNames;
 
-    public final Map<String, StructEntityIndex> indexs;
+    private final List<StructEntityIndex> structEntityIndices;
 
     public StructEntity(Class<? extends DomainObject> clazz) {
         this.clazz = clazz;
@@ -43,13 +44,14 @@ public class StructEntity {
         }
 
         Set<String> modifiableEagerFormatFieldNames = new HashSet<String>();
+        //TODO тут необходимо собирать не lazy поля - они будут грузиться сразу же
         eagerFormatFieldNames = Collections.unmodifiableSet(modifiableEagerFormatFieldNames);
 
-        indexs = new HashMap<>();
+        List<StructEntityIndex> modifiableStructEntityIndices = new ArrayList<StructEntityIndex>();
         for (Index index: annotationEntity.indexes()) {
-            StructEntityIndex structEntityIndex = new StructEntityIndex(this, index);
-            indexs.put(structEntityIndex.name, structEntityIndex);
+            modifiableStructEntityIndices.add(new StructEntityIndex(this, index));
         }
+        this.structEntityIndices = Collections.unmodifiableList(modifiableStructEntityIndices);
     }
 
     public Field getFieldByName(String name) {
@@ -67,8 +69,21 @@ public class StructEntity {
 
 
     public StructEntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
-        String nameIndex = StructEntityIndex.buildNameIndex(nameIndexFields);
-        return indexs.get(nameIndex);
+        for (StructEntityIndex structEntityIndex: structEntityIndices) {
+            if (structEntityIndex.indexFieldsSort.size()!=nameIndexFields.size()) continue;
+
+            List<String> iNameIndexFields = structEntityIndex.indexFieldsSort.stream().map(Field::name).collect(Collectors.toList());
+
+            if (!iNameIndexFields.containsAll(nameIndexFields)) continue;
+            if (!nameIndexFields.containsAll(iNameIndexFields)) continue;
+
+            return structEntityIndex;
+        }
+        return null;
+    }
+
+    public List<StructEntityIndex> getStructEntityIndices() {
+        return structEntityIndices;
     }
 
     public static Class<? extends DomainObject> getEntityClass(Class<? extends DomainObject> clazz){

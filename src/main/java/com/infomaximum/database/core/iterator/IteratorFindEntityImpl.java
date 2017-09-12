@@ -63,7 +63,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
         E domainObject = null;
         while (true) {
-            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.name, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.columnFamily, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
             domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);

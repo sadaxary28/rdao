@@ -53,7 +53,9 @@ public class Transaction {
         }
 
         //Разбираемся с индексами
-        for (StructEntityIndex structEntityIndex: structEntity.indexs.values()){
+        for (StructEntityIndex structEntityIndex: structEntity.getStructEntityIndices()){
+            String indexColumnFamily = structEntityIndex.columnFamily;
+
             boolean isUpdateIndex = false;
             for(Field iField: structEntityIndex.indexFieldsSort) {
                 if (writeValues.containsKey(iField)) {
@@ -65,7 +67,7 @@ public class Transaction {
 
             //Нужно обновлять индекс...
             int oldHash = 111;//TODO Необходимо вычислять
-            queue.add(new ModifierRemove(columnFamily, new KeyIndex(self.getId(), structEntityIndex.name, oldHash).pack()));
+            queue.add(new ModifierRemove(indexColumnFamily, new KeyIndex(self.getId(), oldHash).pack()));
 
 
             //Вычисляем новый хеш
@@ -75,7 +77,7 @@ public class Transaction {
             }
 
             int newHash = IndexUtils.calcHashValues(newValues);
-            queue.add(new ModifierSet(columnFamily, new KeyIndex(self.getId(), structEntityIndex.name, newHash).pack(), TypeConvert.pack(self.getId())));
+            queue.add(new ModifierSet(indexColumnFamily, new KeyIndex(self.getId(), newHash).pack(), TypeConvert.pack(self.getId())));
         }
     }
 

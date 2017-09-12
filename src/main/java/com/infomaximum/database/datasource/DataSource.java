@@ -18,7 +18,7 @@ public interface DataSource {
 
     public EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) throws DataSourceDatabaseException;
 
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String index, int hash, Set<String> fields) throws DataSourceDatabaseException;
+    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException;
 
     public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
 
