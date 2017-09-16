@@ -85,7 +85,7 @@ public class TypeConvert {
             return getInteger(value);
         } else if (type == Boolean.class || type == boolean.class) {
             return getBoolean(value);
-        } else if (type == byte[].class) {
+        } else if (type == Byte[].class || type == byte[].class ) {
             return value;
         } else if (type == Date.class) {
             return getDate(value);

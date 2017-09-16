@@ -77,6 +77,10 @@ public abstract class DomainObject {
         return get(String.class, fieldName);
     }
 
+    protected Integer getInteger(String fieldName) throws DataSourceDatabaseException {
+        return get(Integer.class, fieldName);
+    }
+
     protected Long getLong(String fieldName) throws DataSourceDatabaseException {
         return get(Long.class, fieldName);
     }
@@ -90,6 +94,9 @@ public abstract class DomainObject {
         return get(Boolean.class, fieldName);
     }
 
+    protected byte[] getBytes(String fieldName) throws DataSourceDatabaseException {
+        return get(byte[].class, fieldName);
+    }
 
     protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) throws DataSourceDatabaseException {
         return get(enumClass, fieldName);
