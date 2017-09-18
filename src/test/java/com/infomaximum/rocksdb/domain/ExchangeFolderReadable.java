@@ -4,7 +4,6 @@ import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.DomainObjectReadable;
 import com.infomaximum.database.exeption.DatabaseException;
 
 import java.util.Date;
@@ -24,7 +23,7 @@ import java.util.Date;
                 @Index(fields = {ExchangeFolderReadable.FIELD_USER_EMAIL, ExchangeFolderReadable.FIELD_UUID})
         }
 )
-public class ExchangeFolderReadable extends DomainObject implements DomainObjectReadable {
+public class ExchangeFolderReadable extends DomainObject {
 
     public final static String FIELD_UUID="uuid";
     public final static String FIELD_USER_EMAIL="user_email";

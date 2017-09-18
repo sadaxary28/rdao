@@ -4,7 +4,6 @@ import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.DomainObjectReadable;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
@@ -25,7 +24,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
                 @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME})
         }
 )
-public class StoreFileReadable extends DomainObject implements DomainObjectReadable {
+public class StoreFileReadable extends DomainObject {
 
     public final static String FIELD_FILE_NAME="file_name";
     public final static String FIELD_CONTENT_TYPE="content_type";
