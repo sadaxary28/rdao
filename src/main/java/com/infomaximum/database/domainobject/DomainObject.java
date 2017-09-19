@@ -5,6 +5,8 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
+import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Date;
@@ -65,6 +67,16 @@ public abstract class DomainObject {
                 }
             }
         }
+
+        //Валидируем
+        Field aField = structEntity.getFieldByName(field);
+        if (aField==null) throw new StructEntityDatabaseException("In entity " + getClass() + " not found field: " + field);
+
+        if (value!=null) {
+            //Проверяем на совпадение типов
+            if (value.getClass() != aField.type()) throw new IllegalTypeDatabaseException("Not equals type field in type value");
+        }
+
         waitWriteFieldValues.put(field, Optional.ofNullable(value));
     }
 
