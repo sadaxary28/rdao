@@ -24,23 +24,14 @@ public class EngineTransactionImpl implements EngineTransaction {
      */
     public void execute(final Monad operation) throws TransactionDatabaseException {
         final Transaction transaction = new Transaction(dataSource);
-        int attempt = 0;
-        do {
-            // пытаемся выполнить операцию некоторое количество раз
-            try {
-                operation.action(transaction);
-                transaction.commit();
-                return;
-            } catch (RuntimeException ex) {
-                attempt += 1;
-                try {
-                    Thread.sleep(RETRY_TIMEOUT*attempt);
-                } catch (InterruptedException ignored) {}
-            } catch (Exception ex) {
-                throw new TransactionDatabaseException("Exception execute transaction", ex);
-            }
-        } while (attempt < DEFAULT_RETRIES);
-        throw new TransactionDatabaseException("Exception execute transaction");
+        // пытаемся выполнить операцию некоторое количество раз
+        try {
+            operation.action(transaction);
+            transaction.commit();
+            return;
+        } catch (Exception ex) {
+            throw new TransactionDatabaseException("Exception execute transaction", ex);
+        }
     }
 
     @Override
