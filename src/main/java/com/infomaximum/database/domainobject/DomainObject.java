@@ -75,7 +75,7 @@ public abstract class DomainObject {
 
         if (value!=null) {
             //Проверяем на совпадение типов
-            if (EqualsUtils.equalsType(value.getClass(), aField.type())) throw new IllegalTypeDatabaseException("Not equals type field in type value");
+            if (!EqualsUtils.equalsType(value.getClass(), aField.type())) throw new IllegalTypeDatabaseException("Not equals type field in type value");
         }
 
         waitWriteFieldValues.put(field, Optional.ofNullable(value));
