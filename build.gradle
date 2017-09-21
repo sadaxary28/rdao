@@ -22,8 +22,7 @@ sourceSets {
     test_performance {
         java.srcDir 'src/test_performance/java'
         resources.srcDir 'src/test_performance/resources'
-        compileClasspath += main.output + test.output
-        runtimeClasspath += main.output + test.output
+        compileClasspath += configurations.compile + configurations.testCompile + sourceSets.main.output + sourceSets.test.output
     }
 }
 
