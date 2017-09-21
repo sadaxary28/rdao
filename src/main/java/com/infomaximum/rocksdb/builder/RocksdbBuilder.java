@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.builder;
 
-import com.infomaximum.rocksdb.core.struct.DomainObject;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.utils.TypeConvertRocksdb;
 import org.rocksdb.*;
 
 import java.nio.file.Path;
@@ -48,7 +48,7 @@ public class RocksdbBuilder {
 		for (byte[] columnFamilyName: RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
 			columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
 		}
-		if (columnFamilyDescriptors.isEmpty()) columnFamilyDescriptors.add(new ColumnFamilyDescriptor("default".getBytes(TypeConvertRocksdb.ROCKSDB_CHARSET)));
+		if (columnFamilyDescriptors.isEmpty()) columnFamilyDescriptors.add(new ColumnFamilyDescriptor("default".getBytes(TypeConvert.ROCKSDB_CHARSET)));
 		options.close();
 
 
@@ -58,7 +58,7 @@ public class RocksdbBuilder {
 
 		Map<String, ColumnFamilyHandle> columnFamilies = new HashMap<String, ColumnFamilyHandle>();
 		for (int i=0; i<columnFamilyDescriptors.size(); i++) {
-			String columnFamilyName = new String(columnFamilyDescriptors.get(i).columnFamilyName(), TypeConvertRocksdb.ROCKSDB_CHARSET);
+			String columnFamilyName = new String(columnFamilyDescriptors.get(i).columnFamilyName(), TypeConvert.ROCKSDB_CHARSET);
 			ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
 			columnFamilies.put(columnFamilyName, columnFamilyHandle);
 		}

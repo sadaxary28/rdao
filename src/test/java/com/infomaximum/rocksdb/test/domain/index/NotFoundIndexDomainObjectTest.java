@@ -1,11 +1,11 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.domain.ExchangeFolder;
-import com.infomaximum.rocksdb.exception.NotFoundIndexException;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,20 +27,20 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         try {
-            domainObjectSource.find(ExchangeFolder.class, "uuid", "");
+            domainObjectSource.find(ExchangeFolderReadable.class, "uuid", "");
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (NotFoundIndexDatabaseException ignore) {}
 
         try {
-            domainObjectSource.find(ExchangeFolder.class, new HashMap<String, Object>(){{
-                put("uuid", "");
-                put("syncDate", "");
+            domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>(){{
+                put(ExchangeFolderReadable.FIELD_UUID, "");
+                put(ExchangeFolderReadable.FIELD_SYNC_DATE, "");
             }});
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (NotFoundIndexDatabaseException ignore) {}
 
         rocksDataBase.destroy();
     }

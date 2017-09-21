@@ -1,10 +1,10 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.domain.StoreFile;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,16 +26,16 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         try {
-            domainObjectSource.find(StoreFile.class, "zzzzz", null);
+            domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);
             Assert.fail();
         } catch (Exception ignore) {}
 
 
         try {
-            domainObjectSource.find(StoreFile.class, new HashMap<String, Object>(){{
+            domainObjectSource.find(StoreFileReadable.class, new HashMap<String, Object>(){{
                 put("xxxxx", null);
                 put("yyyyy", null);
             }});

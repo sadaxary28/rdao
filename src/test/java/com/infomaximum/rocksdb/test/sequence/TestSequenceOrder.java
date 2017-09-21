@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.test.sequence;
 
+import com.infomaximum.database.core.sequence.Sequence;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.sequence.Sequence;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;

@@ -1,13 +1,14 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.transaction.Transaction;
+import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.domain.ExchangeFolder;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
+import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.transaction.engine.Monad;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -28,27 +29,27 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         String uuid = "AQMkAGYzOGZhMGRlLTk0ZmQtNGU4Mi05YzMyLWU1YmMyODgAMzA1MzkALgAAA2q7G9o/e25DjV2GPrKtaxsBAOVhxnfq2u5Gj3QIHLYcQRoAAAIBDQAAAA==";
         String userEmail = "test1@infomaximum.onmicrosoft.com";
 
-        //Добавляем объект
+//        Добавляем объект
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
-                ExchangeFolder exchangeFolder = domainObjectSource.create(transaction, ExchangeFolder.class);
+                ExchangeFolderEditable exchangeFolder = domainObjectSource.create(ExchangeFolderEditable.class);
                 exchangeFolder.setUuid(uuid);
                 exchangeFolder.setUserEmail(userEmail);
-                exchangeFolder.save();
+                domainObjectSource.save(exchangeFolder, transaction);
             }
         });
 
 
         //Ищем объект
-        ExchangeFolder exchangeFolder = domainObjectSource.find(ExchangeFolder.class, new HashMap<String, Object>(){{
-            put("uuid", uuid);
-            put("userEmail", userEmail);
+        ExchangeFolderReadable exchangeFolder = domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>(){{
+            put(ExchangeFolderReadable.FIELD_UUID, uuid);
+            put(ExchangeFolderReadable.FIELD_USER_EMAIL, userEmail);
         }});
         Assert.assertNotNull(exchangeFolder);
         Assert.assertEquals(uuid, exchangeFolder.getUuid());

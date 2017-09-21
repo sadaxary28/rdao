@@ -1,13 +1,14 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.transaction.Transaction;
+import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.domain.StoreFile;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.domain.StoreFileEditable;
+import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
-import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.transaction.engine.Monad;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -26,20 +27,20 @@ public class IndexRemove1DomainObjectTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
         //Проверяем, что таких объектов нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFile.class, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFile.class, 2L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
 
         //Добавляем объекты
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
                 for (int i=1; i<=2; i++) {
-                    StoreFile storeFile = domainObjectSource.create(transaction, StoreFile.class);
+                    StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
                     storeFile.setSize(100);
-                    storeFile.save();
+                    domainObjectSource.save(storeFile, transaction);
                 }
             }
         });
@@ -48,15 +49,15 @@ public class IndexRemove1DomainObjectTest extends RocksDataTest {
         domainObjectSource.getEngineTransaction().execute(new Monad() {
             @Override
             public void action(Transaction transaction) throws Exception {
-                StoreFile storeFile = domainObjectSource.edit(transaction, StoreFile.class, 1L);
+                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setSize(99);
-                storeFile.save();
+                domainObjectSource.save(storeFile, transaction);
             }
         });
 
 
         //Ищем объекты по size
-        StoreFile storeFile = domainObjectSource.find(StoreFile.class, "size", 100L);
+        StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, "size", 100L);
         Assert.assertNotNull(storeFile);
         Assert.assertEquals(100, storeFile.getSize());
 

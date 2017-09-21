@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.domain.type;
 
-import com.infomaximum.rocksdb.core.struct.enums.PersistentEnumId;
+import com.infomaximum.database.struct.enums.PersistentEnumId;
 
 /**
  * Created by kris on 16.06.17.

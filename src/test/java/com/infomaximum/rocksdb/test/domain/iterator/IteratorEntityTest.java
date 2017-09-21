@@ -1,14 +1,15 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
+import com.infomaximum.database.core.transaction.Transaction;
+import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.core.datasource.DataSourceImpl;
-import com.infomaximum.rocksdb.core.objectsource.DomainObjectSource;
-import com.infomaximum.rocksdb.domain.Department;
+import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.domain.StoreFileEditable;
+import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import com.infomaximum.rocksdb.test.domain.create.CreateDomainObjectTest;
-import com.infomaximum.rocksdb.transaction.Transaction;
-import com.infomaximum.rocksdb.transaction.engine.Monad;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -29,10 +30,10 @@ public class IteratorEntityTest extends RocksDataTest {
         RocksDataBase rocksDataBase = new RocksdbBuilder()
                 .withPath(pathDataBase)
                 .build();
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new DataSourceImpl(rocksDataBase));
+        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
 
 
-        Iterator iteratorEmpty = domainObjectSource.iterator(Department.class);
+        Iterator iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class);
         Assert.assertFalse(iteratorEmpty.hasNext());
         try {
             iteratorEmpty.next();
@@ -46,7 +47,7 @@ public class IteratorEntityTest extends RocksDataTest {
             @Override
             public void action(Transaction transaction) throws Exception {
                 for (int i=0; i< size; i++) {
-                    domainObjectSource.create(transaction, Department.class).save();
+                    domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
                 }
             }
         });
@@ -55,12 +56,12 @@ public class IteratorEntityTest extends RocksDataTest {
         //Итератором пробегаемся
         int count = 0;
         long prevId=0;
-        for (Department department: domainObjectSource.iterator(Department.class)) {
+        for (StoreFileReadable storeFile: domainObjectSource.iterator(StoreFileReadable.class)) {
             count++;
 
-            if (prevId==department.getId()) Assert.fail("Fail next object");
-            if (prevId>=department.getId()) Assert.fail("Fail sort id to iterators");
-            prevId=department.getId();
+            if (prevId==storeFile.getId()) Assert.fail("Fail next object");
+            if (prevId>=storeFile.getId()) Assert.fail("Fail sort id to iterators");
+            prevId=storeFile.getId();
         }
         Assert.assertEquals(size, count);
 
