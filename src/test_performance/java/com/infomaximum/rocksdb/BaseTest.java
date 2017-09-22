@@ -32,7 +32,7 @@ public abstract class BaseTest {
 
     @After
     public void destroy() throws IOException {
-        rocksDataBase.destroy();
+        rocksDataBase.close();
         FileUtils.deleteDirectory(pathDataBase.toAbsolutePath().toFile());
     }
 }

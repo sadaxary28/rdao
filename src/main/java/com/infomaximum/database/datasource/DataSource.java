@@ -12,7 +12,7 @@ import java.util.Set;
  */
 public interface DataSource {
 
-    public long nextId(String columnFamily) throws DataSourceDatabaseException;
+    public long nextId(String sequenceName) throws DataSourceDatabaseException;
 
     public byte[] getField(String columnFamily, long id, String field) throws DataSourceDatabaseException;
 
@@ -23,4 +23,9 @@ public interface DataSource {
     public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
 
     public void commit(List<Modifier> modifiers) throws DataSourceDatabaseException;
+
+    void createColumnFamily(String name) throws DataSourceDatabaseException;
+    void dropColumnFamily(String name) throws DataSourceDatabaseException;
+    void createSequence(String name) throws DataSourceDatabaseException;
+    void dropSequence(String name) throws DataSourceDatabaseException;
 }

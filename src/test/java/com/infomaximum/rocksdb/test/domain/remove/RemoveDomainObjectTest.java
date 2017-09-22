@@ -28,6 +28,7 @@ public class RemoveDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
@@ -63,7 +64,7 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
         Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

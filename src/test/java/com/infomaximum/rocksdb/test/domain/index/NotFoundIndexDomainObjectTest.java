@@ -28,6 +28,7 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(ExchangeFolderReadable.class);
 
         try {
             domainObjectSource.find(ExchangeFolderReadable.class, "uuid", "");
@@ -42,7 +43,7 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
             Assert.fail();
         } catch (NotFoundIndexDatabaseException ignore) {}
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

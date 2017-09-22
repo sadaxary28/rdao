@@ -30,6 +30,7 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(ExchangeFolderEditable.class);
 
         String uuid = "AQMkAGYzOGZhMGRlLTk0ZmQtNGU4Mi05YzMyLWU1YmMyODgAMzA1MzkALgAAA2q7G9o/e25DjV2GPrKtaxsBAOVhxnfq2u5Gj3QIHLYcQRoAAAIBDQAAAA==";
         String userEmail = "test1@infomaximum.onmicrosoft.com";
@@ -55,7 +56,7 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(uuid, exchangeFolder.getUuid());
         Assert.assertEquals(userEmail, exchangeFolder.getUserEmail());
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

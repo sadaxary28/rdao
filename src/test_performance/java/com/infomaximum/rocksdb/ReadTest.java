@@ -10,7 +10,9 @@ public class ReadTest  extends BaseTest {
 
     @Test
     public void iterateRecords1() throws Exception {
-        final int recordCount = 1000 * 1000;
+        final int recordCount = 10000;
+
+        domainObjectSource.createEntity(RecordReadable.class);
 
         Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
         for (int i = 0; i < recordCount; ++i) {

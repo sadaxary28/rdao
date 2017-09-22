@@ -8,6 +8,8 @@ public class WriteTest extends BaseTest {
 
     @Test
     public void createNonIndexedRecords1() throws Exception {
+        domainObjectSource.createEntity(RecordReadable.class);
+
         PerfomanceTest.test(1000, step-> {
             Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
             RecordEditable rec = domainObjectSource.create(RecordEditable.class);
@@ -19,6 +21,8 @@ public class WriteTest extends BaseTest {
 
     @Test
     public void createNonIndexedRecords2() throws Exception {
+        domainObjectSource.createEntity(RecordReadable.class);
+
         Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
         PerfomanceTest.test(100000, step-> {
             RecordEditable rec = domainObjectSource.create(RecordEditable.class);

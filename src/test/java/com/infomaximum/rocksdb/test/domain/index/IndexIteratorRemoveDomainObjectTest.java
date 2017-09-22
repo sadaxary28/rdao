@@ -28,6 +28,7 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Добавляем объекты
         domainObjectSource.getEngineTransaction().execute(new Monad() {
@@ -62,7 +63,7 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(9, count);
 
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

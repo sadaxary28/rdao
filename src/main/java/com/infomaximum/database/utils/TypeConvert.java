@@ -12,13 +12,13 @@ import java.util.Date;
  */
 public class TypeConvert {
 
-    public static final Charset ROCKSDB_CHARSET = Charset.forName("UTF-8");
+    private static final Charset CHARSET = Charset.forName("UTF-8");
 
     public static String getString(byte[] value){
         if (value==null) {
             return null;
         } else {
-            return new String(value, TypeConvert.ROCKSDB_CHARSET);
+            return new String(value, TypeConvert.CHARSET);
         }
     }
 
@@ -56,7 +56,7 @@ public class TypeConvert {
 
 
     public static byte[] pack(String value){
-        return value.getBytes(TypeConvert.ROCKSDB_CHARSET);
+        return value.getBytes(TypeConvert.CHARSET);
     }
 
     public static byte[] pack(int value){

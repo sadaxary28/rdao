@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.infomaximum.database.core.sequence.SequenceManager;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
@@ -11,8 +12,6 @@ import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,18 +23,18 @@ import java.util.Set;
  */
 public class RocksDBDataSourceImpl implements DataSource {
 
-    private final static Logger log = LoggerFactory.getLogger(RocksDBDataSourceImpl.class);
-
     private final RocksDataBase rocksDataBase;
+    private final SequenceManager sequenceManager;
 
-    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) {
+    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) throws RocksDBException {
         this.rocksDataBase = rocksDataBase;
+        this.sequenceManager = new SequenceManager(rocksDataBase);
     }
 
     @Override
-    public long nextId(String sequenceName) throws DataSourceDatabaseException {
+    public long nextId(String entityName) throws DataSourceDatabaseException {
         try {
-            return rocksDataBase.getSequence(sequenceName).next();
+            return sequenceManager.getSequence(entityName).next();
         } catch (Exception e) {
             throw new DataSourceDatabaseException(e);
         }
@@ -50,7 +49,6 @@ public class RocksDBDataSourceImpl implements DataSource {
             throw new DataSourceDatabaseException(e);
         }
     }
-
 
     @Override
     public EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException {
@@ -237,4 +235,39 @@ public class RocksDBDataSourceImpl implements DataSource {
         }
     }
 
+    @Override
+    public void createColumnFamily(String name) throws DataSourceDatabaseException {
+        try {
+            rocksDataBase.createColumnFamily(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void dropColumnFamily(String name) throws DataSourceDatabaseException {
+        try {
+            rocksDataBase.dropColumnFamily(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void createSequence(String name) throws DataSourceDatabaseException {
+        try {
+            sequenceManager.createSequence(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void dropSequence(String name) throws DataSourceDatabaseException {
+        try {
+            sequenceManager.dropSequence(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
 }
