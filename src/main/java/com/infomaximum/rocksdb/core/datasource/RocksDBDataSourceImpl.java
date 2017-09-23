@@ -11,11 +11,10 @@ import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.domainobject.key.*;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exeption.IteratorDataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +39,7 @@ public class RocksDBDataSourceImpl implements DataSource {
         this.rocksDataBase = rocksDataBase;
         this.sequenceManager = new SequenceManager(rocksDataBase);
 
+        this.seqIterator = new AtomicLong(1);
         this.iterators = CacheBuilder.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .removalListener(notification -> {
@@ -252,14 +252,9 @@ public class RocksDBDataSourceImpl implements DataSource {
 
     @Override
     public long createIterator(String columnFamily) throws DataSourceDatabaseException {
-        RocksIterator rocksIterator;
-        try {
-            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
-            rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
-            rocksIterator.seekToFirst();
-        } catch (RocksDBException e) {
-            throw new DataSourceDatabaseException(e);
-        }
+        ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+        RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
+        rocksIterator.seekToFirst();
 
         long iteratorId = seqIterator.getAndIncrement();
         iterators.put(iteratorId, rocksIterator);

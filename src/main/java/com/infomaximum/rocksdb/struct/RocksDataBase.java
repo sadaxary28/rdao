@@ -1,7 +1,10 @@
 package com.infomaximum.rocksdb.struct;
 
 import com.infomaximum.database.utils.TypeConvert;
-import org.rocksdb.*;
+import org.rocksdb.ColumnFamilyDescriptor;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;

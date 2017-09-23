@@ -61,7 +61,7 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
         Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

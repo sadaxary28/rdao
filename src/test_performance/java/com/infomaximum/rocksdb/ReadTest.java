@@ -6,14 +6,13 @@ import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
-import java.util.Iterator;
 import java.util.UUID;
 
 public class ReadTest  extends BaseTest {
 
     @Test
     public void iterateRecords() throws Exception {
-        final int recordCount = 10000;
+        final int recordCount = 1000 * 1000;
 
         domainObjectSource.createEntity(RecordReadable.class);
 
@@ -50,7 +49,7 @@ public class ReadTest  extends BaseTest {
         transaction.commit();
 
         PerfomanceTest.test(1, step -> {
-            Iterator<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_STRING_1, fixedString);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_STRING_1, fixedString);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }
@@ -74,7 +73,7 @@ public class ReadTest  extends BaseTest {
         transaction.commit();
 
         PerfomanceTest.test(1, step -> {
-            Iterator<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_LONG_1, fixedLong);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_LONG_1, fixedLong);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }

@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;

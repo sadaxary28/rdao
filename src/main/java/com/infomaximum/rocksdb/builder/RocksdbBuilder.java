@@ -1,13 +1,13 @@
 package com.infomaximum.rocksdb.builder;
 
-import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
