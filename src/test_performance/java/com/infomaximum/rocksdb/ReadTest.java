@@ -25,9 +25,10 @@ public class ReadTest  extends BaseTest {
         transaction.commit();
 
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class);
-            while (i.hasNext()) {
-                RecordReadable rec = i.next();
+            try(IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class)) {
+                while (i.hasNext()) {
+                    RecordReadable rec = i.next();
+                }
             }
         });
     }
