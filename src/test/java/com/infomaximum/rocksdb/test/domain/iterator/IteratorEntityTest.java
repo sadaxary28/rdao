@@ -31,6 +31,7 @@ public class IteratorEntityTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
 
         try (IteratorEntity iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class)){
@@ -72,6 +73,6 @@ public class IteratorEntityTest extends RocksDataTest {
         }
         Assert.assertEquals(size, count);
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 }

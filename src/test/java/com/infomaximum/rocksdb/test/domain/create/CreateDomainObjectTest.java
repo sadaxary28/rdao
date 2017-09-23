@@ -29,6 +29,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
@@ -59,7 +60,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(size, storeFileCheckSave.getSize());
         Assert.assertEquals(format, storeFileCheckSave.getFormat());
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

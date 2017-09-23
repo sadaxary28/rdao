@@ -1,59 +1,62 @@
 package com.infomaximum.rocksdb.struct;
 
-import com.infomaximum.database.core.sequence.ManagerSequence;
-import com.infomaximum.database.core.sequence.Sequence;
-import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.*;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by kris on 10.03.17.
  */
-public class RocksDataBase {
+public class RocksDataBase implements AutoCloseable {
+
+    public static final String DEFAULT_COLUMN_FAMILY = "default";
 
     private final RocksDB rocksDB;
-    private final DBOptions dbOptions;
-    private final Map<String, ColumnFamilyHandle> columnFamilies;
-    private final ManagerSequence managerSequence;
+    private final ConcurrentMap<String, ColumnFamilyHandle> columnFamilies;
 
-    public RocksDataBase(RocksDB rocksDB, DBOptions dbOptions, Map<String, ColumnFamilyHandle> columnFamilies, Set<Class<? extends DomainObject>> classMaintenancies) throws RocksDBException {
+    public RocksDataBase(RocksDB rocksDB, ConcurrentMap<String, ColumnFamilyHandle> columnFamilies) throws RocksDBException {
         this.rocksDB = rocksDB;
-        this.dbOptions=dbOptions;
-        this.columnFamilies=columnFamilies;
-
-        this.managerSequence=new ManagerSequence(this);
-    }
-
-    public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) throws RocksDBException {
-        ColumnFamilyHandle columnFamilyHandle = columnFamilies.get(columnFamilyName);
-        if (columnFamilyHandle==null) {
-            synchronized (columnFamilies) {
-                columnFamilyHandle = columnFamilies.get(columnFamilyName);
-                if (columnFamilyHandle==null) {
-                    ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(columnFamilyName.getBytes(TypeConvert.ROCKSDB_CHARSET));
-                    columnFamilyHandle = rocksDB.createColumnFamily(columnFamilyDescriptor);
-                    columnFamilies.put(columnFamilyName, columnFamilyHandle);
-                }
-            }
-        }
-        return columnFamilyHandle;
+        this.columnFamilies = columnFamilies;
     }
 
     public RocksDB getRocksDB() {
         return rocksDB;
     }
 
-    public Sequence getSequence(String sequenceName) throws RocksDBException {
-        return managerSequence.getSequence(sequenceName);
+    public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) {
+        return columnFamilies.get(columnFamilyName);
     }
 
-    public void destroy() {
-        //TODO необходимо дестроить все columnFamilyHandle
+    public ColumnFamilyHandle getDefaultColumnFamily() {
+        return columnFamilies.get(RocksDataBase.DEFAULT_COLUMN_FAMILY);
+    }
 
-        dbOptions.close();
+    public Map<String, ColumnFamilyHandle> getColumnFamilies() {
+        return columnFamilies;
+    }
+
+    public ColumnFamilyHandle createColumnFamily(String columnFamilyName) throws RocksDBException {
+        ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(TypeConvert.pack(columnFamilyName));
+        ColumnFamilyHandle columnFamilyHandle = rocksDB.createColumnFamily(columnFamilyDescriptor);
+        columnFamilies.put(columnFamilyName, columnFamilyHandle);
+        return columnFamilyHandle;
+    }
+
+    public void dropColumnFamily(String columnFamilyName) throws RocksDBException {
+        ColumnFamilyHandle columnFamilyHandle = columnFamilies.remove(columnFamilyName);
+        rocksDB.dropColumnFamily(columnFamilyHandle);
+        columnFamilyHandle.close();
+    }
+
+    @Override
+    public void close() {
+        for (Map.Entry<String, ColumnFamilyHandle> entry : columnFamilies.entrySet()) {
+            entry.getValue().close();
+        }
+        columnFamilies.clear();
+
         rocksDB.close();
     }
 }

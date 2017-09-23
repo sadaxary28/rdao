@@ -8,23 +8,15 @@ import org.rocksdb.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by kris on 07.10.16.
  */
 public class RocksdbBuilder {
 
-	private DBOptions dbOptions;
 	private Path path;
-
-	private Set<Class<? extends DomainObject>> maintenanceClasses = new HashSet<>();
-
-	public RocksdbBuilder() {
-		RocksDB.loadLibrary();
-
-		this.dbOptions = new DBOptions();
-		this.dbOptions.setCreateIfMissing(true);
-	}
 
 	public RocksdbBuilder withPath(String path) {
 		this.path = Paths.get(path);
@@ -36,43 +28,33 @@ public class RocksdbBuilder {
 		return this;
 	}
 
-	public RocksdbBuilder addMaintenanceClass(Class<? extends DomainObject> clazz) {
-		maintenanceClasses.add(clazz);
-		return this;
-	}
-
 	public RocksDataBase build() throws RocksDBException {
 		//Загружаем список columnFamilyName
-		Options options = new Options().setCreateIfMissing(true);
-		List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<ColumnFamilyDescriptor>();
-		for (byte[] columnFamilyName: RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
-			columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
-		}
-		if (columnFamilyDescriptors.isEmpty()) columnFamilyDescriptors.add(new ColumnFamilyDescriptor("default".getBytes(TypeConvert.ROCKSDB_CHARSET)));
-		options.close();
-
-
-		//Подключаемся к базе данных
-		List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<ColumnFamilyHandle>();
-		RocksDB rocksDB = RocksDB.open(dbOptions, path.toAbsolutePath().toString(), columnFamilyDescriptors, columnFamilyHandles);
-
-		Map<String, ColumnFamilyHandle> columnFamilies = new HashMap<String, ColumnFamilyHandle>();
-		for (int i=0; i<columnFamilyDescriptors.size(); i++) {
-			String columnFamilyName = new String(columnFamilyDescriptors.get(i).columnFamilyName(), TypeConvert.ROCKSDB_CHARSET);
-			ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
-			columnFamilies.put(columnFamilyName, columnFamilyHandle);
+		List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+		try (Options options = new Options().setCreateIfMissing(true)) {
+			for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
+				columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
+			}
+			if (columnFamilyDescriptors.isEmpty()) {
+				columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDataBase.DEFAULT_COLUMN_FAMILY)));
+			}
 		}
 
+        //Подключаемся к базе данных
+        List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
+        RocksDB rocksDB;
+        try (DBOptions dbOptions = new DBOptions().setCreateIfMissing(true)) {
+            rocksDB = RocksDB.open(dbOptions, path.toAbsolutePath().toString(), columnFamilyDescriptors, columnFamilyHandles);
+        }
 
-		//Запускаем миграционные скрипты
-//		if (migrationItems==null) throw new RuntimeException("Not found migration engine");
-//		MigrationWorker migrationWorker = new MigrationWorker(
-//				rocksDB, migrationItems
-//		);
-//		migrationWorker.work();
+        ConcurrentMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
+        for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
+            String columnFamilyName = TypeConvert.getString(columnFamilyDescriptors.get(i).columnFamilyName());
+            ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
+            columnFamilies.put(columnFamilyName, columnFamilyHandle);
+        }
 
-		//Теперь можно создавать соединение с базой данной
-		return new RocksDataBase(rocksDB, dbOptions, columnFamilies, maintenanceClasses);
+        //Теперь можно создавать соединение с базой данной
+        return new RocksDataBase(rocksDB, columnFamilies);
 	}
-
 }

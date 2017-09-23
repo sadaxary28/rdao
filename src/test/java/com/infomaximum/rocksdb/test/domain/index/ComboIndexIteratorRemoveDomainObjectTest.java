@@ -31,6 +31,7 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Добавляем объекты
         domainObjectSource.getEngineTransaction().execute(new Monad() {
@@ -76,7 +77,7 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(4, count);
 
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

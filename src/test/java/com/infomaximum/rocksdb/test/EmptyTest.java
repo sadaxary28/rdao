@@ -17,7 +17,7 @@ public class EmptyTest extends RocksDataTest {
                 .withPath(pathDataBase)
                 .build();
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

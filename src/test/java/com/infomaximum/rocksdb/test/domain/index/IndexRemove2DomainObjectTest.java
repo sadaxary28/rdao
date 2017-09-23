@@ -28,6 +28,7 @@ public class IndexRemove2DomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
@@ -57,7 +58,7 @@ public class IndexRemove2DomainObjectTest extends RocksDataTest {
         StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, StoreFileReadable.FIELD_SIZE, 100L);
         Assert.assertNull(storeFile);
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

@@ -28,6 +28,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
         for (long i=1; i<=100; i++) {
@@ -60,7 +61,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
             Assert.assertEquals(size, storeFile.getSize());
         }
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

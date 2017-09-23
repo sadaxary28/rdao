@@ -12,48 +12,44 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Sequence {
 
-    private final static int SIZE_CACHE=10;
+    private final static int SIZE_CACHE = 10;
 
     private final RocksDataBase rocksDataBase;
     private final ColumnFamilyHandle columnFamilyHandle;
-    private final byte[] sequenceName;
+    private final byte[] key;
 
-    private final AtomicLong increment;
-    private long maxCacheIncrement;
+    private final AtomicLong counter;
+    private long maxCacheValue;
 
-    public Sequence(RocksDataBase rocksDataBase, ColumnFamilyHandle columnFamilyHandle, byte[] sequenceName) throws RocksDBException {
-        this.rocksDataBase=rocksDataBase;
+    protected Sequence(RocksDataBase rocksDataBase, ColumnFamilyHandle columnFamilyHandle, byte[] key) throws RocksDBException {
+        this.rocksDataBase = rocksDataBase;
         this.columnFamilyHandle = columnFamilyHandle;
-        this.sequenceName = sequenceName;
+        this.key = key;
 
-        increment = new AtomicLong(0);
-        byte[] value = rocksDataBase.getRocksDB().get(columnFamilyHandle, sequenceName);
-        if (value==null) {
-            increment.set(0);
-            maxCacheIncrement=0;
-        } else {
-            long lValue = TypeConvert.getLong(value);
-            increment.set(lValue);
-            maxCacheIncrement=lValue;
-        }
-        tryRefillCacheIncrement();
+        byte[] value = rocksDataBase.getRocksDB().get(columnFamilyHandle, key);
+        maxCacheValue = TypeConvert.getLong(value);
+        counter = new AtomicLong(maxCacheValue);
+        growCache();
     }
 
-    private synchronized void tryRefillCacheIncrement() throws RocksDBException {
-        if (maxCacheIncrement - increment.get()>SIZE_CACHE) return;
-        maxCacheIncrement += SIZE_CACHE;
-        rocksDataBase.getRocksDB().put(columnFamilyHandle, sequenceName, TypeConvert.pack(maxCacheIncrement));
+    private synchronized void growCache() throws RocksDBException {
+        if (maxCacheValue - counter.get() > SIZE_CACHE) {
+            return;
+        }
+
+        maxCacheValue += SIZE_CACHE;
+        rocksDataBase.getRocksDB().put(columnFamilyHandle, key, TypeConvert.pack(maxCacheValue));
     }
 
     public long next() throws RocksDBException {
         long value;
         do {
-            value = increment.get();
-            if (value>=maxCacheIncrement) {
+            value = counter.get();
+            if (value >= maxCacheValue) {
                 //Кеш закончился-берем еще
-                tryRefillCacheIncrement();
+                growCache();
             }
-        } while (!increment.compareAndSet(value, value + 1));
+        } while (!counter.compareAndSet(value, value + 1));
         return value + 1;
     }
 }

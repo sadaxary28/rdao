@@ -12,19 +12,24 @@ import java.util.Set;
  */
 public interface DataSource {
 
-    public long nextId(String columnFamily) throws DataSourceDatabaseException;
+    long nextId(String sequenceName) throws DataSourceDatabaseException;
 
-    public byte[] getField(String columnFamily, long id, String field) throws DataSourceDatabaseException;
+    byte[] getField(String columnFamily, long id, String field) throws DataSourceDatabaseException;
 
-    public EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) throws DataSourceDatabaseException;
+    EntitySource getEntitySource(String columnFamily, long id, Set<String> fields) throws DataSourceDatabaseException;
 
-    public EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException;
+    EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException;
 
-    public EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
+    EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
 
-    public void commit(List<Modifier> modifiers) throws DataSourceDatabaseException;
+    void commit(List<Modifier> modifiers) throws DataSourceDatabaseException;
 
-    public long createIterator(String columnFamily) throws DataSourceDatabaseException;
+    long createIterator(String columnFamily) throws DataSourceDatabaseException;
 
-    public void closeIterator(long iteratorId);
+    void closeIterator(long iteratorId);
+
+    void createColumnFamily(String name) throws DataSourceDatabaseException;
+    void dropColumnFamily(String name) throws DataSourceDatabaseException;
+    void createSequence(String name) throws DataSourceDatabaseException;
+    void dropSequence(String name) throws DataSourceDatabaseException;
 }

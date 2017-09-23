@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.core.datasource;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.infomaximum.database.core.sequence.SequenceManager;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
@@ -10,7 +11,6 @@ import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.domainobject.key.*;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.IteratorDataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
@@ -29,18 +29,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RocksDBDataSourceImpl implements DataSource {
 
-    private final static Logger log = LoggerFactory.getLogger(RocksDBDataSourceImpl.class);
-
     private final RocksDataBase rocksDataBase;
+    private final SequenceManager sequenceManager;
 
     private final AtomicLong seqIterator;
     private final Cache<Object, Object> iterators;
 
 
-    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) {
+    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) throws RocksDBException {
         this.rocksDataBase = rocksDataBase;
-
-        this.seqIterator = new AtomicLong(1);
+        this.sequenceManager = new SequenceManager(rocksDataBase);
 
         this.iterators = CacheBuilder.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -52,9 +50,9 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public long nextId(String sequenceName) throws DataSourceDatabaseException {
+    public long nextId(String entityName) throws DataSourceDatabaseException {
         try {
-            return rocksDataBase.getSequence(sequenceName).next();
+            return sequenceManager.getSequence(entityName).next();
         } catch (Exception e) {
             throw new DataSourceDatabaseException(e);
         }
@@ -251,6 +249,7 @@ public class RocksDBDataSourceImpl implements DataSource {
         }
     }
 
+
     @Override
     public long createIterator(String columnFamily) throws DataSourceDatabaseException {
         RocksIterator rocksIterator;
@@ -273,4 +272,40 @@ public class RocksDBDataSourceImpl implements DataSource {
         iterators.invalidate(iteratorId);
     }
 
+
+    @Override
+    public void createColumnFamily(String name) throws DataSourceDatabaseException {
+        try {
+            rocksDataBase.createColumnFamily(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void dropColumnFamily(String name) throws DataSourceDatabaseException {
+        try {
+            rocksDataBase.dropColumnFamily(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void createSequence(String name) throws DataSourceDatabaseException {
+        try {
+            sequenceManager.createSequence(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
+
+    @Override
+    public void dropSequence(String name) throws DataSourceDatabaseException {
+        try {
+            sequenceManager.dropSequence(name);
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+    }
 }

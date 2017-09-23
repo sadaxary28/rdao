@@ -27,6 +27,7 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         try {
             domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);
@@ -42,7 +43,7 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
             Assert.fail();
         } catch (Exception ignore) {}
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }
