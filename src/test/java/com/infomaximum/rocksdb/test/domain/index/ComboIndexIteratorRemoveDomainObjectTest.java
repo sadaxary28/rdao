@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
@@ -57,14 +58,20 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
 
         //Ищем объекты по size
         int count=0;
-        for (StoreFileReadable storeFile: domainObjectSource.findAll(StoreFileReadable.class, new HashMap<String, Object>(){{
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, new HashMap<String, Object>(){{
             put(StoreFileReadable.FIELD_SIZE, 100L);
             put(StoreFileReadable.FIELD_FILE_NAME, "1");
         }})) {
-            count++;
-            Assert.assertNotNull(storeFile);
-            Assert.assertEquals(100, storeFile.getSize());
-            Assert.assertEquals("1", storeFile.getFileName());
+            while(iStoreFileReadable.hasNext()) {
+                StoreFileReadable storeFile = iStoreFileReadable.next();
+
+                Assert.assertNotNull(storeFile);
+                Assert.assertEquals(100, storeFile.getSize());
+                Assert.assertEquals("1", storeFile.getFileName());
+
+                count++;
+            }
+
         }
         Assert.assertEquals(4, count);
 

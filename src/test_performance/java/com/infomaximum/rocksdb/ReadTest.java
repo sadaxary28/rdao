@@ -1,10 +1,9 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import org.junit.Test;
-
-import java.util.Iterator;
 
 public class ReadTest  extends BaseTest {
 
@@ -21,7 +20,7 @@ public class ReadTest  extends BaseTest {
         transaction.commit();
 
         PerfomanceTest.test(1, step -> {
-            Iterator<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class);
+            IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class);
             while (i.hasNext()) {
                 RecordReadable rec = i.next();
             }

@@ -13,7 +13,10 @@ import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Created by kris on 30.04.17.
@@ -103,23 +106,17 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     }
 
     @Override
-    public E next() {
+    public E next() throws DataSourceDatabaseException {
         if (nextElement==null) throw new NoSuchElementException();
 
         E element = nextElement;
-        try {
-            nextElement = loadNextElement(false);
-        } catch (Exception e) {
-            //TODO подумать
-            throw new RuntimeException(e);
-        }
+        nextElement = loadNextElement(false);
 
         return element;
     }
 
     @Override
-    public Iterator<E> iterator() {
-        return this;
+    public void close() throws Exception {
+        //TODO Ulitin V. реализовать
     }
-
 }

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Created by kris on 01.05.17.
  */
-public interface EntitySource extends Serializable{
+public interface EntitySource extends Serializable {
 
     public long getId();
 

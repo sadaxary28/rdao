@@ -20,7 +20,11 @@ public interface DataSource {
 
     public EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException;
 
-    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
+    public EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
 
     public void commit(List<Modifier> modifiers) throws DataSourceDatabaseException;
+
+    public long createIterator(String columnFamily) throws DataSourceDatabaseException;
+
+    public void closeIterator(long iteratorId);
 }

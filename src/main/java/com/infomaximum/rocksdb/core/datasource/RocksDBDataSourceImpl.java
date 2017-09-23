@@ -1,5 +1,7 @@
 package com.infomaximum.rocksdb.core.datasource;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.struct.modifier.ModifierSet;
@@ -8,6 +10,7 @@ import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.domainobject.key.*;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exeption.IteratorDataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.rocksdb.*;
@@ -18,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by user on 20.04.2017.
@@ -28,8 +33,22 @@ public class RocksDBDataSourceImpl implements DataSource {
 
     private final RocksDataBase rocksDataBase;
 
+    private final AtomicLong seqIterator;
+    private final Cache<Object, Object> iterators;
+
+
     public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) {
         this.rocksDataBase = rocksDataBase;
+
+        this.seqIterator = new AtomicLong(1);
+
+        this.iterators = CacheBuilder.newBuilder()
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .removalListener(notification -> {
+                    RocksIterator rocksIterator = (RocksIterator) notification.getValue();
+                    rocksIterator.close();
+                })
+                .build();
     }
 
     @Override
@@ -138,44 +157,39 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource nextEntitySource(String columnFamily, Long prevId, Set<String> fields) throws DataSourceDatabaseException {
+    public EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException {
         try {
-            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+            RocksIterator rocksIterator = (RocksIterator) iterators.getIfPresent(iteratorId);
+            if (rocksIterator == null) throw new IteratorDataSourceDatabaseException("iterator " + iteratorId + " not found");
 
             KeyAvailability keyAvailability = null;
             Map<String, byte[]> fieldValues = new HashMap<String, byte[]>();
-            try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
-                if (prevId == null) {
-                    rocksIterator.seekToFirst();
-                } else {
-                    rocksIterator.seek(TypeConvert.pack(new KeyAvailability(prevId).pack()));
+            while (true) {
+                if (!rocksIterator.isValid()) {
+                    rocksIterator.status();
+                    break;
                 }
-                while (true) {
-                    if (!rocksIterator.isValid()) break;
 
-                    Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
-                    TypeKey typeKey = key.getTypeKey();
+                Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
+                TypeKey typeKey = key.getTypeKey();
+                if (typeKey == TypeKey.AVAILABILITY) {
                     if (keyAvailability == null) {
-                        if (typeKey == TypeKey.AVAILABILITY) {
-                            if (prevId == null) {
-                                keyAvailability = (KeyAvailability) key;
-                            } else if (key.getId() != prevId) {
-                                keyAvailability = (KeyAvailability) key;
-                            }
-                        }
+                        keyAvailability = (KeyAvailability) key;
+                    } else {
+                        break;//начался следующий элемент
                     }
-
-                    if (keyAvailability != null) {
-                        if (typeKey == TypeKey.FIELD) {
-                            String fieldName = ((KeyField) key).getFieldName();
-                            if (fields.contains(fieldName)) {
-                                fieldValues.put(fieldName, rocksIterator.value());
-                            }
-                        }
-                    }
-
-                    rocksIterator.next();
                 }
+
+                if (keyAvailability != null) {
+                    if (typeKey == TypeKey.FIELD) {
+                        String fieldName = ((KeyField) key).getFieldName();
+                        if (fields.contains(fieldName)) {
+                            fieldValues.put(fieldName, rocksIterator.value());
+                        }
+                    }
+                }
+
+                rocksIterator.next();
             }
 
             if (keyAvailability != null) {
@@ -235,6 +249,28 @@ public class RocksDBDataSourceImpl implements DataSource {
         } catch (RocksDBException e) {
             throw new DataSourceDatabaseException(e);
         }
+    }
+
+    @Override
+    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
+        RocksIterator rocksIterator;
+        try {
+            ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
+            rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle);
+            rocksIterator.seekToFirst();
+        } catch (RocksDBException e) {
+            throw new DataSourceDatabaseException(e);
+        }
+
+        long iteratorId = seqIterator.getAndIncrement();
+        iterators.put(iteratorId, rocksIterator);
+
+        return iteratorId;
+    }
+
+    @Override
+    public void closeIterator(long iteratorId) {
+        iterators.invalidate(iteratorId);
     }
 
 }

@@ -1,18 +1,15 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.domainobject.DomainObject;
-
-import java.util.Iterator;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
 /**
  * Created by kris on 08.09.17.
  */
-public interface IteratorEntity<E extends DomainObject> extends Iterator<E>, Iterable<E>{
+public interface IteratorEntity<E extends DomainObject> extends AutoCloseable {
 
     boolean hasNext();
 
-    E next();
-
-    Iterator<E> iterator();
+    E next() throws DataSourceDatabaseException;
 
 }
