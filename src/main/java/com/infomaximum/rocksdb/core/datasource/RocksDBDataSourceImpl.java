@@ -82,7 +82,10 @@ public class RocksDBDataSourceImpl implements DataSource {
                 }
 
                 while (true) {
-                    if (!rocksIterator.isValid()) return null;
+                    if (!rocksIterator.isValid()) {
+                        rocksIterator.status();
+                        return null;
+                    }
 
                     Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
                     if (key.getTypeKey() != TypeKey.INDEX) return null;
@@ -121,7 +124,10 @@ public class RocksDBDataSourceImpl implements DataSource {
             try (RocksIterator rocksIterator = rocksDataBase.getRocksDB().newIterator(columnFamilyHandle)) {
                 rocksIterator.seek(TypeConvert.pack(new KeyAvailability(id).pack()));
                 while (true) {
-                    if (!rocksIterator.isValid()) break;
+                    if (!rocksIterator.isValid()) {
+                        rocksIterator.status();
+                        break;
+                    }
 
                     Key key = Key.parse(TypeConvert.getString(rocksIterator.key()));
                     if (key.getId() != id) break;
