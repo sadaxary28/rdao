@@ -20,7 +20,7 @@ public interface DataSource {
 
     EntitySource findNextEntitySource(String columnFamily, Long prevId, String indexColumnFamily, int hash, Set<String> fields) throws DataSourceDatabaseException;
 
-    EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException;
+    EntitySource nextEntitySource(long iteratorId, Set<String> fields) throws DataSourceDatabaseException;
 
     void commit(List<Modifier> modifiers) throws DataSourceDatabaseException;
 

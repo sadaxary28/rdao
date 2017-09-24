@@ -40,9 +40,7 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
 
     /** Загружаем следующий элемент */
     private synchronized E loadNextElement() throws DataSourceDatabaseException {
-        Long prevId = (nextElement==null)?null:nextElement.getId();
-
-        EntitySource entitySource = dataSource.nextEntitySource(iteratorId, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+        EntitySource entitySource = dataSource.nextEntitySource(iteratorId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) {
             nextElement = null;
         } else {

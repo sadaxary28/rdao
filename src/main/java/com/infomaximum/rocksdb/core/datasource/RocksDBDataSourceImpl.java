@@ -155,7 +155,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
-    public EntitySource nextEntitySource(long iteratorId, Long prevId, Set<String> fields) throws DataSourceDatabaseException {
+    public EntitySource nextEntitySource(long iteratorId, Set<String> fields) throws DataSourceDatabaseException {
         try {
             RocksIterator rocksIterator = (RocksIterator) iterators.getIfPresent(iteratorId);
             if (rocksIterator == null) throw new IteratorDataSourceDatabaseException("iterator " + iteratorId + " not found");
