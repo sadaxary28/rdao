@@ -5,8 +5,8 @@ import com.infomaximum.database.core.sequence.SequenceDBException;
 import com.infomaximum.database.core.sequence.SequenceManager;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
+import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class SequenceTest extends RocksDataTest {
     public void createNew() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
             sequenceManager.createSequence(sequenceName);
 
@@ -33,7 +33,7 @@ public class SequenceTest extends RocksDataTest {
     public void createExisting() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
             sequenceManager.createSequence(sequenceName);
 
@@ -52,7 +52,7 @@ public class SequenceTest extends RocksDataTest {
     public void drop() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
             sequenceManager.createSequence(sequenceName);
 
@@ -66,7 +66,7 @@ public class SequenceTest extends RocksDataTest {
     public void order() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
             sequenceManager.createSequence(sequenceName);
 
@@ -83,7 +83,7 @@ public class SequenceTest extends RocksDataTest {
         String sequenceName = "sdfuisii";
         Set<Long> ids = new HashSet<>();
 
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             new SequenceManager(rocksDataBase).createSequence(sequenceName);
         }
 
@@ -103,7 +103,7 @@ public class SequenceTest extends RocksDataTest {
     }
 
     private void startDbAndIncrementSequence(String sequenceName, Set<Long> ids, int count) throws Exception {
-        try (RocksDataBase rocksDataBase = new RocksdbBuilder().withPath(pathDataBase).build()) {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
 
             Sequence sequence = sequenceManager.getSequence(sequenceName);

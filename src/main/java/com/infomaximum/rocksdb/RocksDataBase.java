@@ -1,10 +1,7 @@
-package com.infomaximum.rocksdb.struct;
+package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.utils.TypeConvert;
-import org.rocksdb.ColumnFamilyDescriptor;
-import org.rocksdb.ColumnFamilyHandle;
-import org.rocksdb.RocksDB;
-import org.rocksdb.RocksDBException;
+import org.rocksdb.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -16,16 +13,17 @@ public class RocksDataBase implements AutoCloseable {
 
     public static final String DEFAULT_COLUMN_FAMILY = "default";
 
-    private final RocksDB rocksDB;
+    private final OptimisticTransactionDB rocksDB;
     private final ConcurrentMap<String, ColumnFamilyHandle> columnFamilies;
+    private final WriteOptions writeOptions = new WriteOptions();
 
-    public RocksDataBase(RocksDB rocksDB, ConcurrentMap<String, ColumnFamilyHandle> columnFamilies) throws RocksDBException {
+    protected RocksDataBase(OptimisticTransactionDB rocksDB, ConcurrentMap<String, ColumnFamilyHandle> columnFamilies) throws RocksDBException {
         this.rocksDB = rocksDB;
         this.columnFamilies = columnFamilies;
     }
 
     public RocksDB getRocksDB() {
-        return rocksDB;
+        return rocksDB.getBaseDB();
     }
 
     public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) {
@@ -40,21 +38,27 @@ public class RocksDataBase implements AutoCloseable {
         return columnFamilies;
     }
 
+    public Transaction beginTransaction() {
+        return rocksDB.beginTransaction(writeOptions);
+    }
+
     public ColumnFamilyHandle createColumnFamily(String columnFamilyName) throws RocksDBException {
         ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(TypeConvert.pack(columnFamilyName));
-        ColumnFamilyHandle columnFamilyHandle = rocksDB.createColumnFamily(columnFamilyDescriptor);
+        ColumnFamilyHandle columnFamilyHandle = getRocksDB().createColumnFamily(columnFamilyDescriptor);
         columnFamilies.put(columnFamilyName, columnFamilyHandle);
         return columnFamilyHandle;
     }
 
     public void dropColumnFamily(String columnFamilyName) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = columnFamilies.remove(columnFamilyName);
-        rocksDB.dropColumnFamily(columnFamilyHandle);
+        getRocksDB().dropColumnFamily(columnFamilyHandle);
         columnFamilyHandle.close();
     }
 
     @Override
     public void close() {
+        writeOptions.close();
+
         for (Map.Entry<String, ColumnFamilyHandle> entry : columnFamilies.entrySet()) {
             entry.getValue().close();
         }

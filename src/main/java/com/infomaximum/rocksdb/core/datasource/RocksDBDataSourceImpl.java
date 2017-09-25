@@ -13,7 +13,7 @@ import com.infomaximum.database.domainobject.key.*;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.IteratorDataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.rocksdb.*;
 
 import java.util.HashMap;

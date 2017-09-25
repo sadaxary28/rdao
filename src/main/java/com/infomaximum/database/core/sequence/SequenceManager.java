@@ -2,7 +2,7 @@ package com.infomaximum.database.core.sequence;
 
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;

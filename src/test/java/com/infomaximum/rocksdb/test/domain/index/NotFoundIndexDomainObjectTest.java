@@ -3,10 +3,10 @@ package com.infomaximum.rocksdb.test.domain.index;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
