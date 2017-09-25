@@ -28,11 +28,12 @@ sourceSets {
 
 repositories {
     mavenCentral()
+    maven { url "http://maven.office.infomaximum.com/content/repositories/releases/" }
 }
 
 dependencies {
 
-    compile 'org.rocksdb:rocksdbjni:5.6.1'
+    compile 'com.infomaximum:rocksdbjni:5.6.1-RC1'
 
     compile 'com.google.guava:guava:23.0'
 
