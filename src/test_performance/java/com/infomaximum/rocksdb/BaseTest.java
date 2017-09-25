@@ -1,9 +1,7 @@
 package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -23,7 +21,7 @@ public abstract class BaseTest {
         pathDataBase = Files.createTempDirectory("rocksdb");
         pathDataBase.toAbsolutePath().toFile().deleteOnExit();
 
-         rocksDataBase = new RocksdbBuilder()
+         rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
