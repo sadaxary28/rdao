@@ -10,13 +10,12 @@ import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
-import com.infomaximum.database.core.transaction.engine.impl.EngineTransactionImpl;
+import com.infomaximum.database.core.transaction.engine.EngineTransactionImpl;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.datasource.entitysource.EntitySourceImpl;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 
 import java.util.HashMap;
 import java.util.Map;

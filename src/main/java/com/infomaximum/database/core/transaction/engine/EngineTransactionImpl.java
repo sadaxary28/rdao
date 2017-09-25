@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.transaction.engine.impl;
+package com.infomaximum.database.core.transaction.engine;
 
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;

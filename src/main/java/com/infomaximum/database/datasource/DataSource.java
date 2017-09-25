@@ -1,6 +1,6 @@
 package com.infomaximum.database.datasource;
 
-import com.infomaximum.database.core.transaction.struct.modifier.Modifier;
+import com.infomaximum.database.core.transaction.modifier.Modifier;
 import com.infomaximum.database.datasource.entitysource.EntitySource;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
