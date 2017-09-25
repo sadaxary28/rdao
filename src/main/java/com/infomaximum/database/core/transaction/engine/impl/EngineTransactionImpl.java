@@ -22,6 +22,7 @@ public class EngineTransactionImpl implements EngineTransaction {
      *
      * @param operation Выполняемая операция.
      */
+    @Override
     public void execute(final Monad operation) throws TransactionDatabaseException {
         final Transaction transaction = new Transaction(dataSource);
         // пытаемся выполнить операцию некоторое количество раз
