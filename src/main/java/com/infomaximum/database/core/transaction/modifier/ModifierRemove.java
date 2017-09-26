@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.transaction.struct.modifier;
+package com.infomaximum.database.core.transaction.modifier;
 
 import com.infomaximum.database.domainobject.key.Key;
 

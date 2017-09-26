@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.transaction.engine.impl;
+package com.infomaximum.database.core.transaction.engine;
 
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
@@ -22,6 +22,7 @@ public class EngineTransactionImpl implements EngineTransaction {
      *
      * @param operation Выполняемая операция.
      */
+    @Override
     public void execute(final Monad operation) throws TransactionDatabaseException {
         final Transaction transaction = new Transaction(dataSource);
         // пытаемся выполнить операцию некоторое количество раз

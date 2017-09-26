@@ -16,6 +16,7 @@ public class RocksDataBase implements AutoCloseable {
     private final OptimisticTransactionDB rocksDB;
     private final ConcurrentMap<String, ColumnFamilyHandle> columnFamilies;
     private final WriteOptions writeOptions = new WriteOptions();
+    private final ReadOptions readOptions = new ReadOptions();
 
     protected RocksDataBase(OptimisticTransactionDB rocksDB, ConcurrentMap<String, ColumnFamilyHandle> columnFamilies) throws RocksDBException {
         this.rocksDB = rocksDB;
@@ -42,6 +43,14 @@ public class RocksDataBase implements AutoCloseable {
         return rocksDB.beginTransaction(writeOptions);
     }
 
+    public WriteOptions getWriteOptions() {
+        return writeOptions;
+    }
+
+    public ReadOptions getReadOptions() {
+        return readOptions;
+    }
+
     public ColumnFamilyHandle createColumnFamily(String columnFamilyName) throws RocksDBException {
         ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(TypeConvert.pack(columnFamilyName));
         ColumnFamilyHandle columnFamilyHandle = getRocksDB().createColumnFamily(columnFamilyDescriptor);
@@ -57,6 +66,7 @@ public class RocksDataBase implements AutoCloseable {
 
     @Override
     public void close() {
+        readOptions.close();
         writeOptions.close();
 
         for (Map.Entry<String, ColumnFamilyHandle> entry : columnFamilies.entrySet()) {
