@@ -10,7 +10,6 @@ import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -22,6 +21,8 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     private final Class<E> clazz;
     private final String columnFamily;
 
+    private final long iteratorId;
+
     private E nextElement;
 
     public IteratorEntityImpl(DataSource dataSource, Class<E> clazz) throws DatabaseException {
@@ -32,14 +33,14 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
         Entity entityAnnotation = structEntity.annotationEntity;
         this.columnFamily = entityAnnotation.name();
 
-        nextElement = loadNextElement(true);
+        this.iteratorId = dataSource.createIterator(columnFamily);
+
+        nextElement = loadNextElement();
     }
 
     /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws DataSourceDatabaseException {
-        Long prevId = (isFirst)?null:nextElement.getId();
-
-        EntitySource entitySource = dataSource.nextEntitySource(columnFamily, prevId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+    private synchronized E loadNextElement() throws DataSourceDatabaseException {
+        EntitySource entitySource = dataSource.nextEntitySource(iteratorId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
         if (entitySource==null) {
             nextElement = null;
         } else {
@@ -54,23 +55,20 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     }
 
     @Override
-    public E next() {
+    public E next() throws DataSourceDatabaseException {
         if (nextElement==null) throw new NoSuchElementException();
 
         E element = nextElement;
-        try {
-            nextElement = loadNextElement(false);
-        } catch (DatabaseException e) {
-            //TODO Подумать
-            throw new RuntimeException(e);
-        }
+        nextElement = loadNextElement();
+
+        //Если элементы закончились - сразу закрываем
+        if (nextElement==null) close();
 
         return element;
     }
 
     @Override
-    public Iterator<E> iterator() {
-        return this;
+    public void close() {
+        dataSource.closeIterator(iteratorId);
     }
-
 }

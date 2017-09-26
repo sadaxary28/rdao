@@ -19,7 +19,7 @@ public class IndexUtils {
         } else {
             string = value.toString();
         }
-        return Math.abs(hash(string.getBytes(TypeConvert.ROCKSDB_CHARSET), 1));
+        return Math.abs(hash(TypeConvert.pack(string), 1));
     }
 
     public static int calcHashValues(Collection<Object> values) {
@@ -33,7 +33,7 @@ public class IndexUtils {
             }
         }
 
-        return Math.abs(hash(sBuilder.toString().getBytes(TypeConvert.ROCKSDB_CHARSET), 1));
+        return Math.abs(hash(TypeConvert.pack(sBuilder.toString()), 1));
     }
 
 

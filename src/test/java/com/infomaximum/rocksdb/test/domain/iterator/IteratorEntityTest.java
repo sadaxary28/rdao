@@ -1,21 +1,21 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.test.domain.create.CreateDomainObjectTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -27,18 +27,21 @@ public class IteratorEntityTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
 
-        Iterator iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class);
-        Assert.assertFalse(iteratorEmpty.hasNext());
-        try {
-            iteratorEmpty.next();
-            Assert.fail();
-        } catch (NoSuchElementException e){}
+        try (IteratorEntity iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class)){
+            Assert.assertFalse(iteratorEmpty.hasNext());
+            try {
+                iteratorEmpty.next();
+                Assert.fail();
+            } catch (NoSuchElementException e){}
+        }
+
 
         int size=10;
 
@@ -56,15 +59,20 @@ public class IteratorEntityTest extends RocksDataTest {
         //Итератором пробегаемся
         int count = 0;
         long prevId=0;
-        for (StoreFileReadable storeFile: domainObjectSource.iterator(StoreFileReadable.class)) {
-            count++;
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.iterator(StoreFileReadable.class)) {
+            while(iStoreFileReadable.hasNext()) {
+                StoreFileReadable storeFile = iStoreFileReadable.next();
 
-            if (prevId==storeFile.getId()) Assert.fail("Fail next object");
-            if (prevId>=storeFile.getId()) Assert.fail("Fail sort id to iterators");
-            prevId=storeFile.getId();
+                count++;
+
+                if (prevId==storeFile.getId()) Assert.fail("Fail next object");
+                if (prevId>=storeFile.getId()) Assert.fail("Fail sort id to iterators");
+                prevId=storeFile.getId();
+            }
+
         }
         Assert.assertEquals(size, count);
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 }

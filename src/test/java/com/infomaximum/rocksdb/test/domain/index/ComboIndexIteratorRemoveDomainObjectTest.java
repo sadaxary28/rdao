@@ -1,14 +1,15 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -25,11 +26,12 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Добавляем объекты
         domainObjectSource.getEngineTransaction().execute(new Monad() {
@@ -57,19 +59,25 @@ public class ComboIndexIteratorRemoveDomainObjectTest extends RocksDataTest {
 
         //Ищем объекты по size
         int count=0;
-        for (StoreFileReadable storeFile: domainObjectSource.findAll(StoreFileReadable.class, new HashMap<String, Object>(){{
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, new HashMap<String, Object>(){{
             put(StoreFileReadable.FIELD_SIZE, 100L);
             put(StoreFileReadable.FIELD_FILE_NAME, "1");
         }})) {
-            count++;
-            Assert.assertNotNull(storeFile);
-            Assert.assertEquals(100, storeFile.getSize());
-            Assert.assertEquals("1", storeFile.getFileName());
+            while(iStoreFileReadable.hasNext()) {
+                StoreFileReadable storeFile = iStoreFileReadable.next();
+
+                Assert.assertNotNull(storeFile);
+                Assert.assertEquals(100, storeFile.getSize());
+                Assert.assertEquals("1", storeFile.getFileName());
+
+                count++;
+            }
+
         }
         Assert.assertEquals(4, count);
 
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

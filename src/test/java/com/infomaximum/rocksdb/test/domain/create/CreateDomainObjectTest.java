@@ -4,12 +4,12 @@ import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.domain.type.FormatType;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -24,11 +24,12 @@ public class CreateDomainObjectTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
@@ -59,7 +60,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(size, storeFileCheckSave.getSize());
         Assert.assertEquals(format, storeFileCheckSave.getFormat());
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

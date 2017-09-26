@@ -7,6 +7,7 @@ import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.impl.EngineTransactionImpl;
@@ -141,5 +142,16 @@ public class DomainObjectSource {
      */
     public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws DatabaseException {
         return new IteratorEntityImpl<>(dataSource, clazz);
+    }
+
+    public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {
+        StructEntity entity = new StructEntity(clazz);
+        dataSource.createColumnFamily(entity.annotationEntity.name());
+        dataSource.createSequence(entity.annotationEntity.name());
+        for (StructEntityIndex i : entity.getStructEntityIndices()) {
+            dataSource.createColumnFamily(i.columnFamily);
+        }
+
+        //TODO realize
     }
 }

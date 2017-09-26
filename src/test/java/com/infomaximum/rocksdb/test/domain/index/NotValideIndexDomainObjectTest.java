@@ -2,10 +2,10 @@ package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -22,11 +22,12 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         try {
             domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);
@@ -42,7 +43,7 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
             Assert.fail();
         } catch (Exception ignore) {}
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }

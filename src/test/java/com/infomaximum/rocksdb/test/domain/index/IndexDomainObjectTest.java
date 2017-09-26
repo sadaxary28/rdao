@@ -4,11 +4,11 @@ import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.builder.RocksdbBuilder;
+import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.struct.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDataBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -23,11 +23,12 @@ public class IndexDomainObjectTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksdbBuilder()
+        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
                 .withPath(pathDataBase)
                 .build();
 
         DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+        domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
         for (long i=1; i<=100; i++) {
@@ -60,7 +61,7 @@ public class IndexDomainObjectTest extends RocksDataTest {
             Assert.assertEquals(size, storeFile.getSize());
         }
 
-        rocksDataBase.destroy();
+        rocksDataBase.close();
     }
 
 }
