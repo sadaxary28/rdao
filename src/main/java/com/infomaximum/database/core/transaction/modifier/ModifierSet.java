@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.transaction.struct.modifier;
+package com.infomaximum.database.core.transaction.modifier;
 
 /**
  * Created by kris on 18.05.17.
