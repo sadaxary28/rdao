@@ -116,7 +116,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         //TODO Ulitin V. реализовать
     }
 }
