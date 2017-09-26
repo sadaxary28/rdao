@@ -6,6 +6,8 @@ import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ReadTest  extends BaseTest {
@@ -49,8 +51,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
+        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_STRING_1, fixedString);}};
+
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_STRING_1, fixedString);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }
@@ -73,8 +77,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
+        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_LONG_1, fixedLong);}};
+
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_LONG_1, fixedLong);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }

@@ -12,6 +12,7 @@ import com.infomaximum.database.core.transaction.Transaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransaction;
 import com.infomaximum.database.core.transaction.engine.EngineTransactionImpl;
 import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
@@ -68,7 +69,7 @@ public class DomainObjectSource {
     public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
 
-        long iteratorId = dataSource.createIterator(entityAnnotation.name(), TypeConvert.pack(Key.getPatternObject(id)));
+        long iteratorId = dataSource.createIterator(entityAnnotation.name(), FieldKey.getKeyPrefix(id));
         EntitySource entitySource;
 
         try {

@@ -4,6 +4,8 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.infomaximum.database.struct.enums.PersistentEnumId;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Date;
 
@@ -14,11 +16,27 @@ public class TypeConvert {
 
     private static final Charset CHARSET = Charset.forName("UTF-8");
 
+    public static ByteBuffer allocateBuffer(int capacity) {
+        return ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
+    }
+
+    public static ByteBuffer wrapBuffer(final byte[] src) {
+        return ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
+    }
+
     public static String getString(byte[] value){
         if (value==null) {
             return null;
         } else {
             return new String(value, TypeConvert.CHARSET);
+        }
+    }
+
+    public static String getString(byte[] value, int offset, int length){
+        if (value==null) {
+            return null;
+        } else {
+            return new String(value, offset, length, TypeConvert.CHARSET);
         }
     }
 

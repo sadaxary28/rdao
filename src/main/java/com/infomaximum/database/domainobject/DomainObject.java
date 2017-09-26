@@ -4,7 +4,7 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.domainobject.key.KeyField;
+import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
@@ -83,7 +83,7 @@ public abstract class DomainObject {
     }
 
     private <T> T loadField(Class<T> type, String fieldName) throws DataSourceDatabaseException {
-        byte[] bValue = dataSource.getValue(structEntity.annotationEntity.name(), new KeyField(id, fieldName).pack());
+        byte[] bValue = dataSource.getValue(structEntity.annotationEntity.name(), new FieldKey(id, fieldName).pack());
         return (T) TypeConvert.get(type, bValue);
     }
 

@@ -10,9 +10,8 @@ import com.infomaximum.database.core.transaction.modifier.ModifierSet;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.Key;
-import com.infomaximum.database.domainobject.key.KeyAvailability;
-import com.infomaximum.database.domainobject.key.KeyField;
-import com.infomaximum.database.domainobject.key.KeyIndex;
+import com.infomaximum.database.domainobject.key.FieldKey;
+import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
@@ -37,12 +36,12 @@ public class Transaction {
         final String columnFamily = structEntity.annotationEntity.name();
         final List<Modifier> queue = new ArrayList<>();
 
-        queue.add(new ModifierSet(columnFamily, new KeyAvailability(self.getId()).pack(), TypeConvert.pack(self.getId())));
+        queue.add(new ModifierSet(columnFamily, new FieldKey(self.getId()).pack(), TypeConvert.pack(self.getId())));
         for (Map.Entry<Field, Object> writeEntry: writeValues.entrySet()) {
             Field field = writeEntry.getKey();
             Object value = writeEntry.getValue();
 
-            byte[] key = new KeyField(self.getId(), field.name()).pack();
+            byte[] key = new FieldKey(self.getId(), field.name()).pack();
             if (value != null) {
                 byte[] bValue = TypeConvert.packObject(value.getClass(), value);
                 queue.add(new ModifierSet(columnFamily, key, bValue));
@@ -65,8 +64,8 @@ public class Transaction {
             if (!isUpdateIndex) continue;
 
             //Нужно обновлять индекс...
-            int oldHash = 111;//TODO Необходимо вычислять
-            queue.add(new ModifierRemove(indexColumnFamily, new KeyIndex(self.getId(), oldHash).pack(), false));
+            long oldHash = 111;//TODO Необходимо вычислять
+            queue.add(new ModifierRemove(indexColumnFamily, new IndexKey(self.getId(), new long[]{oldHash}).pack(), false));
 
 
             //Вычисляем новый хеш
@@ -75,8 +74,8 @@ public class Transaction {
                 newValues.add(writeValues.get(field));
             }
 
-            int newHash = IndexUtils.calcHashValues(newValues);
-            queue.add(new ModifierSet(indexColumnFamily, new KeyIndex(self.getId(), newHash).pack(), TypeConvert.pack(self.getId())));
+            long newHash = IndexUtils.calcHashValues(newValues);
+            queue.add(new ModifierSet(indexColumnFamily, new IndexKey(self.getId(), new long[] { newHash }).pack(), TypeConvert.pack(self.getId())));
         }
 
         modify(queue);
@@ -84,7 +83,7 @@ public class Transaction {
 
     public void remove(StructEntity structEntity, DomainObject self) throws DataSourceDatabaseException {
         final String columnFamily = structEntity.annotationEntity.name();
-        modify(Arrays.asList(new ModifierRemove(columnFamily, TypeConvert.pack(Key.getPatternObject(self.getId())), true)));
+        modify(Arrays.asList(new ModifierRemove(columnFamily, FieldKey.getKeyPrefix(self.getId()), true)));
 
         //TODO need delete indexed values
     }

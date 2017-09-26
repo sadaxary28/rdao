@@ -6,8 +6,7 @@ import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.Key;
-import com.infomaximum.database.domainobject.key.KeyField;
-import com.infomaximum.database.domainobject.key.TypeKey;
+import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.ReflectionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
@@ -65,8 +64,8 @@ public class DomainObjectUtils {
                 break;
             }
 
-            Key key = Key.parse(TypeConvert.getString(keyValue.getKey()));
-            if (key.getTypeKey() == TypeKey.AVAILABILITY) {
+            FieldKey key = FieldKey.unpack(keyValue.getKey());
+            if (key.isBeginningObject()) {
                 if (entitySource == null) {
                     entitySource = new EntitySource(key.getId(), new HashMap<>());
                     continue;
@@ -77,9 +76,9 @@ public class DomainObjectUtils {
                 }
                 break;
             } else {
-                KeyField keyField = (KeyField)key;
-                if (fields.contains(keyField.getFieldName())) {
-                    entitySource.getFields().put(keyField.getFieldName(), keyValue.getValue());
+                FieldKey fieldKey = (FieldKey)key;
+                if (fields.contains(fieldKey.getFieldName())) {
+                    entitySource.getFields().put(fieldKey.getFieldName(), keyValue.getValue());
                 }
             }
         }
