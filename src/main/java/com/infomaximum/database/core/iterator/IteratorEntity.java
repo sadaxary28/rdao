@@ -12,4 +12,6 @@ public interface IteratorEntity<E extends DomainObject> extends AutoCloseable {
 
     E next() throws DataSourceDatabaseException;
 
+    void close() throws DataSourceDatabaseException;
+
 }
