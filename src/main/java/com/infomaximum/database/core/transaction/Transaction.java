@@ -9,6 +9,7 @@ import com.infomaximum.database.core.transaction.modifier.ModifierRemove;
 import com.infomaximum.database.core.transaction.modifier.ModifierSet;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.KeyAvailability;
 import com.infomaximum.database.domainobject.key.KeyField;
 import com.infomaximum.database.domainobject.key.KeyIndex;
@@ -41,12 +42,12 @@ public class Transaction {
             Field field = writeEntry.getKey();
             Object value = writeEntry.getValue();
 
-            String key = new KeyField(self.getId(), field.name()).pack();
-            if (value!=null) {
+            byte[] key = new KeyField(self.getId(), field.name()).pack();
+            if (value != null) {
                 byte[] bValue = TypeConvert.packObject(value.getClass(), value);
                 queue.add(new ModifierSet(columnFamily, key, bValue));
             } else {
-                queue.add(new ModifierRemove(columnFamily, key));
+                queue.add(new ModifierRemove(columnFamily, key, false));
             }
         }
 
@@ -65,7 +66,7 @@ public class Transaction {
 
             //Нужно обновлять индекс...
             int oldHash = 111;//TODO Необходимо вычислять
-            queue.add(new ModifierRemove(indexColumnFamily, new KeyIndex(self.getId(), oldHash).pack()));
+            queue.add(new ModifierRemove(indexColumnFamily, new KeyIndex(self.getId(), oldHash).pack(), false));
 
 
             //Вычисляем новый хеш
@@ -83,7 +84,9 @@ public class Transaction {
 
     public void remove(StructEntity structEntity, DomainObject self) throws DataSourceDatabaseException {
         final String columnFamily = structEntity.annotationEntity.name();
-        modify(Arrays.asList(ModifierRemove.removeDomainObject(columnFamily, self.getId())));
+        modify(Arrays.asList(new ModifierRemove(columnFamily, TypeConvert.pack(Key.getPatternObject(self.getId())), true)));
+
+        //TODO need delete indexed values
     }
 
     public void commit() throws DataSourceDatabaseException {

@@ -4,6 +4,7 @@ import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.KeyAvailability;
 import com.infomaximum.database.domainobject.key.KeyField;
 import com.infomaximum.database.domainobject.key.KeyIndex;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,7 +23,7 @@ public class KeyTest {
 
             KeyAvailability key = new KeyAvailability(id);
 
-            String sKey = key.pack();
+            String sKey = TypeConvert.getString(key.pack());
 
             KeyAvailability checkKey = (KeyAvailability) Key.parse(sKey);
             Assert.assertEquals(id, checkKey.getId());
@@ -37,7 +38,7 @@ public class KeyTest {
 
             KeyField key = new KeyField(id, fieldName);
 
-            String sKey = key.pack();
+            String sKey = TypeConvert.getString(key.pack());
 
             KeyField checkKey = (KeyField) Key.parse(sKey);
             Assert.assertEquals(id, checkKey.getId());
@@ -54,7 +55,7 @@ public class KeyTest {
 
             KeyIndex key = new KeyIndex(id, hash);
 
-            String sKey = key.pack();
+            String sKey = TypeConvert.getString(key.pack());
 
             KeyIndex checkKey = (KeyIndex) Key.parse(sKey);
             Assert.assertEquals(id, checkKey.getId());

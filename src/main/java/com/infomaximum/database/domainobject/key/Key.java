@@ -17,7 +17,7 @@ public abstract class Key {
 
     public abstract TypeKey getTypeKey();
 
-    public abstract String pack();
+    public abstract byte[] pack();
 
     protected static String packId(long id){
         return String.format("%017d", id);

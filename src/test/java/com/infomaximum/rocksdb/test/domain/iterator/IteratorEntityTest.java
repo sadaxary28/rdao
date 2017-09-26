@@ -27,52 +27,49 @@ public class IteratorEntityTest extends RocksDataTest {
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
-                .withPath(pathDataBase)
-                .build();
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
-        domainObjectSource.createEntity(StoreFileReadable.class);
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+            domainObjectSource.createEntity(StoreFileReadable.class);
 
-
-        try (IteratorEntity iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class)){
-            Assert.assertFalse(iteratorEmpty.hasNext());
-            try {
-                iteratorEmpty.next();
-                Assert.fail();
-            } catch (NoSuchElementException e){}
-        }
-
-
-        int size=10;
-
-        //Добавляем объекты
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                for (int i=0; i< size; i++) {
-                    domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
+            try (IteratorEntity iteratorEmpty = domainObjectSource.iterator(StoreFileReadable.class)) {
+                Assert.assertFalse(iteratorEmpty.hasNext());
+                try {
+                    iteratorEmpty.next();
+                    Assert.fail();
+                } catch (NoSuchElementException e) {
                 }
             }
-        });
 
 
-        //Итератором пробегаемся
-        int count = 0;
-        long prevId=0;
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.iterator(StoreFileReadable.class)) {
-            while(iStoreFileReadable.hasNext()) {
-                StoreFileReadable storeFile = iStoreFileReadable.next();
+            int size = 10;
 
-                count++;
+            //Добавляем объекты
+            domainObjectSource.getEngineTransaction().execute(new Monad() {
+                @Override
+                public void action(Transaction transaction) throws Exception {
+                    for (int i = 0; i < size; i++) {
+                        domainObjectSource.save(domainObjectSource.create(StoreFileEditable.class), transaction);
+                    }
+                }
+            });
 
-                if (prevId==storeFile.getId()) Assert.fail("Fail next object");
-                if (prevId>=storeFile.getId()) Assert.fail("Fail sort id to iterators");
-                prevId=storeFile.getId();
+
+            //Итератором пробегаемся
+            int count = 0;
+            long prevId = 0;
+            try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.iterator(StoreFileReadable.class)) {
+                while (iStoreFileReadable.hasNext()) {
+                    StoreFileReadable storeFile = iStoreFileReadable.next();
+
+                    count++;
+
+                    if (prevId == storeFile.getId()) Assert.fail("Fail next object");
+                    if (prevId >= storeFile.getId()) Assert.fail("Fail sort id to iterators");
+                    prevId = storeFile.getId();
+                }
+
             }
-
+            Assert.assertEquals(size, count);
         }
-        Assert.assertEquals(size, count);
-
-        rocksDataBase.close();
     }
 }

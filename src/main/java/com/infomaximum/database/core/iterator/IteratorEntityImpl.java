@@ -1,10 +1,9 @@
 package com.infomaximum.database.core.iterator;
 
-import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.entitysource.EntitySource;
+import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
@@ -20,27 +19,24 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     private final DataSource dataSource;
     private final Class<E> clazz;
     private final String columnFamily;
-
+    private final StructEntity structEntity;
     private final long iteratorId;
 
     private E nextElement;
+    private EntitySource[] state = new EntitySource[1];
 
     public IteratorEntityImpl(DataSource dataSource, Class<E> clazz) throws DatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
-
-        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
-        Entity entityAnnotation = structEntity.annotationEntity;
-        this.columnFamily = entityAnnotation.name();
-
+        this.structEntity = HashStructEntities.getStructEntity(clazz);
+        this.columnFamily = structEntity.annotationEntity.name();
         this.iteratorId = dataSource.createIterator(columnFamily);
 
         nextElement = loadNextElement();
     }
 
-    /** Загружаем следующий элемент */
-    private synchronized E loadNextElement() throws DataSourceDatabaseException {
-        EntitySource entitySource = dataSource.nextEntitySource(iteratorId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+    private E loadNextElement() throws DataSourceDatabaseException {
+        EntitySource entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, structEntity.getEagerFormatFieldNames(), state);
         if (entitySource == null) {
             nextElement = null;
         } else {
@@ -51,18 +47,20 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
 
     @Override
     public boolean hasNext() {
-        return (nextElement!=null);
+        return (nextElement != null);
     }
 
     @Override
     public E next() throws DataSourceDatabaseException {
-        if (nextElement==null) throw new NoSuchElementException();
+        if (nextElement == null) {
+            throw new NoSuchElementException();
+        }
 
         E element = nextElement;
         nextElement = loadNextElement();
-
-        //Если элементы закончились - сразу закрываем
-        if (nextElement==null) close();
+        if (nextElement == null) {
+            close();
+        }
 
         return element;
     }

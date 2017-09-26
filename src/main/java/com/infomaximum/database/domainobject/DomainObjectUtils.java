@@ -4,12 +4,18 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.entitysource.EntitySource;
+import com.infomaximum.database.datasource.KeyValue;
+import com.infomaximum.database.domainobject.key.Key;
+import com.infomaximum.database.domainobject.key.KeyField;
+import com.infomaximum.database.domainobject.key.TypeKey;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.ReflectionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by kris on 28.04.17.
@@ -46,4 +52,38 @@ public class DomainObjectUtils {
         }
     }
 
+    public static EntitySource nextEntitySource(DataSource dataSource, long iteratorId, final Set<String> fields, EntitySource[] state) throws DataSourceDatabaseException {
+        EntitySource entitySource = null;
+        if (state != null) {
+            entitySource = state[0];
+            state[0] = null;
+        }
+
+        while (true) {
+            KeyValue keyValue = dataSource.next(iteratorId);
+            if (keyValue == null) {
+                break;
+            }
+
+            Key key = Key.parse(TypeConvert.getString(keyValue.getKey()));
+            if (key.getTypeKey() == TypeKey.AVAILABILITY) {
+                if (entitySource == null) {
+                    entitySource = new EntitySource(key.getId(), new HashMap<>());
+                    continue;
+                }
+
+                if (state != null) {
+                    state[0] = new EntitySource(key.getId(), new HashMap<>());
+                }
+                break;
+            } else {
+                KeyField keyField = (KeyField)key;
+                if (fields.contains(keyField.getFieldName())) {
+                    entitySource.getFields().put(keyField.getFieldName(), keyValue.getValue());
+                }
+            }
+        }
+
+        return entitySource;
+    }
 }

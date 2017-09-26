@@ -1,5 +1,7 @@
 package com.infomaximum.database.domainobject.key;
 
+import com.infomaximum.database.utils.TypeConvert;
+
 /**
  * Created by kris on 27.04.17.
  */
@@ -24,8 +26,8 @@ public class KeyIndex extends Key {
     }
 
     @Override
-    public String pack() {
-        return prifix(hash) + packId(id);
+    public byte[] pack() {
+        return TypeConvert.pack(prifix(hash) + packId(id));
     }
 
     public static String prifix(int hash) {

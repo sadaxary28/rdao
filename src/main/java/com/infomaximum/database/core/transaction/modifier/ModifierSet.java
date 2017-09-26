@@ -7,9 +7,9 @@ public class ModifierSet extends Modifier {
 
     private final byte[] value;
 
-    public ModifierSet(String columnFamily, String key, byte[] value) {
+    public ModifierSet(String columnFamily, final byte[] key, final byte[] value) {
         super(columnFamily, key);
-        this.value=value;
+        this.value = value;
     }
 
     public byte[] getValue() {

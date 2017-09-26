@@ -12,7 +12,7 @@ public class ReadTest  extends BaseTest {
 
     @Test
     public void iterateRecords() throws Exception {
-        final int recordCount = 1000 * 1000;
+        final int recordCount = 50 * 1000;
 
         domainObjectSource.createEntity(RecordReadable.class);
 
@@ -24,7 +24,7 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
-        PerfomanceTest.test(1, step -> {
+        PerfomanceTest.test(100, step -> {
             try(IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();

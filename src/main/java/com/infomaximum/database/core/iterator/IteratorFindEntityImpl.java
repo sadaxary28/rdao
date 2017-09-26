@@ -6,7 +6,7 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.entitysource.EntitySource;
+import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
@@ -66,7 +66,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
         E domainObject = null;
         while (true) {
-            EntitySource entitySource = dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.columnFamily, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
+            EntitySource entitySource = null;//dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.columnFamily, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
             if (entitySource==null) break;
 
             domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
@@ -116,7 +116,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws DataSourceDatabaseException {
         //TODO Ulitin V. реализовать
     }
 }
