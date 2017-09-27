@@ -51,7 +51,7 @@ public class DomainObjectUtils {
         }
     }
 
-    public static EntitySource nextEntitySource(DataSource dataSource, long iteratorId, final Set<String> fields, EntitySource[] state) throws DataSourceDatabaseException {
+    public static EntitySource nextEntitySource(DataSource dataSource, long iteratorId, EntitySource[] state) throws DataSourceDatabaseException {
         EntitySource entitySource = null;
         if (state != null) {
             entitySource = state[0];
@@ -67,19 +67,14 @@ public class DomainObjectUtils {
             FieldKey key = FieldKey.unpack(keyValue.getKey());
             if (key.isBeginningObject()) {
                 if (entitySource == null) {
-                    entitySource = new EntitySource(key.getId(), new HashMap<>());
+                    entitySource = new EntitySource(key.getId(), null);
                     continue;
                 }
 
                 if (state != null) {
-                    state[0] = new EntitySource(key.getId(), new HashMap<>());
+                    state[0] = new EntitySource(key.getId(), null);
                 }
                 break;
-            } else {
-                FieldKey fieldKey = (FieldKey)key;
-                if (fields.contains(fieldKey.getFieldName())) {
-                    entitySource.getFields().put(fieldKey.getFieldName(), keyValue.getValue());
-                }
             }
         }
 

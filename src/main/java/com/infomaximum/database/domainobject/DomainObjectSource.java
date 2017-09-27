@@ -73,7 +73,7 @@ public class DomainObjectSource {
         EntitySource entitySource;
 
         try {
-            entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames(), null);
+            entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, null);
         } finally {
             dataSource.closeIterator(iteratorId);
         }

@@ -1,7 +1,6 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.structentity.HashStructEntities;
-import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -18,8 +17,6 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
 
     private final DataSource dataSource;
     private final Class<E> clazz;
-    private final String columnFamily;
-    private final StructEntity structEntity;
     private final long iteratorId;
 
     private E nextElement;
@@ -28,25 +25,15 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     public IteratorEntityImpl(DataSource dataSource, Class<E> clazz) throws DatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
-        this.structEntity = HashStructEntities.getStructEntity(clazz);
-        this.columnFamily = structEntity.annotationEntity.name();
+        String columnFamily = HashStructEntities.getStructEntity(clazz).annotationEntity.name();
         this.iteratorId = dataSource.createIterator(columnFamily);
 
-        nextElement = loadNextElement();
-    }
-
-    private E loadNextElement() throws DataSourceDatabaseException {
-        EntitySource entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, structEntity.getEagerFormatFieldNames(), state);
-        if (entitySource == null) {
-            return null;
-        }
-
-        return DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
+        nextImpl();
     }
 
     @Override
     public boolean hasNext() {
-        return (nextElement != null);
+        return nextElement != null;
     }
 
     @Override
@@ -56,16 +43,23 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
         }
 
         E element = nextElement;
-        nextElement = loadNextElement();
-        if (nextElement == null) {
-            close();
-        }
-
+        nextImpl();
         return element;
     }
 
     @Override
     public void close() {
         dataSource.closeIterator(iteratorId);
+    }
+
+    private void nextImpl() throws DataSourceDatabaseException {
+        EntitySource entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, state);
+        if (entitySource == null) {
+            nextElement = null;
+            close();
+            return;
+        }
+
+        nextElement = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
     }
 }

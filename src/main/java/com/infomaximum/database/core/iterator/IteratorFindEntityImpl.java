@@ -67,21 +67,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         this.filterFields = filterFields;
         this.filterValues = filterValues;
 
-        nextElement = loadNextElement();
-    }
-
-    private E loadNextElement() throws DataSourceDatabaseException {
-        while (true) {
-            KeyValue keyValue = dataSource.next(indexIteratorId);
-            if (keyValue == null) {
-                return null;
-            }
-
-            IndexKey key = IndexKey.unpack(keyValue.getKey());
-            if (checkFilter(key.getId())) {
-                return DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(key.getId(), null));
-            }
-        }
+        nextImpl();
     }
 
     @Override
@@ -96,17 +82,31 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         }
 
         E element = nextElement;
-        nextElement = loadNextElement();
-        if (nextElement == null) {
-            close();
-        }
-
+        nextImpl();
         return element;
     }
 
     @Override
     public void close() throws DataSourceDatabaseException {
         dataSource.closeIterator(indexIteratorId);
+    }
+
+    private void nextImpl() throws DataSourceDatabaseException {
+        while (true) {
+            KeyValue keyValue = dataSource.next(indexIteratorId);
+            if (keyValue == null) {
+                break;
+            }
+
+            IndexKey key = IndexKey.unpack(keyValue.getKey());
+            if (checkFilter(key.getId())) {
+                nextElement = DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(key.getId(), null));
+                return;
+            }
+        }
+
+        nextElement = null;
+        close();
     }
 
     private void checkIndex(final Map<String, Object> filters) {

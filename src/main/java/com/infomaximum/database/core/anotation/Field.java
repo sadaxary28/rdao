@@ -14,5 +14,4 @@ public @interface Field {
 
     String name();
     Class type();
-    boolean lazy() default true;
 }
