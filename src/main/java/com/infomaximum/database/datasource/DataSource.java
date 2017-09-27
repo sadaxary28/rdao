@@ -26,6 +26,9 @@ public interface DataSource {
     KeyValue next(long iteratorId) throws DataSourceDatabaseException;
     void closeIterator(long iteratorId);
 
+    boolean containsColumnFamily(String name);
+
+    String[] getColumnFamilies();
     void createColumnFamily(String name) throws DataSourceDatabaseException;
     void dropColumnFamily(String name) throws DataSourceDatabaseException;
 

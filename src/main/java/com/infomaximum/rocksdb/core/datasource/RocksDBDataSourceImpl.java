@@ -13,10 +13,14 @@ import com.infomaximum.database.exeption.IteratorNotFoundException;
 import com.infomaximum.database.exeption.TransactionNotFoundException;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.rocksdb.RocksDataBase;
-import org.rocksdb.*;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
+import org.rocksdb.Transaction;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -251,6 +255,16 @@ public class RocksDBDataSourceImpl implements DataSource {
         iterators.invalidate(iteratorId);
     }
 
+    @Override
+    public boolean containsColumnFamily(String name) {
+        return (rocksDataBase.getColumnFamilyHandle(name) != null);
+    }
+
+    @Override
+    public String[] getColumnFamilies() {
+        Set<String> columnFamilySet = rocksDataBase.getColumnFamilies().keySet();
+        return columnFamilySet.toArray(new String[columnFamilySet.size()]);
+    }
 
     @Override
     public void createColumnFamily(String name) throws DataSourceDatabaseException {
