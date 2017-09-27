@@ -1,8 +1,6 @@
 package com.infomaximum.database.core.transaction.engine;
 
 import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.EngineTransaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.exeption.TransactionDatabaseException;
 
@@ -24,12 +22,9 @@ public class EngineTransactionImpl implements EngineTransaction {
      */
     @Override
     public void execute(final Monad operation) throws TransactionDatabaseException {
-        final Transaction transaction = new Transaction(dataSource);
-        // пытаемся выполнить операцию некоторое количество раз
-        try {
+        try (Transaction transaction = new Transaction(dataSource)) {
             operation.action(transaction);
             transaction.commit();
-            return;
         } catch (Exception ex) {
             throw new TransactionDatabaseException("Exception execute transaction", ex);
         }

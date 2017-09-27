@@ -6,13 +6,15 @@ import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ReadTest  extends BaseTest {
 
     @Test
     public void iterateRecords() throws Exception {
-        final int recordCount = 1000 * 1000;
+        final int recordCount = 50 * 1000;
 
         domainObjectSource.createEntity(RecordReadable.class);
 
@@ -24,7 +26,7 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
-        PerfomanceTest.test(1, step -> {
+        PerfomanceTest.test(100, step -> {
             try(IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
@@ -49,8 +51,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
+        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_STRING_1, fixedString);}};
+
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_STRING_1, fixedString);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }
@@ -73,8 +77,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
-        PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, RecordIndexEditable.FIELD_LONG_1, fixedLong);
+        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_LONG_1, fixedLong);}};
+
+        PerfomanceTest.test(50, step -> {
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }

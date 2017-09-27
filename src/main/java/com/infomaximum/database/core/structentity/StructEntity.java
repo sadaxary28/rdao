@@ -19,38 +19,33 @@ public class StructEntity {
 
     private final Set<Field> fields;
     private final Map<String, Field> nameToFields;
-
-    private final Set<String> eagerFormatFieldNames;
-
     private final List<StructEntityIndex> structEntityIndices;
 
     public StructEntity(Class<? extends DomainObject> clazz) {
         this.clazz = clazz;
-
         this.annotationEntity = StructEntity.getEntityAnnotation(clazz);
 
-        Set<Field> modifiableFields = new HashSet<Field>();
-        this.fields = Collections.unmodifiableSet(modifiableFields);
-
-        Map<String, Field> modifiableNameToFields = new HashMap<String, Field>();
-        this.nameToFields = Collections.unmodifiableMap(modifiableNameToFields);
+        Set<Field> modifiableFields = new HashSet<>(annotationEntity.fields().length);
+        Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
         for(Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
-            if (nameToFields.containsKey(field.name())) throw new StructEntityDatabaseException(clazz.getName() + ": Имя поля " + field.name() + " не уникально");
+            if (modifiableNameToFields.containsKey(field.name())) {
+                throw new StructEntityDatabaseException(clazz.getName() + ": Имя поля " + field.name() + " не уникально");
+            }
 
             modifiableFields.add(field);
             modifiableNameToFields.put(field.name(), field);
         }
 
-        Set<String> modifiableEagerFormatFieldNames = new HashSet<String>();
-        //TODO тут необходимо собирать не lazy поля - они будут грузиться сразу же
-        eagerFormatFieldNames = Collections.unmodifiableSet(modifiableEagerFormatFieldNames);
+        this.nameToFields = Collections.unmodifiableMap(modifiableNameToFields);
+        this.fields = Collections.unmodifiableSet(modifiableFields);
 
-        List<StructEntityIndex> modifiableStructEntityIndices = new ArrayList<StructEntityIndex>();
+        List<StructEntityIndex> modifiableStructEntityIndices = new ArrayList<>(annotationEntity.indexes().length);
         for (Index index: annotationEntity.indexes()) {
             modifiableStructEntityIndices.add(new StructEntityIndex(this, index));
         }
+
         this.structEntityIndices = Collections.unmodifiableList(modifiableStructEntityIndices);
     }
 
@@ -58,21 +53,17 @@ public class StructEntity {
         return nameToFields.get(name);
     }
 
-
     public Set<Field> getFields() {
         return fields;
     }
 
-    public Set<String> getEagerFormatFieldNames(){
-        return eagerFormatFieldNames;
-    }
-
-
     public StructEntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
         for (StructEntityIndex structEntityIndex: structEntityIndices) {
-            if (structEntityIndex.indexFieldsSort.size()!=nameIndexFields.size()) continue;
+            if (structEntityIndex.sortedFields.size() != nameIndexFields.size()) {
+                continue;
+            }
 
-            List<String> iNameIndexFields = structEntityIndex.indexFieldsSort.stream().map(Field::name).collect(Collectors.toList());
+            List<String> iNameIndexFields = structEntityIndex.sortedFields.stream().map(Field::name).collect(Collectors.toList());
 
             if (!iNameIndexFields.containsAll(nameIndexFields)) continue;
             if (!nameIndexFields.containsAll(iNameIndexFields)) continue;

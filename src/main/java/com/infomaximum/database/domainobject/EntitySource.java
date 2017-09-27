@@ -1,26 +1,21 @@
-package com.infomaximum.database.datasource.entitysource;
+package com.infomaximum.database.domainobject;
 
 import java.util.Map;
 
-/**
- * Created by kris on 01.05.17.
- */
-public class EntitySourceImpl implements EntitySource {
+public class EntitySource {
 
     private final long id;
     private final Map<String, byte[]> fields;
 
-    public EntitySourceImpl(long id, Map<String, byte[]> fields) {
+    public EntitySource(long id, Map<String, byte[]> fields) {
         this.id = id;
         this.fields = fields;
     }
 
-    @Override
     public long getId() {
         return id;
     }
 
-    @Override
     public Map<String, byte[]> getFields() {
         return fields;
     }
