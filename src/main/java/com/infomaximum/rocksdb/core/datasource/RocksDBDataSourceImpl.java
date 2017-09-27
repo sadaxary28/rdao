@@ -295,6 +295,11 @@ public class RocksDBDataSourceImpl implements DataSource {
     }
 
     @Override
+    public boolean containsSequence(String name) {
+        return (sequenceManager.getSequence(name) != null);
+    }
+
+    @Override
     public void createSequence(String name) throws DataSourceDatabaseException {
         try {
             sequenceManager.createSequence(name);

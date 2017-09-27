@@ -27,11 +27,11 @@ public interface DataSource {
     void closeIterator(long iteratorId);
 
     boolean containsColumnFamily(String name);
-
     String[] getColumnFamilies();
     void createColumnFamily(String name) throws DataSourceDatabaseException;
     void dropColumnFamily(String name) throws DataSourceDatabaseException;
 
+    boolean containsSequence(String name);
     void createSequence(String name) throws DataSourceDatabaseException;
     void dropSequence(String name) throws DataSourceDatabaseException;
 }
