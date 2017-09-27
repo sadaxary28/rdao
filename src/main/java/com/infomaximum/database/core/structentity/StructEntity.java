@@ -70,9 +70,9 @@ public class StructEntity {
 
     public StructEntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
         for (StructEntityIndex structEntityIndex: structEntityIndices) {
-            if (structEntityIndex.indexFieldsSort.size()!=nameIndexFields.size()) continue;
+            if (structEntityIndex.sortedFields.size()!=nameIndexFields.size()) continue;
 
-            List<String> iNameIndexFields = structEntityIndex.indexFieldsSort.stream().map(Field::name).collect(Collectors.toList());
+            List<String> iNameIndexFields = structEntityIndex.sortedFields.stream().map(Field::name).collect(Collectors.toList());
 
             if (!iNameIndexFields.containsAll(nameIndexFields)) continue;
             if (!nameIndexFields.containsAll(iNameIndexFields)) continue;

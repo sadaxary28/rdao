@@ -50,4 +50,12 @@ public class IndexKey extends Key {
 
         return new IndexKey(buffer.getLong(), fieldValues);
     }
+
+    public static byte[] getKeyPrefix(final long[] fieldValues) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(8 * fieldValues.length);
+        for (int i = 0; i < fieldValues.length; ++i) {
+            buffer.putLong(fieldValues[i]);
+        }
+        return buffer.array();
+    }
 }

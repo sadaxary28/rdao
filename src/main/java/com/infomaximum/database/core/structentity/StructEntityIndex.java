@@ -16,7 +16,7 @@ public class StructEntityIndex {
     private final static Logger log = LoggerFactory.getLogger(StructEntityIndex.class);
 
     public final String columnFamily;
-    public final List<Field> indexFieldsSort;
+    public final List<Field> sortedFields;
 
     public StructEntityIndex(StructEntity structEntity, Index index) throws StructEntityDatabaseException {
         List<Field> modifiableIndexFields = new ArrayList<>();
@@ -33,7 +33,7 @@ public class StructEntityIndex {
         //Вычисляем columnFamily индекса
         this.columnFamily = structEntity.annotationEntity.name() + ".index." + buildColumnFamilyIndexToSortFields(modifiableIndexFields);
 
-        this.indexFieldsSort = Collections.unmodifiableList(modifiableIndexFields);
+        this.sortedFields = Collections.unmodifiableList(modifiableIndexFields);
     }
 
     private static String buildColumnFamilyIndexToSortFields(Collection<Field> modifiableIndexFields){

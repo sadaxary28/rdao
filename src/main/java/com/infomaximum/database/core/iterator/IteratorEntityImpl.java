@@ -38,11 +38,10 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     private E loadNextElement() throws DataSourceDatabaseException {
         EntitySource entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, structEntity.getEagerFormatFieldNames(), state);
         if (entitySource == null) {
-            nextElement = null;
-        } else {
-            nextElement = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
+            return null;
         }
-        return nextElement;
+
+        return DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
     }
 
     @Override

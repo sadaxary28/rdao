@@ -79,7 +79,7 @@ public class ReadTest  extends BaseTest {
 
         final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_LONG_1, fixedLong);}};
 
-        PerfomanceTest.test(1, step -> {
+        PerfomanceTest.test(50, step -> {
             IteratorEntity<RecordIndexEditable> i = domainObjectSource.findAll(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();

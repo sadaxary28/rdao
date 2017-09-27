@@ -4,87 +4,96 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Created by kris on 24.05.17.
  */
 public class IndexUtils {
 
-    public static int calcHashValue(Object value) {
-        String string;
-        if (value==null) {
-            string = "";
-        } else if (value instanceof DomainObject) {
-            string = String.valueOf( ((DomainObject) value).getId() );
-        } else {
-            string = value.toString();
-        }
-        return Math.abs(hash(TypeConvert.pack(string), 1));
+    public static boolean toLongCastable(Class<?> type) {
+        return type != String.class;
     }
 
-    public static int calcHashValues(Collection<Object> values) {
-        StringBuilder sBuilder = new StringBuilder();
-        for (Object value: values) {
-            if (value==null) continue;
+    public static long buildHash(Object value, Class<?> type) {
+        if (value == null) {
+            return 0;
+        }
+
+        if (type == Long.class) {
             if (value instanceof DomainObject) {
-                sBuilder.append(((DomainObject) value).getId());
+                return ((DomainObject) value).getId();
             } else {
-                sBuilder.append(value.toString());
+                return ((Long) value).longValue();
             }
+        } else if (type == String.class) {
+            return hash(TypeConvert.pack((String) value));
+        } else if (type == Integer.class) {
+            return ((Integer) value).longValue();
+        } else if (type == Boolean.class) {
+            return ((Boolean) value) ? 1 : 0;
+        } else if (type == Date.class) {
+            return ((Date)value).getTime();
+        } else {
+            throw new IllegalArgumentException("Unsupported " + type + " for hashing.");
         }
-
-        return Math.abs(hash(TypeConvert.pack(sBuilder.toString()), 1));
     }
 
-
-    private static int hash(byte[] data, int seed) {
-        int m = 0x5bd1e995;
-        int r = 24;
-
-        int h = seed ^ data.length;
+    /**
+     * http://www.azillionmonkeys.com/qed/hash.html
+     * @param data
+     * @return
+     */
+    private static long hash(final byte[] data) {
+        if (data == null || data.length == 0) {
+            return 0;
+        }
 
         int len = data.length;
-        int len_4 = len >> 2;
+        long hash = len;
+        long tmp;
+        int rem;
 
-        for (int i = 0; i < len_4; i++) {
-            int i_4 = i << 2;
-            int k = data[i_4 + 3];
-            k = k << 8;
-            k = k | (data[i_4 + 2] & 0xff);
-            k = k << 8;
-            k = k | (data[i_4 + 1] & 0xff);
-            k = k << 8;
-            k = k | (data[i_4 + 0] & 0xff);
-            k *= m;
-            k ^= k >>> r;
-            k *= m;
-            h *= m;
-            h ^= k;
+        rem = len & 3;
+        len >>>= 2;
+
+        /* Main loop */
+        int pos = 0;
+        for (; len > 0; --len) {
+            hash += (data[pos++] | (data[pos++] << 8));
+            tmp = ((data[pos++] | (data[pos++] << 8)) << 11) ^ hash;
+            hash = ((hash << 16) ^ tmp);
+            hash += (hash >>> 11);
         }
 
-        int len_m = len_4 << 2;
-        int left = len - len_m;
-
-        if (left != 0) {
-            if (left >= 3) {
-                h ^= (int) data[len - 3] << 16;
-            }
-            if (left >= 2) {
-                h ^= (int) data[len - 2] << 8;
-            }
-            if (left >= 1) {
-                h ^= (int) data[len - 1];
-            }
-
-            h *= m;
+        /* Handle end cases */
+        switch (rem) {
+            case 3:
+                hash += (data[pos++] | (data[pos++] << 8));
+                hash ^= (hash << 16);
+                hash ^= (data[pos++] << 18);
+                hash += (hash >>> 11);
+                break;
+            case 2:
+                hash += (data[pos++] | (data[pos++] << 8));
+                hash ^= (hash << 11);
+                hash += (hash >>> 17);
+                break;
+            case 1:
+                hash += data[pos++];
+                hash ^= (hash << 10);
+                hash += (hash >>> 1);
+                break;
         }
 
-        h ^= h >>> 13;
-        h *= m;
-        h ^= h >>> 15;
+        /* Force "avalanching" of final 127 bits */
+        hash ^= (hash << 3);
+        hash += (hash >>> 5);
+        hash ^= (hash << 4);
+        hash += (hash >>> 17);
+        hash ^= (hash << 25);
+        hash += (hash >>> 6);
 
-        return h;
+        return hash & 0xFFFFFFFF;
     }
-
-
 }

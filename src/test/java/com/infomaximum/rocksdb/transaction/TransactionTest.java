@@ -41,12 +41,12 @@ public class TransactionTest extends RocksDataTest {
             try {
                 dataSource.rollbackTransaction(transactionId);
             } catch (TransactionNotFoundException e) {
-                Assert.assertTrue(true);
+                Assert.fail();
                 return;
             }
         }
 
-        Assert.fail();
+        Assert.assertTrue(true);
     }
 
     @Test

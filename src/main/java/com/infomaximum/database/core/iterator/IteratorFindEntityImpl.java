@@ -6,17 +6,18 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
+import com.infomaximum.database.domainobject.key.FieldKey;
+import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
+import com.infomaximum.database.utils.TypeConvert;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Created by kris on 30.04.17.
@@ -25,98 +26,114 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
     private final DataSource dataSource;
     private final Class<E> clazz;
-    private final Map<String, Object> filters;
-
     private final StructEntity structEntity;
     private final StructEntityIndex structEntityIndex;
-
-    private final int findHash;
+    private final long indexIteratorId;
+    private final List<Field> filterFields;
+    private final List<Object> filterValues;
 
     private E nextElement;
 
     public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws DataSourceDatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
-        this.filters=filters;
-
         this.structEntity = HashStructEntities.getStructEntity(clazz);
+        this.structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
 
-        structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
-        if (structEntityIndex==null) throw new NotFoundIndexDatabaseException(clazz, filters.keySet());
+        checkIndex(filters);
 
-        //Проверяем совпадение типов
-        for (Field field: structEntityIndex.indexFieldsSort) {
-            Object filterValue = filters.get(field.name());
-            if (filterValue!=null && !EqualsUtils.equalsType(field.type(), filterValue.getClass())) throw new RuntimeException("Not equals type field " + field.type() + " and type value " + filterValue.getClass());
+        List<Field> filterFields = null;
+        List<Object> filterValues = null;
+
+        long[] values = new long[filters.size()];
+        for (int i = 0; i < structEntityIndex.sortedFields.size(); ++i) {
+            Field field = structEntityIndex.sortedFields.get(i);
+            Object value = filters.get(field.name());
+            values[i] = IndexUtils.buildHash(value, field.type());
+            if (IndexUtils.toLongCastable(field.type())) {
+                continue;
+            }
+
+            if (filterFields == null) {
+                filterFields = new ArrayList<>();
+                filterValues = new ArrayList<>();
+            }
+
+            filterFields.add(field);
+            filterValues.add(value);
         }
 
-        //Сортируем поля и вычисляем хеш
-        List<Object> sortFilterValues = new ArrayList();
-        for (Field field: structEntityIndex.indexFieldsSort) {
-            sortFilterValues.add(filters.get(field.name()));
-        }
-        this.findHash = IndexUtils.calcHashValues(sortFilterValues);
+        this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, IndexKey.getKeyPrefix(values));
+        this.filterFields = filterFields;
+        this.filterValues = filterValues;
 
-        nextElement = loadNextElement(true);
+        nextElement = loadNextElement();
     }
 
-    /** Загружаем следующий элемент */
-    private synchronized E loadNextElement(boolean isFirst) throws DataSourceDatabaseException {
-        Long prevFindId = (isFirst)?null:nextElement.getId();
-
-        E domainObject = null;
+    private E loadNextElement() throws DataSourceDatabaseException {
         while (true) {
-            EntitySource entitySource = null;//dataSource.findNextEntitySource(structEntity.annotationEntity.name(), prevFindId, structEntityIndex.columnFamily, findHash, HashStructEntities.getStructEntity(clazz).getEagerFormatFieldNames());
-            if (entitySource==null) break;
-
-            domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
-
-            //Необходима дополнительная проверка, так как нельзя исключать сломанный индекс или коллизии хеша
-            boolean isFullCoincidence = true;
-            for (Field field: structEntityIndex.indexFieldsSort) {
-                Object filterFieldValue = filters.get(field.name());
-                Object iFieldValue = domainObject.get(field.type(), field.name());
-                if (!EqualsUtils.equals(filterFieldValue, iFieldValue)) {
-                    //Промахнулись с индексом
-                    isFullCoincidence=false;
-                    break;
-                }
+            KeyValue keyValue = dataSource.next(indexIteratorId);
+            if (keyValue == null) {
+                return null;
             }
-            if (isFullCoincidence) {
-                //Все хорошо, совпадение полное - выходим
-                break;
-            } else {
-                //Промахнулись с индексом - уходим на повторный круг
-                prevFindId = domainObject.getId();
-                domainObject = null;
+
+            IndexKey key = IndexKey.unpack(keyValue.getKey());
+            if (checkFilter(key.getId())) {
+                return DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(key.getId(), null));
             }
         }
-
-        if (domainObject==null) {
-            nextElement = null;
-        } else {
-            nextElement = domainObject;
-        }
-        return nextElement;
     }
 
     @Override
     public boolean hasNext() {
-        return (nextElement!=null);
+        return nextElement != null;
     }
 
     @Override
     public E next() throws DataSourceDatabaseException {
-        if (nextElement==null) throw new NoSuchElementException();
+        if (nextElement == null) {
+            throw new NoSuchElementException();
+        }
 
         E element = nextElement;
-        nextElement = loadNextElement(false);
+        nextElement = loadNextElement();
+        if (nextElement == null) {
+            close();
+        }
 
         return element;
     }
 
     @Override
     public void close() throws DataSourceDatabaseException {
-        //TODO Ulitin V. реализовать
+        dataSource.closeIterator(indexIteratorId);
+    }
+
+    private void checkIndex(final Map<String, Object> filters) {
+        if (structEntityIndex == null) {
+            throw new NotFoundIndexDatabaseException(clazz, filters.keySet());
+        }
+
+        for (Field field : structEntityIndex.sortedFields) {
+            Object filterValue = filters.get(field.name());
+            if (filterValue != null && !EqualsUtils.equalsType(field.type(), filterValue.getClass())) {
+                throw new RuntimeException("Not equals type field " + field.type() + " and type value " + filterValue.getClass());
+            }
+        }
+    }
+
+    private boolean checkFilter(long id) throws DataSourceDatabaseException {
+        if (filterFields == null) {
+            return true;
+        }
+        for (int i = 0; i < filterFields.size(); ++i) {
+            Field field = filterFields.get(i);
+            byte[] value = dataSource.getValue(structEntity.annotationEntity.name(), new FieldKey(id, field.name()).pack());
+            if (!EqualsUtils.equals(filterValues.get(i), TypeConvert.get(field.type(), value))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

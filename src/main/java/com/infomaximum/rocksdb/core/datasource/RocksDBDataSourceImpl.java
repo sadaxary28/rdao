@@ -198,7 +198,7 @@ public class RocksDBDataSourceImpl implements DataSource {
     public void rollbackTransaction(long transactionId) throws DataSourceDatabaseException {
         Transaction transaction = (Transaction) transactions.getIfPresent(transactionId);
         if (transaction == null) {
-            throw new TransactionNotFoundException(transactionId);
+            return;
         }
 
         try {
