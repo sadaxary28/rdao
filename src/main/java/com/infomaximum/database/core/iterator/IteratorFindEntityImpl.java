@@ -7,7 +7,6 @@ import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.domainobject.key.FieldKey;
@@ -34,7 +33,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
     private E nextElement;
 
-    public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Map<String, Object> filters) throws DataSourceDatabaseException {
+    public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Set<String> loadingFields, Map<String, Object> filters) throws DataSourceDatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
         this.structEntity = HashStructEntities.getStructEntity(clazz);
@@ -100,7 +99,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
             IndexKey key = IndexKey.unpack(keyValue.getKey());
             if (checkFilter(key.getId())) {
-                nextElement = DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(key.getId(), null));
+                nextElement = DomainObjectUtils.buildDomainObject(clazz, key.getId(), dataSource);
                 return;
             }
         }

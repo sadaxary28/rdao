@@ -18,8 +18,10 @@ import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by user on 19.04.2017.
@@ -44,7 +46,7 @@ public class DomainObjectSource {
 
             long id = dataSource.nextId(entityAnnotation.name());
 
-            T domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(id, null));
+            T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, dataSource);
 
             //TODO нужно сделать "похорошему", без такого "хака"
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
@@ -67,45 +69,49 @@ public class DomainObjectSource {
         transaction.remove(domainObject.getStructEntity(), domainObject);
     }
 
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
+    public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
 
         long iteratorId = dataSource.createIterator(entityAnnotation.name(), FieldKey.getKeyPrefix(id));
-        EntitySource entitySource;
+        T obj = null;
 
         try {
-            entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, null);
+            obj = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, null);
         } finally {
             dataSource.closeIterator(iteratorId);
         }
 
-        return entitySource != null ? DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource) : null;
+        return obj;
     }
 
-    public <T extends DomainObject> T find(final Class<T> clazz, String filterFieldName, Object filterValue) throws DatabaseException {
-        Map<String, Object> filters = new HashMap<>();
-        filters.put(filterFieldName, filterValue);
-        return find(clazz, filters);
-    }
-
-    public <T extends DomainObject> IteratorEntity<T> findAll(final Class<T> clazz, String filterFieldName, Object filterValue) throws DatabaseException {
-        Map<String, Object> filters = new HashMap<>();
-        filters.put(filterFieldName, filterValue);
-        return findAll(clazz, filters);
-    }
-
-    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
-        try (IteratorFindEntityImpl iterator = new IteratorFindEntityImpl(dataSource, clazz, filters)) {
+     public <T extends DomainObject> T find(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
+        try (IteratorFindEntityImpl iterator = new IteratorFindEntityImpl(dataSource, clazz, loadingFields, filters)) {
             return iterator.hasNext() ? (T) iterator.next() : null;
         }
     }
 
+    public <T extends DomainObject> IteratorEntity<T> findAll(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
+        return new IteratorFindEntityImpl(dataSource, clazz, loadingFields, filters);
+    }
+
+    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz, final Set<String> loadingFields) throws DatabaseException {
+        return new IteratorEntityImpl(dataSource, clazz, loadingFields);
+    }
+
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
+        return get(clazz, Collections.emptySet(), id);
+    }
+
+    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
+        return find(clazz, Collections.emptySet(), filters);
+    }
+
     public <T extends DomainObject> IteratorEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
-        return new IteratorFindEntityImpl(dataSource, clazz, filters);
+        return findAll(clazz, Collections.emptySet(), filters);
     }
 
     public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws DatabaseException {
-        return new IteratorEntityImpl<>(dataSource, clazz);
+        return iterator(clazz, Collections.emptySet());
     }
 
     public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {

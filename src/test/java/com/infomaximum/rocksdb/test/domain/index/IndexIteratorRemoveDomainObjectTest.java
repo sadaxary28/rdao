@@ -15,6 +15,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+
 /**
  * Created by kris on 22.04.17.
  */
@@ -56,7 +58,7 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
 
         //Ищем объекты по size
         int count=0;
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, StoreFileReadable.FIELD_SIZE, 100L)) {
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, new HashMap<String, Object>() {{ put(StoreFileReadable.FIELD_SIZE, 100L);}})) {
             while(iStoreFileReadable.hasNext()) {
                 StoreFileReadable storeFile = iStoreFileReadable.next();
 

@@ -14,6 +14,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+
 /**
  * Created by kris on 22.04.17.
  */
@@ -58,7 +60,7 @@ public class IndexRemove1DomainObjectTest extends RocksDataTest {
 
 
         //Ищем объекты по size
-        StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, "size", 100L);
+        StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, new HashMap<String, Object>(){{put("size", 100L);}});
         Assert.assertNotNull(storeFile);
         Assert.assertEquals(100, storeFile.getSize());
 

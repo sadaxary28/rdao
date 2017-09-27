@@ -32,11 +32,12 @@ public abstract class DomainObject {
     private volatile ConcurrentMap<String, Optional<Object>> waitWriteFieldValues = null;
 
     public DomainObject(long id) {
+        if (id < 1) {
+            throw new IllegalArgumentException();
+        }
         this.id = id;
-
         this.structEntity = HashStructEntities.getStructEntity(this.getClass());
-
-        this.fieldValues = new ConcurrentHashMap<String, Optional<Object>>();
+        this.fieldValues = new ConcurrentHashMap<>();
     }
 
     public long getId() {

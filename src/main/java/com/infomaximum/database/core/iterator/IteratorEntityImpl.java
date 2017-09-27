@@ -2,13 +2,13 @@ package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.domainobject.EntitySource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Created by kris on 30.04.17.
@@ -20,9 +20,9 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     private final long iteratorId;
 
     private E nextElement;
-    private EntitySource[] state = new EntitySource[1];
+    private DomainObjectUtils.NextState state = new DomainObjectUtils.NextState();
 
-    public IteratorEntityImpl(DataSource dataSource, Class<E> clazz) throws DatabaseException {
+    public IteratorEntityImpl(DataSource dataSource, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataSource = dataSource;
         this.clazz = clazz;
         String columnFamily = HashStructEntities.getStructEntity(clazz).annotationEntity.name();
@@ -53,13 +53,9 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
-        EntitySource entitySource = DomainObjectUtils.nextEntitySource(dataSource, iteratorId, state);
-        if (entitySource == null) {
-            nextElement = null;
+        nextElement = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, state);
+        if (nextElement == null) {
             close();
-            return;
         }
-
-        nextElement = DomainObjectUtils.buildDomainObject(dataSource, clazz, entitySource);
     }
 }

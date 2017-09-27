@@ -30,7 +30,7 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);
+            domainObjectSource.find(StoreFileReadable.class, new HashMap<String, Object>() {{ put("zzzzz", null);}});
             Assert.fail();
         } catch (Exception ignore) {}
 

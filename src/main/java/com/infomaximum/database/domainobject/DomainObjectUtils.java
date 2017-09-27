@@ -5,57 +5,52 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.ReflectionDatabaseException;
+import com.infomaximum.database.exeption.runtime.FieldNotFoundDatabaseException;
+import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by kris on 28.04.17.
  */
 public class DomainObjectUtils {
 
-    public static <T extends DomainObject> T buildDomainObject(DataSource dataSource, final Class<T> clazz, EntitySource entitySource) throws ReflectionDatabaseException {
-        try {
-            Constructor<T> constructor = clazz.getConstructor(long.class);
+    public static class NextState {
+        protected long nextId = -1;
 
-            T domainObject = constructor.newInstance(entitySource.getId());
+        protected boolean isEmpty() {
+            return nextId != -1;
+        }
 
-            //Устанавливаем dataSource
-            HashStructEntities.getDataSourceField().set(domainObject, dataSource);
-
-            //Загружаем поля
-            Map<String, byte[]> data = entitySource.getFields();
-            if (data!=null) {
-                StructEntity structEntity = domainObject.getStructEntity();
-
-                for (Field field: structEntity.getFields()) {
-                    String fieldName = field.name();
-                    if (data.containsKey(fieldName)) {
-                        byte[] bValue = data.get(fieldName);
-                        Object value = TypeConvert.get(field.type(), bValue);
-                        domainObject.set(fieldName, value);
-                    }
-                }
-            }
-
-            return domainObject;
-        } catch (ReflectiveOperationException e) {
-            throw new ReflectionDatabaseException(e);
+        protected void clear() {
+            nextId = -1;
         }
     }
 
-    public static EntitySource nextEntitySource(DataSource dataSource, long iteratorId, EntitySource[] state) throws DataSourceDatabaseException {
-        EntitySource entitySource = null;
-        if (state != null) {
-            entitySource = state[0];
-            state[0] = null;
+    public static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, DataSource dataSource) {
+        try {
+            Constructor<T> constructor = clazz.getConstructor(long.class);
+
+            T domainObject = constructor.newInstance(id);
+
+            //Устанавливаем dataSource
+            HashStructEntities.dataSourceField.set(domainObject, dataSource);
+
+            return domainObject;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalTypeDatabaseException(e);
+        }
+    }
+
+    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataSource dataSource, long iteratorId, NextState state) throws DataSourceDatabaseException {
+        T obj = null;
+        if (state != null && state.isEmpty()) {
+            obj = buildDomainObject(clazz, state.nextId, dataSource);
+            state.clear();
         }
 
         while (true) {
@@ -66,18 +61,24 @@ public class DomainObjectUtils {
 
             FieldKey key = FieldKey.unpack(keyValue.getKey());
             if (key.isBeginningObject()) {
-                if (entitySource == null) {
-                    entitySource = new EntitySource(key.getId(), null);
+                if (obj == null) {
+                    obj = buildDomainObject(clazz, key.getId(), dataSource);
                     continue;
                 }
 
                 if (state != null) {
-                    state[0] = new EntitySource(key.getId(), null);
+                    state.nextId = key.getId();
                 }
                 break;
+            } else {
+                Field field = obj.getStructEntity().getFieldByName(key.getFieldName());
+                if (field == null) {
+                    throw new FieldNotFoundDatabaseException(clazz, key.getFieldName());
+                }
+                obj.set(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
             }
         }
 
-        return entitySource;
+        return obj;
     }
 }

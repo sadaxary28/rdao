@@ -14,6 +14,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+
 /**
  * Created by kris on 22.04.17.
  */
@@ -32,8 +34,10 @@ public class IndexDomainObjectTest extends RocksDataTest {
 
         //Проверяем, что таких объектов нет в базе
         for (long i=1; i<=100; i++) {
+            HashMap<String, Object> filter = new HashMap<>();
+            filter.put("size", i);
             Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, i));
-            Assert.assertNull(domainObjectSource.find(StoreFileReadable.class, "size", i));
+            Assert.assertNull(domainObjectSource.find(StoreFileReadable.class, filter));
         }
 
 
@@ -56,7 +60,9 @@ public class IndexDomainObjectTest extends RocksDataTest {
 
         //Ищем объекты по size
         for (long size=1; size<=100; size++) {
-            StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, "size", size);
+            HashMap<String, Object> filter = new HashMap<>();
+            filter.put("size", size);
+            StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, filter);
             Assert.assertNotNull(storeFile);
             Assert.assertEquals(size, storeFile.getSize());
         }

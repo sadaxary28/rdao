@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by user on 23.04.2017.
@@ -15,36 +15,31 @@ public class HashStructEntities {
 
     private final static Logger log = LoggerFactory.getLogger(HashStructEntities.class);
 
+    public final static Field dataSourceField = getDataSourceField();
+    private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
 
-    private static Field dataSourceField;
-    static {
-        try {
-            dataSourceField = DomainObject.class.getDeclaredField("dataSource");
-            dataSourceField.setAccessible(true);
-        } catch (Exception e) {
-            log.error("Exception find field: transaction");
-        }
-    }
-    public static Field getDataSourceField(){
-        return dataSourceField;
-    }
-
-
-    private static Map<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
     public static StructEntity getStructEntity(Class<? extends DomainObject> clazz) {
         Class<? extends DomainObject> entityClass = StructEntity.getEntityClass(clazz);
 
         StructEntity domainObjectFields = structEntities.get(entityClass);
-        if (domainObjectFields==null){
-            synchronized (structEntities) {
-                domainObjectFields = structEntities.get(entityClass);
-                if (domainObjectFields==null){
-                    domainObjectFields = new StructEntity(entityClass);
-                    structEntities.put(entityClass, domainObjectFields);
-                }
-            }
+        if (domainObjectFields != null) {
+            return domainObjectFields;
         }
-        return domainObjectFields;
+
+        StructEntity newValue = new StructEntity(entityClass);
+        domainObjectFields = structEntities.putIfAbsent(entityClass, newValue);
+        return domainObjectFields != null ? domainObjectFields : newValue;
     }
 
+    private static Field getDataSourceField() {
+        Field field = null;
+        try {
+            field = DomainObject.class.getDeclaredField("dataSource");
+            field.setAccessible(true);
+        } catch (Exception e) {
+            log.error("Exception HashStructEntities.getDataSourceField", e);
+        }
+
+        return field;
+    }
 }
