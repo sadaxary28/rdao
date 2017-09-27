@@ -46,6 +46,7 @@ public class DomainObjectSource {
 
             T domainObject = DomainObjectUtils.buildDomainObject(dataSource, clazz, new EntitySource(id, null));
 
+            //TODO нужно сделать "похорошему", без такого "хака"
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (Field field: entityAnnotation.fields()) {
                 domainObject.set(field.name(), null);

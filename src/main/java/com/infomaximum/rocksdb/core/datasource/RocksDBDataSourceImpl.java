@@ -18,9 +18,7 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Transaction;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -257,13 +255,25 @@ public class RocksDBDataSourceImpl implements DataSource {
 
     @Override
     public boolean containsColumnFamily(String name) {
-        return (rocksDataBase.getColumnFamilyHandle(name) != null);
+        return rocksDataBase.getColumnFamilies().containsKey(name);
     }
 
     @Override
     public String[] getColumnFamilies() {
-        Set<String> columnFamilySet = rocksDataBase.getColumnFamilies().keySet();
-        return columnFamilySet.toArray(new String[columnFamilySet.size()]);
+        int size = rocksDataBase.getColumnFamilies().size();
+        if (rocksDataBase.getColumnFamilies().containsKey(RocksDataBase.DEFAULT_COLUMN_FAMILY)) {
+            --size;
+        }
+
+        String[] columnFamilies = new String[size];
+        int pos = 0;
+        for (Map.Entry<String, ColumnFamilyHandle> cf : rocksDataBase.getColumnFamilies().entrySet()) {
+            if (!cf.getKey().equals(RocksDataBase.DEFAULT_COLUMN_FAMILY)) {
+                columnFamilies[pos++] = cf.getKey();
+            }
+        }
+
+        return columnFamilies;
     }
 
     @Override
