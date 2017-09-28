@@ -111,7 +111,12 @@ public class TypeConvert {
             return getDate(value);
         } else if (type.isEnum()) {
             if (PersistentEnumId.class.isAssignableFrom(type)) {
-                int id = getInteger(value);
+                Integer idObj = getInteger(value);
+                if (idObj == null) {
+                    return null;
+                }
+
+                int id = idObj.intValue();
                 for(PersistentEnumId iEnum : ((Class<? extends PersistentEnumId>)type).getEnumConstants()) {
                     if(id == iEnum.getId()) {
                         return iEnum;
@@ -120,7 +125,7 @@ public class TypeConvert {
                 throw new RuntimeException("not found enum: " + type + ", id: " + id);
             } else {
                 String name = getString(value);
-                return Enum.valueOf((Class<? extends Enum>) type, name);
+                return name != null ? Enum.valueOf((Class<? extends Enum>) type, name) : null;
             }
         } else {
             throw new RuntimeException("Not support type: " + type);

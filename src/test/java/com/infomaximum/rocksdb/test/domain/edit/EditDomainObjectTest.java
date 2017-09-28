@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.edit;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -31,7 +30,7 @@ public class EditDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
 
         String fileName1 = "info1.json";
         String fileName2 = "info2.json";
@@ -39,18 +38,18 @@ public class EditDomainObjectTest extends RocksDataTest {
         long size = 1000L;
 
         //Добавляем объект
-        Transaction transaction1 = domainObjectSource.getEngineTransaction().createTransaction();
-        StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
-        storeFile.setFileName(fileName1);
-        storeFile.setContentType(contentType);
-        storeFile.setSize(size);
-        storeFile.setSingle(false);
-        domainObjectSource.save(storeFile, transaction1);
-        transaction1.commit();
-
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
+            storeFile.setFileName(fileName1);
+            storeFile.setContentType(contentType);
+            storeFile.setSize(size);
+            storeFile.setSingle(false);
+            transaction.save(storeFile);
+            transaction.commit();
+        }
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
         Assert.assertNotNull(storeFileCheckSave);
         Assert.assertEquals(fileName1, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
@@ -58,18 +57,15 @@ public class EditDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(false, storeFileCheckSave.isSingle());
 
         //Редактируем сохраненый объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
-                storeFile.setFileName(fileName2);
-                storeFile.setSingle(true);
-                domainObjectSource.save(storeFile, transaction);
-            }
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                obj.setFileName(fileName2);
+                obj.setSingle(true);
+                transaction.save(obj);
         });
 
         //Загружаем отредактированный объект
-        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
+        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
         Assert.assertNotNull(editFileCheckSave);
         Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
         Assert.assertEquals(contentType, editFileCheckSave.getContentType());
@@ -78,18 +74,15 @@ public class EditDomainObjectTest extends RocksDataTest {
 
 
         //Повторно редактируем сохраненый объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
-                storeFile.setFileName(fileName1);
-                storeFile.setSingle(false);
-                domainObjectSource.save(storeFile, transaction);
-            }
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                obj.setFileName(fileName1);
+                obj.setSingle(false);
+                transaction.save(obj);
         });
 
 
-        StoreFileReadable storeFileCheckSave2 = domainObjectSource.get(StoreFileReadable.class, 1L);
+        StoreFileReadable storeFileCheckSave2 = domainObjectSource.get(StoreFileReadable.class, null, 1L);
         Assert.assertNotNull(storeFileCheckSave2);
         Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());

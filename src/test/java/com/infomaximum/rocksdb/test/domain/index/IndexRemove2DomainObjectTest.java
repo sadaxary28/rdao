@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -33,34 +32,27 @@ public class IndexRemove2DomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
 
         //Добавляем объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                 storeFile.setSize(100);
-                domainObjectSource.save(storeFile, transaction);
-            }
+                transaction.save(storeFile);
         });
 
         //Редактируем объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, null, 1L);
                 storeFile.setSize(99);
-                domainObjectSource.save(storeFile, transaction);
-            }
+                transaction.save(storeFile);
         });
 
-
         //Ищем объекты по size
-        StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, new HashMap<String, Object>() {{ put(StoreFileReadable.FIELD_SIZE, 100L);}});
-        Assert.assertNull(storeFile);
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>() {{ put(StoreFileReadable.FIELD_SIZE, 100L);}})) {
+            Assert.assertFalse(i.hasNext());
+        }
 
         rocksDataBase.close();
     }
-
 }

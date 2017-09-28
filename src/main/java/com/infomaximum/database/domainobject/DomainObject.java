@@ -3,13 +3,10 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
-import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -27,7 +24,7 @@ public abstract class DomainObject {
 
     private final StructEntity structEntity;
 
-    private DataSource dataSource = null;
+    private DataEnumerable dataSource = null;
     private ConcurrentMap<String, Optional<Object>> fieldValues = null;
     private volatile ConcurrentMap<String, Optional<Object>> waitWriteFieldValues = null;
 
@@ -52,8 +49,8 @@ public abstract class DomainObject {
         } else {
             synchronized (this) {
                 if (!fieldValues.containsKey(fieldName)) {
-                    T value = loadField(type, fieldName);
-                    setLoadedField(fieldName, value);
+                    T value = dataSource.getField(type, fieldName, this);
+                    _setLoadedField(fieldName, value);
                     return value;
                 } else {
                     return (T) fieldValues.get(fieldName).orElse(null);
@@ -88,13 +85,8 @@ public abstract class DomainObject {
      * @param name
      * @param value
      */
-    protected void setLoadedField(String name, Object value) {
+    protected void _setLoadedField(String name, Object value) {
         fieldValues.put(name, Optional.ofNullable(value));
-    }
-
-    private <T> T loadField(Class<T> type, String fieldName) throws DataSourceDatabaseException {
-        byte[] bValue = dataSource.getValue(structEntity.annotationEntity.name(), new FieldKey(id, fieldName).pack());
-        return (T) TypeConvert.get(type, bValue);
     }
 
     protected String getString(String fieldName) throws DataSourceDatabaseException {

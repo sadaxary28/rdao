@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.structentity.HashStructEntities;
-import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.FieldKey;
@@ -12,7 +11,6 @@ import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
-import java.util.Map;
 
 /**
  * Created by kris on 28.04.17.
@@ -31,7 +29,7 @@ public class DomainObjectUtils {
         }
     }
 
-    public static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, DataSource dataSource) {
+    public static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, DataEnumerable dataSource) {
         try {
             Constructor<T> constructor = clazz.getConstructor(long.class);
 
@@ -46,10 +44,10 @@ public class DomainObjectUtils {
         }
     }
 
-    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataSource dataSource, long iteratorId, NextState state) throws DataSourceDatabaseException {
+    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataSource dataSource, long iteratorId, DataEnumerable dataEnumerable, NextState state) throws DataSourceDatabaseException {
         T obj = null;
         if (state != null && state.isEmpty()) {
-            obj = buildDomainObject(clazz, state.nextId, dataSource);
+            obj = buildDomainObject(clazz, state.nextId, dataEnumerable);
             state.clear();
         }
 
@@ -62,7 +60,7 @@ public class DomainObjectUtils {
             FieldKey key = FieldKey.unpack(keyValue.getKey());
             if (key.isBeginningObject()) {
                 if (obj == null) {
-                    obj = buildDomainObject(clazz, key.getId(), dataSource);
+                    obj = buildDomainObject(clazz, key.getId(), dataEnumerable);
                     continue;
                 }
 
@@ -76,7 +74,7 @@ public class DomainObjectUtils {
                     throw new FieldNotFoundDatabaseException(clazz, key.getFieldName());
                 }
 
-                obj.setLoadedField(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
+                obj._setLoadedField(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
             }
         }
 

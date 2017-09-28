@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -36,25 +35,24 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
         String userEmail = "test1@infomaximum.onmicrosoft.com";
 
 //        Добавляем объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                ExchangeFolderEditable exchangeFolder = domainObjectSource.create(ExchangeFolderEditable.class);
+        domainObjectSource.executeTransactional(transaction -> {
+                ExchangeFolderEditable exchangeFolder = transaction.create(ExchangeFolderEditable.class);
                 exchangeFolder.setUuid(uuid);
                 exchangeFolder.setUserEmail(userEmail);
-                domainObjectSource.save(exchangeFolder, transaction);
-            }
+                transaction.save(exchangeFolder);
         });
 
 
         //Ищем объект
-        ExchangeFolderReadable exchangeFolder = domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>(){{
+         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>(){{
             put(ExchangeFolderReadable.FIELD_UUID, uuid);
             put(ExchangeFolderReadable.FIELD_USER_EMAIL, userEmail);
-        }});
-        Assert.assertNotNull(exchangeFolder);
-        Assert.assertEquals(uuid, exchangeFolder.getUuid());
-        Assert.assertEquals(userEmail, exchangeFolder.getUserEmail());
+        }})) {
+             ExchangeFolderReadable exchangeFolder = i.next();
+             Assert.assertNotNull(exchangeFolder);
+             Assert.assertEquals(uuid, exchangeFolder.getUuid());
+             Assert.assertEquals(userEmail, exchangeFolder.getUserEmail());
+         }
 
         rocksDataBase.close();
     }

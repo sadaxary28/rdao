@@ -1,82 +1,73 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Entity;
-import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
-import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.EngineTransaction;
-import com.infomaximum.database.core.transaction.engine.EngineTransactionImpl;
 import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by user on 19.04.2017.
  */
-public class DomainObjectSource {
+public class DomainObjectSource implements DataEnumerable {
+
+    public interface Monad {
+
+        /**
+         * Реализация операции.
+         * @param transaction Контекст, в котором выполняется операция.
+         * @throws Exception Если во время выполнения операции возникла ошибка.
+         */
+        public void action(final Transaction transaction) throws Exception;
+    }
 
     private final DataSource dataSource;
-    private final EngineTransaction engineTransaction;
 
     public DomainObjectSource(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.engineTransaction = new EngineTransactionImpl(dataSource);
     }
 
-    public EngineTransaction getEngineTransaction() {
-        return engineTransaction;
-    }
-
-    public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
-        try {
-            Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
-
-            long id = dataSource.nextId(entityAnnotation.name());
-
-            T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, dataSource);
-
-            //TODO нужно сделать "похорошему", без такого "хака"
-            //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
-            for (Field field: entityAnnotation.fields()) {
-                domainObject.set(field.name(), null);
-            }
-
-            return domainObject;
-        } catch (Exception e) {
-            throw new DatabaseException(e);
+    public void executeTransactional(final Monad operation) throws TransactionDatabaseException {
+        try (Transaction transaction = buildTransaction()) {
+            operation.action(transaction);
+            transaction.commit();
+        } catch (Exception ex) {
+            throw new TransactionDatabaseException("Exception execute transaction", ex);
         }
     }
 
-    public <T extends DomainObject & DomainObjectEditable> void save(final T domainObject, final Transaction transaction) throws DatabaseException {
-        transaction.update(domainObject.getStructEntity(), domainObject, domainObject.getLoadValues(), domainObject.writeValues());
-        domainObject.flush();
+    public Transaction buildTransaction() {
+        return new Transaction(dataSource);
     }
 
-    public <T extends DomainObject & DomainObjectEditable> void remove(final T domainObject, final Transaction transaction) throws DatabaseException {
-        transaction.remove(domainObject.getStructEntity(), domainObject);
+    @Override
+    public <T extends Object, U extends DomainObject> T getField(final Class<T> type, String fieldName, U object) throws DataSourceDatabaseException {
+        byte[] value = dataSource.getValue(object.getStructEntity().annotationEntity.name(), new FieldKey(object.getId(), fieldName).pack());
+        return (T) TypeConvert.get(type, value);
     }
 
+    @Override
     public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
+        KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
-        long iteratorId = dataSource.createIterator(entityAnnotation.name(), FieldKey.buildKeyPattern(id, loadingFields));
-        T obj = null;
+        long iteratorId = dataSource.createIterator(entityAnnotation.name(), pattern);
 
+        T obj;
         try {
-            obj = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, null);
+            obj = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, this, null);
         } finally {
             dataSource.closeIterator(iteratorId);
         }
@@ -84,34 +75,14 @@ public class DomainObjectSource {
         return obj;
     }
 
-     public <T extends DomainObject> T find(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
-        try (IteratorFindEntityImpl iterator = new IteratorFindEntityImpl(dataSource, clazz, loadingFields, filters)) {
-            return iterator.hasNext() ? (T) iterator.next() : null;
-        }
+    @Override
+    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
+        return new IteratorFindEntityImpl(dataSource, this, clazz, loadingFields, filters, -1);
     }
 
-    public <T extends DomainObject> IteratorEntity<T> findAll(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
-        return new IteratorFindEntityImpl(dataSource, clazz, loadingFields, filters);
-    }
-
+    @Override
     public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz, final Set<String> loadingFields) throws DatabaseException {
-        return new IteratorEntityImpl(dataSource, clazz, loadingFields);
-    }
-
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
-        return get(clazz, Collections.emptySet(), id);
-    }
-
-    public <T extends DomainObject> T find(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
-        return find(clazz, Collections.emptySet(), filters);
-    }
-
-    public <T extends DomainObject> IteratorEntity<T> findAll(final Class<T> clazz, Map<String, Object> filters) throws DatabaseException {
-        return findAll(clazz, Collections.emptySet(), filters);
-    }
-
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz) throws DatabaseException {
-        return iterator(clazz, Collections.emptySet());
+        return new IteratorEntityImpl(dataSource, this, clazz, loadingFields, -1);
     }
 
     public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {

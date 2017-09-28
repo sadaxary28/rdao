@@ -1,6 +1,7 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
@@ -24,21 +25,22 @@ import java.util.*;
 public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataSource dataSource;
+    private final DataEnumerable dataEnumerable;
     private final Class<E> clazz;
-    private final StructEntity structEntity;
     private final StructEntityIndex structEntityIndex;
     private final long indexIteratorId;
     private final List<Field> checkedFilterFields;
     private final List<Object> filterValues;
     private final KeyPattern dataKeyPattern;
+    private final long dataIteratorId;
 
-    private long dataIteratorId = -1;
     private E nextElement;
 
-    public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Set<String> loadingFields, Map<String, Object> filters) throws DataSourceDatabaseException {
+    public IteratorFindEntityImpl(DataSource dataSource, DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, Map<String, Object> filters, long transactionId) throws DataSourceDatabaseException {
         this.dataSource = dataSource;
+        this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
-        this.structEntity = HashStructEntities.getStructEntity(clazz);
+        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
         this.structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
 
         checkIndex(filters);
@@ -64,21 +66,34 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
             filterValues.add(value);
         }
 
-        this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, IndexKey.buildKeyPattern(values));
         this.checkedFilterFields = filterFields;
         this.filterValues = filterValues;
         this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
+
+        final KeyPattern indexKeyPattern = IndexKey.buildKeyPattern(values);
+        if (transactionId == -1) {
+            this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, indexKeyPattern);
+            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.annotationEntity.name(), null) : -1;
+        } else {
+            this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, indexKeyPattern, transactionId);
+            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.annotationEntity.name(), null, transactionId) : -1;
+        }
 
         nextImpl();
     }
 
     private KeyPattern buildDataKeyPattern(List<Field> fields1, Set<String> fields2) {
+        if (fields2 == null) {
+            fields2 = Collections.emptySet();
+        }
+
         if (fields1 == null || fields1.isEmpty()) {
             return fields2.isEmpty() ? null : FieldKey.buildKeyPattern(fields2);
         }
 
-        Set<String> fields = new HashSet<>(fields2);
+        Set<String> fields = new HashSet<>(fields1.size() + fields2.size());
         fields1.forEach(field -> fields.add(field.name()));
+        fields.addAll(fields2);
         return FieldKey.buildKeyPattern(fields);
     }
 
@@ -138,17 +153,13 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
     private E findObject(IndexKey key) throws DataSourceDatabaseException {
         if (dataKeyPattern == null) {
-            return DomainObjectUtils.buildDomainObject(clazz, key.getId(), dataSource);
+            return DomainObjectUtils.buildDomainObject(clazz, key.getId(), dataEnumerable);
         }
 
         dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(key.getId()));
-        if (dataIteratorId == -1) {
-            dataIteratorId = dataSource.createIterator(structEntity.annotationEntity.name(), dataKeyPattern);
-        } else {
-            dataSource.seekIterator(dataIteratorId, dataKeyPattern);
-        }
+        dataSource.seekIterator(dataIteratorId, dataKeyPattern);
 
-        E obj = DomainObjectUtils.nextObject(clazz, dataSource, dataIteratorId, null);
+        E obj = DomainObjectUtils.nextObject(clazz, dataSource, dataIteratorId, dataEnumerable, null);
         return checkFilter(obj) ? obj : null;
     }
 

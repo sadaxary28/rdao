@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.exeption.DatabaseException;
@@ -29,31 +30,31 @@ public class IteratorFindEntityTest extends RocksDataTest {
             final String nameExpected = "привет всем";
             
             domainObjectSource.createEntity(StoreFileReadable.class);
-            domainObjectSource.getEngineTransaction().execute(transaction -> {
-                StoreFileEditable obj = domainObjectSource.create(StoreFileEditable.class);
+            domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("привет всем");
                 obj.setSize(sizeExpected);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
 
-                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("привет");
                 obj.setSize(sizeExpected);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
 
-                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("ПРИВЕТ ВСЕМ");
                 obj.setSize(sizeExpected);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
 
-                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("всем");
                 obj.setSize(sizeExpected);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
 
-                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("прИВет всЕм");
                 obj.setSize(sizeExpected);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
             });
 
             Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
@@ -61,7 +62,7 @@ public class IteratorFindEntityTest extends RocksDataTest {
                 put(StoreFileReadable.FIELD_SIZE, sizeExpected);
                 put(StoreFileReadable.FIELD_FILE_NAME, nameExpected);
             }};
-            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, loadingFields, filter)) {
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, loadingFields, filter)) {
                 int iteratedRecordCount = 0;
                 while (iterator.hasNext()) {
                     StoreFileReadable storeFile = iterator.next();
@@ -86,7 +87,7 @@ public class IteratorFindEntityTest extends RocksDataTest {
 
             Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
             Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 9L);}};
-            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, loadingFields, filter)) {
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, loadingFields, filter)) {
                 int iteratedRecordCount = 0;
                 while (iterator.hasNext()) {
                     StoreFileReadable storeFile = iterator.next();
@@ -113,7 +114,7 @@ public class IteratorFindEntityTest extends RocksDataTest {
             fieldValuesField.setAccessible(true);
 
             Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 9L);}};
-            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, filter)) {
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, null, filter)) {
                 int iteratedRecordCount = 0;
                 while (iterator.hasNext()) {
                     StoreFileReadable storeFile = iterator.next();
@@ -128,17 +129,45 @@ public class IteratorFindEntityTest extends RocksDataTest {
         }
     }
 
+    @Test
+    public void findTransactional() throws Exception {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+            domainObjectSource.createEntity(StoreFileReadable.class);
+
+            try (Transaction transaction = domainObjectSource.buildTransaction()) {
+                // insert
+                StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+                obj.setSize(10);
+                transaction.save(obj);
+
+                Assert.assertEquals(10L, transaction.get(StoreFileReadable.class, null, obj.getId()).getSize());
+
+                // change
+                obj.setSize(20);
+                transaction.save(obj);
+
+                Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 20L);}};
+                try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, null, filter)) {
+                    Assert.assertTrue(i.hasNext());
+                }
+
+                transaction.commit();
+            }
+        }
+    }
+
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws DatabaseException {
         domainObjectSource.createEntity(StoreFileReadable.class);
-        domainObjectSource.getEngineTransaction().execute(transaction -> {
+        domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; i++) {
-                StoreFileEditable obj = domainObjectSource.create(StoreFileEditable.class);
+                StoreFileEditable obj = transaction.create(StoreFileEditable.class);
                 obj.setSize(i % 10);
                 obj.setFileName("name");
                 obj.setContentType("type");
                 obj.setSingle(true);
                 obj.setFormat(FormatType.B);
-                domainObjectSource.save(obj, transaction);
+                transaction.save(obj);
             }
         });
     }

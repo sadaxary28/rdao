@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -36,38 +35,36 @@ public class IndexDomainObjectTest extends RocksDataTest {
         for (long i=1; i<=100; i++) {
             HashMap<String, Object> filter = new HashMap<>();
             filter.put("size", i);
-            Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, i));
-            Assert.assertNull(domainObjectSource.find(StoreFileReadable.class, filter));
+            Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, i));
+            Assert.assertFalse(domainObjectSource.find(StoreFileReadable.class, null, filter).hasNext());
         }
 
-
         //Добавляем объекты
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
                 for (int i=1; i<=100; i++) {
-                    StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
+                    StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                     storeFile.setSize(i);
-                    domainObjectSource.save(storeFile, transaction);
+                    transaction.save(storeFile);
                 }
-            }
         });
 
         //Проверяем что файлы сохранены
         for (long id=1; id<=100; id++) {
-            Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, id));
+            Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, id));
         }
 
         //Ищем объекты по size
         for (long size=1; size<=100; size++) {
             HashMap<String, Object> filter = new HashMap<>();
             filter.put("size", size);
-            StoreFileReadable storeFile = domainObjectSource.find(StoreFileReadable.class, filter);
-            Assert.assertNotNull(storeFile);
-            Assert.assertEquals(size, storeFile.getSize());
+            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, null, filter)) {
+                StoreFileReadable storeFile = i.next();
+                Assert.assertNotNull(storeFile);
+                Assert.assertEquals(size, storeFile.getSize());
+                Assert.assertFalse(i.hasNext());
+            }
         }
 
         rocksDataBase.close();
     }
-
 }

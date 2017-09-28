@@ -31,12 +31,12 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(ExchangeFolderReadable.class);
 
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>() {{ put("uuid", "");}});
+            domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>() {{ put("uuid", "");}});
             Assert.fail();
         } catch (NotFoundIndexDatabaseException ignore) {}
 
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, new HashMap<String, Object>(){{
+            domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>(){{
                 put(ExchangeFolderReadable.FIELD_UUID, "");
                 put(ExchangeFolderReadable.FIELD_SYNC_DATE, "");
             }});

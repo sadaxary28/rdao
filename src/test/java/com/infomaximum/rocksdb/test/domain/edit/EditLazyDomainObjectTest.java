@@ -1,7 +1,5 @@
 package com.infomaximum.rocksdb.test.domain.edit;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -31,7 +29,7 @@ public class EditLazyDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
 
         String fileName1 = "info1.json";
         String fileName2 = "info2.json";
@@ -39,29 +37,23 @@ public class EditLazyDomainObjectTest extends RocksDataTest {
         long size = 1000L;
 
         //Добавляем объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                 storeFile.setFileName(fileName1);
                 storeFile.setContentType(contentType);
                 storeFile.setSize(size);
-                domainObjectSource.save(storeFile, transaction);
-            }
+                transaction.save(storeFile);
         });
 
         //Редактируем сохраненый объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, null, 1L);
                 storeFile.setFileName(fileName2);
-                domainObjectSource.save(storeFile, transaction);
-            }
+                transaction.save(storeFile);
         });
 
         //Загружаем отредактированный объект
-        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
+        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
         Assert.assertNotNull(editFileCheckSave);
         Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
         Assert.assertEquals(contentType, editFileCheckSave.getContentType());
@@ -69,5 +61,4 @@ public class EditLazyDomainObjectTest extends RocksDataTest {
 
         rocksDataBase.close();
     }
-
 }
