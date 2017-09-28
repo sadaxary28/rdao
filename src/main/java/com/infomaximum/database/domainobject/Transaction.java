@@ -67,7 +67,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
             byte[] key = new FieldKey(object.getId(), field.name()).pack();
             if (value != null) {
-                byte[] bValue = TypeConvert.packObject(value.getClass(), value);
+                byte[] bValue = TypeConvert.pack(value.getClass(), value);
                 modifiers.add(new ModifierSet(columnFamily, key, bValue));
             } else {
                 modifiers.add(new ModifierRemove(columnFamily, key, false));
@@ -136,7 +136,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     @Override
     public <T extends Object, U extends DomainObject> T getField(final Class<T> type, String fieldName, U object) throws DataSourceDatabaseException {
         byte[] value = dataSource.getValue(object.getStructEntity().annotationEntity.name(), new FieldKey(object.getId(), fieldName).pack(), transactionId);
-        return (T) TypeConvert.get(type, value);
+        return (T) TypeConvert.unpack(type, value);
     }
 
     @Override
@@ -198,7 +198,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
             final byte[] key = new FieldKey(id, field.name()).pack();
             final byte[] value = dataSource.getValue(columnFamily, key, transactionId);
-            loadedValues.put(field, TypeConvert.get(field.type(), value));
+            loadedValues.put(field, TypeConvert.unpack(field.type(), value));
         }
     }
 

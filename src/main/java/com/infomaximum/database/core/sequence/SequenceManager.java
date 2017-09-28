@@ -64,7 +64,7 @@ public class SequenceManager {
                     break;
                 }
 
-                String sequenceName = TypeConvert.getString(Arrays.copyOfRange(key, keyPrefix.length, key.length));
+                String sequenceName = TypeConvert.unpackString(Arrays.copyOfRange(key, keyPrefix.length, key.length));
                 sequences.put(sequenceName, new Sequence(rocksDataBase, defaultColumnFamily, key));
                 i.next();
             }

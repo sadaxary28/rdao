@@ -26,7 +26,7 @@ public class TypeConvert {
         return ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
     }
 
-    public static String getString(byte[] value){
+    public static String unpackString(byte[] value){
         if (value==null) {
             return null;
         } else {
@@ -34,7 +34,7 @@ public class TypeConvert {
         }
     }
 
-    public static String getString(byte[] value, int offset, int length){
+    public static String unpackString(byte[] value, int offset, int length){
         if (value==null) {
             return null;
         } else {
@@ -42,7 +42,7 @@ public class TypeConvert {
         }
     }
 
-    public static Integer getInteger(byte[] value){
+    public static Integer unpackInteger(byte[] value){
         if (value==null) {
             return null;
         } else {
@@ -50,7 +50,7 @@ public class TypeConvert {
         }
     }
 
-    public static Long getLong(byte[] value){
+    public static Long unpackLong(byte[] value){
         if (value==null) {
             return null;
         } else {
@@ -58,7 +58,7 @@ public class TypeConvert {
         }
     }
 
-    public static Boolean getBoolean(byte[] value){
+    public static Boolean unpackBoolean(byte[] value){
         if (value==null) {
             return null;
         } else {
@@ -66,11 +66,11 @@ public class TypeConvert {
         }
     }
 
-    public static Date getDate(byte[] value){
+    public static Date unpackDate(byte[] value){
         if (value==null) {
             return null;
         } else {
-            return new Date(getLong(value));
+            return new Date(unpackLong(value));
         }
     }
 
@@ -95,23 +95,22 @@ public class TypeConvert {
         return pack(value.getTime());
     }
 
-
-    public static Object get(Class<?> type, byte[] value){
+    public static Object unpack(Class<?> type, byte[] value){
         if (type==String.class) {
-            return getString(value);
+            return unpackString(value);
         } else if (type == Long.class || type == long.class) {
-            return getLong(value);
+            return unpackLong(value);
         } else if (type == Integer.class || type == int.class) {
-            return getInteger(value);
+            return unpackInteger(value);
         } else if (type == Boolean.class || type == boolean.class) {
-            return getBoolean(value);
+            return unpackBoolean(value);
         } else if (type == Byte[].class || type == byte[].class ) {
             return value;
         } else if (type == Date.class) {
-            return getDate(value);
+            return unpackDate(value);
         } else if (type.isEnum()) {
             if (PersistentEnumId.class.isAssignableFrom(type)) {
-                Integer idObj = getInteger(value);
+                Integer idObj = unpackInteger(value);
                 if (idObj == null) {
                     return null;
                 }
@@ -124,7 +123,7 @@ public class TypeConvert {
                 }
                 throw new RuntimeException("not found enum: " + type + ", id: " + id);
             } else {
-                String name = getString(value);
+                String name = unpackString(value);
                 return name != null ? Enum.valueOf((Class<? extends Enum>) type, name) : null;
             }
         } else {
@@ -132,7 +131,7 @@ public class TypeConvert {
         }
     }
 
-    public static byte[] packObject(Class<?> type, Object value){
+    public static byte[] pack(Class<?> type, Object value){
         if (type==String.class) {
             return pack((String) value);
         } else if (type == Long.class || type == long.class) {

@@ -36,7 +36,7 @@ public class RocksDataBaseBuilder {
 
             ConcurrentMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
             for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
-                String columnFamilyName = TypeConvert.getString(columnFamilyDescriptors.get(i).columnFamilyName());
+                String columnFamilyName = TypeConvert.unpackString(columnFamilyDescriptors.get(i).columnFamilyName());
                 ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
                 columnFamilies.put(columnFamilyName, columnFamilyHandle);
             }

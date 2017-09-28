@@ -56,7 +56,7 @@ public class FieldKey extends Key {
             return new FieldKey(id);
         }
 
-        return new FieldKey(id, TypeConvert.getString(src, ID_BYTE_SIZE, src.length - ID_BYTE_SIZE));
+        return new FieldKey(id, TypeConvert.unpackString(src, ID_BYTE_SIZE, src.length - ID_BYTE_SIZE));
     }
 
     public static byte[] buildKeyPrefix(long id) {

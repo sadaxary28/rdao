@@ -25,7 +25,7 @@ public class SequenceTest extends RocksDataTest {
             sequenceManager.createSequence(sequenceName);
 
             byte[] value = rocksDataBase.getRocksDB().get(rocksDataBase.getDefaultColumnFamily(), TypeConvert.pack(SequenceManager.SEQUENCE_PREFIX + sequenceName));
-            Assert.assertTrue(TypeConvert.getLong(value) > 0);
+            Assert.assertTrue(TypeConvert.unpackLong(value) > 0);
         }
     }
 

@@ -74,7 +74,7 @@ public class DomainObjectUtils {
                     throw new FieldNotFoundDatabaseException(clazz, key.getFieldName());
                 }
 
-                obj._setLoadedField(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
+                obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.type(), keyValue.getValue()));
             }
         }
 

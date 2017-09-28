@@ -55,7 +55,7 @@ public class DomainObjectSource implements DataEnumerable {
     @Override
     public <T extends Object, U extends DomainObject> T getField(final Class<T> type, String fieldName, U object) throws DataSourceDatabaseException {
         byte[] value = dataSource.getValue(object.getStructEntity().annotationEntity.name(), new FieldKey(object.getId(), fieldName).pack());
-        return (T) TypeConvert.get(type, value);
+        return (T) TypeConvert.unpack(type, value);
     }
 
     @Override
