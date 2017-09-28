@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.index.IndexUtils;
+import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
@@ -158,7 +158,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         }
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
             Field field = checkedFilterFields.get(i);
-            if (!EqualsUtils.equals(filterValues.get(i), obj.get(field.type(), field.name()))) {
+            if (!IndexUtils.equals(field.type(), filterValues.get(i), obj.get(field.type(), field.name()))) {
                 return false;
             }
         }

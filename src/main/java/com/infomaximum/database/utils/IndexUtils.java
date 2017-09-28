@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.index;
+package com.infomaximum.database.utils;
 
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.utils.TypeConvert;
@@ -27,7 +27,7 @@ public class IndexUtils {
                 return ((Long) value).longValue();
             }
         } else if (type == String.class) {
-            return hash(TypeConvert.pack((String) value));
+            return hash(TypeConvert.pack(((String) value).toLowerCase()));
         } else if (type == Integer.class) {
             return ((Integer) value).longValue();
         } else if (type == Boolean.class) {
@@ -37,6 +37,18 @@ public class IndexUtils {
         } else {
             throw new IllegalArgumentException("Unsupported " + type + " for hashing.");
         }
+    }
+
+    public static boolean equals(Class<?> clazz, Object left, Object right) {
+        if (left == null) {
+            return right == null;
+        }
+
+        if (clazz == String.class) {
+            return ((String)left).equalsIgnoreCase((String)right);
+        }
+
+        return left.equals(right);
     }
 
     /**

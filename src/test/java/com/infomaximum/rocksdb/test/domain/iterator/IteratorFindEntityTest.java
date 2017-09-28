@@ -21,6 +21,60 @@ import java.util.concurrent.ConcurrentMap;
 public class IteratorFindEntityTest extends RocksDataTest {
 
     @Test
+    public void ignoreCaseFind() throws Exception {
+        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
+
+            final long sizeExpected = 10;
+            final String nameExpected = "привет всем";
+            
+            domainObjectSource.createEntity(StoreFileReadable.class);
+            domainObjectSource.getEngineTransaction().execute(transaction -> {
+                StoreFileEditable obj = domainObjectSource.create(StoreFileEditable.class);
+                obj.setFileName("привет всем");
+                obj.setSize(sizeExpected);
+                domainObjectSource.save(obj, transaction);
+
+                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj.setFileName("привет");
+                obj.setSize(sizeExpected);
+                domainObjectSource.save(obj, transaction);
+
+                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj.setFileName("ПРИВЕТ ВСЕМ");
+                obj.setSize(sizeExpected);
+                domainObjectSource.save(obj, transaction);
+
+                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj.setFileName("всем");
+                obj.setSize(sizeExpected);
+                domainObjectSource.save(obj, transaction);
+
+                obj = domainObjectSource.create(StoreFileEditable.class);
+                obj.setFileName("прИВет всЕм");
+                obj.setSize(sizeExpected);
+                domainObjectSource.save(obj, transaction);
+            });
+
+            Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+            Map<String, Object> filter = new HashMap<String, Object>(){{
+                put(StoreFileReadable.FIELD_SIZE, sizeExpected);
+                put(StoreFileReadable.FIELD_FILE_NAME, nameExpected);
+            }};
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, loadingFields, filter)) {
+                int iteratedRecordCount = 0;
+                while (iterator.hasNext()) {
+                    StoreFileReadable storeFile = iterator.next();
+
+                    Assert.assertTrue(storeFile.getFileName().equalsIgnoreCase(nameExpected));
+                    ++iteratedRecordCount;
+                }
+                Assert.assertEquals(3, iteratedRecordCount);
+            }
+        }
+    }
+
+    @Test
     public void loadTwoFields() throws Exception {
         try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
@@ -32,10 +86,10 @@ public class IteratorFindEntityTest extends RocksDataTest {
 
             Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
             Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 9L);}};
-            try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, loadingFields, filter)) {
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, loadingFields, filter)) {
                 int iteratedRecordCount = 0;
-                while (iStoreFileReadable.hasNext()) {
-                    StoreFileReadable storeFile = iStoreFileReadable.next();
+                while (iterator.hasNext()) {
+                    StoreFileReadable storeFile = iterator.next();
 
                     ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
                     Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_FILE_NAME));
@@ -59,10 +113,10 @@ public class IteratorFindEntityTest extends RocksDataTest {
             fieldValuesField.setAccessible(true);
 
             Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 9L);}};
-            try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.findAll(StoreFileReadable.class, filter)) {
+            try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.findAll(StoreFileReadable.class, filter)) {
                 int iteratedRecordCount = 0;
-                while (iStoreFileReadable.hasNext()) {
-                    StoreFileReadable storeFile = iStoreFileReadable.next();
+                while (iterator.hasNext()) {
+                    StoreFileReadable storeFile = iterator.next();
 
                     ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
                     Assert.assertEquals(0, fieldValues.size());

@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.transaction;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.index.IndexUtils;
+import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.core.transaction.modifier.Modifier;
