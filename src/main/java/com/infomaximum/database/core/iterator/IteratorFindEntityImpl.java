@@ -6,6 +6,7 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
@@ -14,7 +15,6 @@ import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.database.utils.EqualsUtils;
-import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.*;
 
@@ -28,9 +28,11 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     private final StructEntity structEntity;
     private final StructEntityIndex structEntityIndex;
     private final long indexIteratorId;
-    private final List<Field> filterFields;
+    private final List<Field> checkedFilterFields;
     private final List<Object> filterValues;
+    private final KeyPattern dataKeyPattern;
 
+    private long dataIteratorId = -1;
     private E nextElement;
 
     public IteratorFindEntityImpl(DataSource dataSource, Class<E> clazz, Set<String> loadingFields, Map<String, Object> filters) throws DataSourceDatabaseException {
@@ -62,11 +64,22 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
             filterValues.add(value);
         }
 
-        this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, IndexKey.getKeyPrefix(values));
-        this.filterFields = filterFields;
+        this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, IndexKey.buildKeyPattern(values));
+        this.checkedFilterFields = filterFields;
         this.filterValues = filterValues;
+        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
 
         nextImpl();
+    }
+
+    private KeyPattern buildDataKeyPattern(List<Field> fields1, Set<String> fields2) {
+        if (fields1 == null || fields1.isEmpty()) {
+            return fields2.isEmpty() ? null : FieldKey.buildKeyPattern(fields2);
+        }
+
+        Set<String> fields = new HashSet<>(fields2);
+        fields1.forEach(field -> fields.add(field.name()));
+        return FieldKey.buildKeyPattern(fields);
     }
 
     @Override
@@ -88,6 +101,9 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     @Override
     public void close() throws DataSourceDatabaseException {
         dataSource.closeIterator(indexIteratorId);
+        if (dataIteratorId != -1) {
+            dataSource.closeIterator(dataIteratorId);
+        }
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
@@ -97,9 +113,8 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
                 break;
             }
 
-            IndexKey key = IndexKey.unpack(keyValue.getKey());
-            if (checkFilter(key.getId())) {
-                nextElement = DomainObjectUtils.buildDomainObject(clazz, key.getId(), dataSource);
+            nextElement = findObject(IndexKey.unpack(keyValue.getKey()));
+            if (nextElement != null) {
                 return;
             }
         }
@@ -121,14 +136,29 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         }
     }
 
-    private boolean checkFilter(long id) throws DataSourceDatabaseException {
-        if (filterFields == null) {
+    private E findObject(IndexKey key) throws DataSourceDatabaseException {
+        if (dataKeyPattern == null) {
+            return DomainObjectUtils.buildDomainObject(clazz, key.getId(), dataSource);
+        }
+
+        dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(key.getId()));
+        if (dataIteratorId == -1) {
+            dataIteratorId = dataSource.createIterator(structEntity.annotationEntity.name(), dataKeyPattern);
+        } else {
+            dataSource.seekIterator(dataIteratorId, dataKeyPattern);
+        }
+
+        E obj = DomainObjectUtils.nextObject(clazz, dataSource, dataIteratorId, null);
+        return checkFilter(obj) ? obj : null;
+    }
+
+    private boolean checkFilter(E obj) throws DataSourceDatabaseException {
+        if (checkedFilterFields == null) {
             return true;
         }
-        for (int i = 0; i < filterFields.size(); ++i) {
-            Field field = filterFields.get(i);
-            byte[] value = dataSource.getValue(structEntity.annotationEntity.name(), new FieldKey(id, field.name()).pack());
-            if (!EqualsUtils.equals(filterValues.get(i), TypeConvert.get(field.type(), value))) {
+        for (int i = 0; i < checkedFilterFields.size(); ++i) {
+            Field field = checkedFilterFields.get(i);
+            if (!EqualsUtils.equals(filterValues.get(i), obj.get(field.type(), field.name()))) {
                 return false;
             }
         }

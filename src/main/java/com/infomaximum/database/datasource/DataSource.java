@@ -20,9 +20,9 @@ public interface DataSource {
     void commitTransaction(long transactionId) throws DataSourceDatabaseException;
     void rollbackTransaction(long transactionId) throws DataSourceDatabaseException;
 
-    long createIterator(String columnFamily) throws DataSourceDatabaseException;
-    long createIterator(String columnFamily, final byte[] keyPrefix) throws DataSourceDatabaseException;
-    long createIterator(String columnFamily, long transactionId) throws DataSourceDatabaseException;
+    long createIterator(String columnFamily, final KeyPattern pattern) throws DataSourceDatabaseException;
+    long createIterator(String columnFamily, final KeyPattern pattern, long transactionId) throws DataSourceDatabaseException;
+    void seekIterator(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException;
     KeyValue next(long iteratorId) throws DataSourceDatabaseException;
     void closeIterator(long iteratorId);
 

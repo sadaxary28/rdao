@@ -53,7 +53,7 @@ public abstract class DomainObject {
             synchronized (this) {
                 if (!fieldValues.containsKey(fieldName)) {
                     T value = loadField(type, fieldName);
-                    fieldValues.put(fieldName, Optional.ofNullable(value));
+                    setLoadedField(fieldName, value);
                     return value;
                 } else {
                     return (T) fieldValues.get(fieldName).orElse(null);
@@ -81,6 +81,15 @@ public abstract class DomainObject {
         }
 
         waitWriteFieldValues.put(field, Optional.ofNullable(value));
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
+     * @param name
+     * @param value
+     */
+    protected void setLoadedField(String name, Object value) {
+        fieldValues.put(name, Optional.ofNullable(value));
     }
 
     private <T> T loadField(Class<T> type, String fieldName) throws DataSourceDatabaseException {

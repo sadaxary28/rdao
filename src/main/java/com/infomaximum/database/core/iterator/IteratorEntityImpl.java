@@ -4,6 +4,7 @@ import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
+import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 
@@ -26,7 +27,7 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
         this.dataSource = dataSource;
         this.clazz = clazz;
         String columnFamily = HashStructEntities.getStructEntity(clazz).annotationEntity.name();
-        this.iteratorId = dataSource.createIterator(columnFamily);
+        this.iteratorId = dataSource.createIterator(columnFamily, FieldKey.buildKeyPattern(loadingFields));
 
         nextImpl();
     }

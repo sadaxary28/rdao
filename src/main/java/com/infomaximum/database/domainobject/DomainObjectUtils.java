@@ -20,12 +20,12 @@ import java.util.Map;
 public class DomainObjectUtils {
 
     public static class NextState {
+
         protected long nextId = -1;
 
         protected boolean isEmpty() {
             return nextId != -1;
         }
-
         protected void clear() {
             nextId = -1;
         }
@@ -75,7 +75,8 @@ public class DomainObjectUtils {
                 if (field == null) {
                     throw new FieldNotFoundDatabaseException(clazz, key.getFieldName());
                 }
-                obj.set(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
+
+                obj.setLoadedField(key.getFieldName(), TypeConvert.get(field.type(), keyValue.getValue()));
             }
         }
 

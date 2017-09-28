@@ -87,7 +87,7 @@ public class Transaction implements AutoCloseable {
         final List<Modifier> modifiers = new ArrayList<>();
 
         // delete self-object
-        modifiers.add(new ModifierRemove(columnFamily, FieldKey.getKeyPrefix(self.getId()), true));
+        modifiers.add(new ModifierRemove(columnFamily, FieldKey.buildKeyPrefix(self.getId()), true));
 
         // delete indexed values
         if (!structEntity.getStructEntityIndices().isEmpty()) {

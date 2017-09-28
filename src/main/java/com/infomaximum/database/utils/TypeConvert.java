@@ -14,6 +14,8 @@ import java.util.Date;
  */
 public class TypeConvert {
 
+    public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     private static final Charset CHARSET = Charset.forName("UTF-8");
 
     public static ByteBuffer allocateBuffer(int capacity) {

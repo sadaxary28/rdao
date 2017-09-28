@@ -72,7 +72,7 @@ public class DomainObjectSource {
     public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
         Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
 
-        long iteratorId = dataSource.createIterator(entityAnnotation.name(), FieldKey.getKeyPrefix(id));
+        long iteratorId = dataSource.createIterator(entityAnnotation.name(), FieldKey.buildKeyPattern(id, loadingFields));
         T obj = null;
 
         try {

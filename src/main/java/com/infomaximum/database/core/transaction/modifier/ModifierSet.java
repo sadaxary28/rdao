@@ -1,11 +1,11 @@
 package com.infomaximum.database.core.transaction.modifier;
 
+import com.infomaximum.database.utils.TypeConvert;
+
 /**
  * Created by kris on 18.05.17.
  */
 public class ModifierSet extends Modifier {
-
-    public static byte[] EMPTY_VALUE = new byte[0];
 
     private final byte[] value;
 
@@ -15,7 +15,7 @@ public class ModifierSet extends Modifier {
     }
 
     public ModifierSet(String columnFamily, final byte[] key) {
-        this(columnFamily, key, EMPTY_VALUE);
+        this(columnFamily, key, TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
     public byte[] getValue() {

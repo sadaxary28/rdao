@@ -18,4 +18,18 @@ public class ByteUtils {
         }
         return true;
     }
+
+    public static boolean endsWith(final byte[] suffix, final byte[] source) {
+        if (suffix.length > source.length) {
+            return false;
+        }
+
+        int j = source.length - suffix.length;
+        for (int i = 0; i < suffix.length; ++i, ++j) {
+            if (source[j] != suffix[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
