@@ -32,4 +32,8 @@ public class ByteUtils {
         }
         return true;
     }
+
+    public static boolean isNullOrEmpty(byte[] value) {
+        return value == null || value.length == 0;
+    }
 }

@@ -15,17 +15,13 @@ public class IndexUtils {
         return type != String.class;
     }
 
-    public static long buildHash(Object value, Class<?> type) {
+    public static long buildHash(Class<?> type, Object value) {
         if (value == null) {
             return 0;
         }
 
         if (type == Long.class) {
-            if (value instanceof DomainObject) {
-                return ((DomainObject) value).getId();
-            } else {
-                return ((Long) value).longValue();
-            }
+            return ((Long) value).longValue();
         } else if (type == String.class) {
             return hash(TypeConvert.pack(((String) value).toLowerCase()));
         } else if (type == Integer.class) {
@@ -35,7 +31,7 @@ public class IndexUtils {
         } else if (type == Date.class) {
             return ((Date)value).getTime();
         } else {
-            throw new IllegalArgumentException("Unsupported " + type + " for hashing.");
+            throw new IllegalArgumentException("Unsupported type " + type + " for hashing.");
         }
     }
 

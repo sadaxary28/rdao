@@ -52,7 +52,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         for (int i = 0; i < structEntityIndex.sortedFields.size(); ++i) {
             Field field = structEntityIndex.sortedFields.get(i);
             Object value = filters.get(field.name());
-            values[i] = IndexUtils.buildHash(value, field.type());
+            values[i] = IndexUtils.buildHash(field.type(), value);
             if (IndexUtils.toLongCastable(field.type())) {
                 continue;
             }

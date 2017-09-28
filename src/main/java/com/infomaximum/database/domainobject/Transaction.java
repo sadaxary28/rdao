@@ -205,7 +205,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     private static void setHashValues(final List<Field> sortedFields, final Map<Field, Object> values, long[] destination) {
         for (int i = 0; i < sortedFields.size(); ++i) {
             Field field = sortedFields.get(i);
-            destination[i] = IndexUtils.buildHash(values.get(field), field.type());
+            destination[i] = IndexUtils.buildHash(field.type(), values.get(field));
         }
     }
 }
