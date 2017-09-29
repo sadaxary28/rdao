@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.FieldKey;
@@ -68,9 +68,9 @@ public class DomainObjectUtils {
                 }
                 break;
             } else {
-                Field field = obj.getStructEntity().getFieldByName(key.getFieldName());
+                EntityField field = obj.getStructEntity().getField(key.getFieldName());
 
-                obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.type(), keyValue.getValue()));
+                obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getPacker()));
             }
         }
 

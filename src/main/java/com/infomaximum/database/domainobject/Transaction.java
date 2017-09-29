@@ -1,12 +1,11 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.anotation.Entity;
-import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
-import com.infomaximum.database.core.structentity.StructEntity;
-import com.infomaximum.database.core.structentity.StructEntityIndex;
+import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.modifier.Modifier;
@@ -32,16 +31,16 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
         try {
-            Entity entityAnnotation = StructEntity.getInstance(clazz).annotationEntity;
+            StructEntity entity = StructEntity.getInstance(clazz);
 
-            long id = dataSource.nextId(entityAnnotation.name());
+            long id = dataSource.nextId(entity.getName());
 
             T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, this);
 
             //TODO нужно сделать "похорошему", без такого "хака"
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
-            for (Field field: entityAnnotation.fields()) {
-                domainObject.set(field.name(), null);
+            for (EntityField field: entity.getFields()) {
+                domainObject.set(field.getName(), null);
             }
 
             return domainObject;
@@ -53,21 +52,21 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     public <T extends DomainObject & DomainObjectEditable> void save(final T object) throws DatabaseException {
         ensureTransaction();
 
-        Map<Field, Object> loadedValues = object.getLoadedValues();
-        Map<Field, Object> newValues = object.getNewValues();
+        Map<EntityField, Object> loadedValues = object.getLoadedValues();
+        Map<EntityField, Object> newValues = object.getNewValues();
 
-        final String columnFamily = object.getStructEntity().annotationEntity.name();
+        final String columnFamily = object.getStructEntity().getName();
         final List<Modifier> modifiers = new ArrayList<>();
 
         // update self-object
         modifiers.add(new ModifierSet(columnFamily, new FieldKey(object.getId()).pack()));
-        for (Map.Entry<Field, Object> writeEntry: newValues.entrySet()) {
-            Field field = writeEntry.getKey();
+        for (Map.Entry<EntityField, Object> writeEntry: newValues.entrySet()) {
+            EntityField field = writeEntry.getKey();
             Object value = writeEntry.getValue();
 
-            byte[] key = new FieldKey(object.getId(), field.name()).pack();
+            byte[] key = new FieldKey(object.getId(), field.getName()).pack();
             if (value != null) {
-                byte[] bValue = TypeConvert.pack(value.getClass(), value);
+                byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getPacker());
                 modifiers.add(new ModifierSet(columnFamily, key, bValue));
             } else {
                 modifiers.add(new ModifierRemove(columnFamily, key, false));
@@ -75,11 +74,11 @@ public class Transaction implements AutoCloseable, DataEnumerable {
         }
 
         // update indexed values
-        for (StructEntityIndex structEntityIndex: object.getStructEntity().getStructEntityIndices()){
-            String indexColumnFamily = structEntityIndex.columnFamily;
+        for (EntityIndex entityIndex : object.getStructEntity().getIndices()){
+            String indexColumnFamily = entityIndex.columnFamily;
 
             boolean isUpdateIndex = false;
-            for (Field iField: structEntityIndex.sortedFields) {
+            for (EntityField iField: entityIndex.sortedFields) {
                 if (newValues.containsKey(iField)) {
                     isUpdateIndex = true;
                     break;
@@ -89,16 +88,16 @@ public class Transaction implements AutoCloseable, DataEnumerable {
                 continue;
             }
 
-            tryLoadFields(columnFamily, object.getId(), structEntityIndex.sortedFields, loadedValues);
+            tryLoadFields(columnFamily, object.getId(), entityIndex.sortedFields, loadedValues);
 
-            final IndexKey indexKey = new IndexKey(object.getId(), new long[structEntityIndex.sortedFields.size()]);
+            final IndexKey indexKey = new IndexKey(object.getId(), new long[entityIndex.sortedFields.size()]);
 
             // Remove old value-index
-            setHashValues(structEntityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
+            setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
             modifiers.add(new ModifierRemove(indexColumnFamily, indexKey.pack(), false));
 
             // Add new value-index
-            setHashValues(structEntityIndex.sortedFields, newValues, indexKey.getFieldValues());
+            setHashValues(entityIndex.sortedFields, newValues, indexKey.getFieldValues());
             modifiers.add(new ModifierSet(indexColumnFamily, indexKey.pack()));
         }
 
@@ -110,23 +109,23 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     public <T extends DomainObject & DomainObjectEditable> void remove(final T object) throws DatabaseException {
         ensureTransaction();
 
-        final String columnFamily = object.getStructEntity().annotationEntity.name();
+        final String columnFamily = object.getStructEntity().getName();
         final List<Modifier> modifiers = new ArrayList<>();
 
         // delete self-object
         modifiers.add(new ModifierRemove(columnFamily, FieldKey.buildKeyPrefix(object.getId()), true));
 
         // delete indexed values
-        if (!object.getStructEntity().getStructEntityIndices().isEmpty()) {
-            Map<Field, Object> loadedValues = new HashMap<>();
+        if (!object.getStructEntity().getIndices().isEmpty()) {
+            Map<EntityField, Object> loadedValues = new HashMap<>();
 
-            for (StructEntityIndex structEntityIndex : object.getStructEntity().getStructEntityIndices()) {
-                tryLoadFields(columnFamily, object.getId(), structEntityIndex.sortedFields, loadedValues);
+            for (EntityIndex entityIndex : object.getStructEntity().getIndices()) {
+                tryLoadFields(columnFamily, object.getId(), entityIndex.sortedFields, loadedValues);
 
-                final IndexKey indexKey = new IndexKey(object.getId(), new long[structEntityIndex.sortedFields.size()]);
+                final IndexKey indexKey = new IndexKey(object.getId(), new long[entityIndex.sortedFields.size()]);
 
-                setHashValues(structEntityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
-                modifiers.add(new ModifierRemove(structEntityIndex.columnFamily, indexKey.pack(), false));
+                setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
+                modifiers.add(new ModifierRemove(entityIndex.columnFamily, indexKey.pack(), false));
             }
         }
 
@@ -134,16 +133,16 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     }
 
     @Override
-    public <T extends Object, U extends DomainObject> T getField(final Class<T> type, String fieldName, U object) throws DataSourceDatabaseException {
-        byte[] value = dataSource.getValue(object.getStructEntity().annotationEntity.name(), new FieldKey(object.getId(), fieldName).pack(), transactionId);
-        return (T) TypeConvert.unpack(type, value);
+    public <T extends Object, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException {
+        byte[] value = dataSource.getValue(object.getStructEntity().getName(), new FieldKey(object.getId(), field.getName()).pack(), transactionId);
+        return (T) TypeConvert.unpack(field.getType(), value, field.getPacker());
     }
 
     @Override
     public <T extends DomainObject> T get(Class<T> clazz, Set<String> loadingFields, long id) throws DataSourceDatabaseException {
         ensureTransaction();
 
-        String columnFamily = StructEntity.getInstance(clazz).annotationEntity.name();
+        String columnFamily = StructEntity.getInstance(clazz).getName();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
         long iteratorId = dataSource.createIterator(columnFamily, pattern, transactionId);
@@ -190,22 +189,22 @@ public class Transaction implements AutoCloseable, DataEnumerable {
         }
     }
 
-    private void tryLoadFields(String columnFamily, long id, final List<Field> fields, Map<Field, Object> loadedValues) throws DataSourceDatabaseException {
-        for (Field field: fields) {
+    private void tryLoadFields(String columnFamily, long id, final List<EntityField> fields, Map<EntityField, Object> loadedValues) throws DataSourceDatabaseException {
+        for (EntityField field: fields) {
             if (loadedValues.containsKey(field)) {
                 continue;
             }
 
-            final byte[] key = new FieldKey(id, field.name()).pack();
+            final byte[] key = new FieldKey(id, field.getName()).pack();
             final byte[] value = dataSource.getValue(columnFamily, key, transactionId);
-            loadedValues.put(field, TypeConvert.unpack(field.type(), value));
+            loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getPacker()));
         }
     }
 
-    private static void setHashValues(final List<Field> sortedFields, final Map<Field, Object> values, long[] destination) {
+    private static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Object> values, long[] destination) {
         for (int i = 0; i < sortedFields.size(); ++i) {
-            Field field = sortedFields.get(i);
-            destination[i] = IndexUtils.buildHash(field.type(), values.get(field));
+            EntityField field = sortedFields.get(i);
+            destination[i] = IndexUtils.buildHash(field.getType(), values.get(field));
         }
     }
 }

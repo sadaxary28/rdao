@@ -2,6 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import com.infomaximum.database.core.schema.TypePacker;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -81,8 +82,10 @@ public class TypeConvert {
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static Object unpack(Class<?> type, byte[] value){
-        if (type == String.class) {
+    public static <T> Object unpack(Class<T> type, byte[] value, TypePacker<T> packer){
+        if (packer != null) {
+            return packer.unpack(value);
+        } else if (type == String.class) {
             return unpackString(value);
         } else if (type == Long.class) {
             return unpackLong(value);
@@ -94,24 +97,14 @@ public class TypeConvert {
             return value;
         } else if (type == Date.class) {
             return unpackDate(value);
-        } else if (type.isEnum() && BaseEnum.class.isAssignableFrom(type)) {
-            if (ByteUtils.isNullOrEmpty(value)) {
-                return null;
-            }
-
-            int enumValue = Ints.fromByteArray(value);
-            for(BaseEnum e : ((Class<? extends BaseEnum>)type).getEnumConstants()) {
-                if(enumValue == e.intValue()) {
-                    return e;
-                }
-            }
-            throw new RuntimeException("Not found enum value " + enumValue + " of " + type);
         }
         throw new RuntimeException("Unsupported type " + type);
     }
 
-    public static byte[] pack(Class<?> type, Object value){
-        if (type == String.class) {
+    public static <T> byte[] pack(Class<T> type, Object value, TypePacker<T> packer){
+        if (packer != null) {
+            return packer.pack((T) value);
+        } else if (type == String.class) {
             return pack((String) value);
         } else if (type == Long.class) {
             return pack((Long) value);
@@ -123,8 +116,6 @@ public class TypeConvert {
             return (byte[]) value;
         } else if (type == Date.class) {
             return pack((Date) value);
-        } else if (type.isEnum() && BaseEnum.class.isAssignableFrom(type)) {
-            return value != null ? pack(((BaseEnum)value).intValue()) : EMPTY_BYTE_ARRAY;
         }
         throw new RuntimeException("Not support type: " + type);
     }

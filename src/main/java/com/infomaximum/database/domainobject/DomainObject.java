@@ -1,11 +1,9 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.utils.BaseEnum;
-import com.infomaximum.database.utils.EqualsUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -45,25 +43,27 @@ public abstract class DomainObject {
         } else if (loadedFieldValues.containsKey(fieldName)) {
             return (T) loadedFieldValues.get(fieldName).orElse(null);
         } else {
-            T value = dataSource.getField(type, fieldName, this);
+            EntityField field = structEntity.getField(fieldName);
+            field.throwIfNotMatch(type);
+
+            T value = dataSource.getValue(field, this);
             Optional<Object> prevValue = loadedFieldValues.putIfAbsent(fieldName, Optional.ofNullable(value));
             return prevValue != null ? (T) prevValue.orElse(null) : value;
         }
     }
 
-    protected void set(String field, Object value) {
+    protected void set(String fieldName, Object value) {
         if (newFieldValues == null) {
             newFieldValues = new HashMap<>();
         }
 
-        Field aField = structEntity.getFieldByName(field);
+        EntityField field = structEntity.getField(fieldName);
 
-        //Проверяем на совпадение типов
-        if (value != null && !EqualsUtils.equalsType(value.getClass(), aField.type())) {
-            throw new IllegalTypeDatabaseException("Not equals type field in type value");
+        if (value != null) {
+            field.throwIfNotMatch(value.getClass());
         }
 
-        newFieldValues.put(field, value);
+        newFieldValues.put(fieldName, value);
     }
 
     /**
@@ -117,18 +117,18 @@ public abstract class DomainObject {
         return structEntity;
     }
 
-    protected Map<Field, Object> getLoadedValues(){
-        Map<Field, Object> values = new HashMap<>(loadedFieldValues.size());
+    protected Map<EntityField, Object> getLoadedValues(){
+        Map<EntityField, Object> values = new HashMap<>(loadedFieldValues.size());
         for (Map.Entry<String, Optional<Object>> entry: loadedFieldValues.entrySet()){
-            values.put(structEntity.getFieldByName(entry.getKey()), entry.getValue().orElse(null));
+            values.put(structEntity.getField(entry.getKey()), entry.getValue().orElse(null));
         }
         return values;
     }
 
-    protected Map<Field, Object> getNewValues(){
-        Map<Field, Object> values = new HashMap<>(newFieldValues.size());
+    protected Map<EntityField, Object> getNewValues(){
+        Map<EntityField, Object> values = new HashMap<>(newFieldValues.size());
         for (Map.Entry<String, Object> entry: newFieldValues.entrySet()){
-            values.put(structEntity.getFieldByName(entry.getKey()), entry.getValue());
+            values.put(structEntity.getField(entry.getKey()), entry.getValue());
         }
         return values;
     }
