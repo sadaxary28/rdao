@@ -66,7 +66,7 @@ public class IteratorEntityTest extends RocksDataTest {
             final int insertedRecordCount = 10;
             initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-            Field fieldValuesField = DomainObject.class.getDeclaredField("fieldValues");
+            Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
             fieldValuesField.setAccessible(true);
 
             Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
@@ -94,7 +94,7 @@ public class IteratorEntityTest extends RocksDataTest {
             final int insertedRecordCount = 10;
             initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-            Field fieldValuesField = DomainObject.class.getDeclaredField("fieldValues");
+            Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
             fieldValuesField.setAccessible(true);
 
             try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.iterator(StoreFileReadable.class, null)) {

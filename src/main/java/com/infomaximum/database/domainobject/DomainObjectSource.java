@@ -1,6 +1,5 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
@@ -60,10 +59,10 @@ public class DomainObjectSource implements DataEnumerable {
 
     @Override
     public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
-        Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
+        String columnFamily = StructEntity.getInstance(clazz).annotationEntity.name();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
-        long iteratorId = dataSource.createIterator(entityAnnotation.name(), pattern);
+        long iteratorId = dataSource.createIterator(columnFamily, pattern);
 
         T obj;
         try {
@@ -86,7 +85,7 @@ public class DomainObjectSource implements DataEnumerable {
     }
 
     public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {
-        StructEntity entity = new StructEntity(clazz);
+        StructEntity entity = StructEntity.getInstance(clazz);
         dataSource.createColumnFamily(entity.annotationEntity.name());
         dataSource.createSequence(entity.annotationEntity.name());
         for (StructEntityIndex i : entity.getStructEntityIndices()) {

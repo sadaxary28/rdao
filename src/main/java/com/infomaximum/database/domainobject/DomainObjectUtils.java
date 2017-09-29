@@ -1,12 +1,11 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.structentity.HashStructEntities;
+import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.FieldNotFoundDatabaseException;
 import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
@@ -36,7 +35,7 @@ public class DomainObjectUtils {
             T domainObject = constructor.newInstance(id);
 
             //Устанавливаем dataSource
-            HashStructEntities.dataSourceField.set(domainObject, dataSource);
+            StructEntity.dataSourceField.set(domainObject, dataSource);
 
             return domainObject;
         } catch (ReflectiveOperationException e) {
@@ -70,9 +69,6 @@ public class DomainObjectUtils {
                 break;
             } else {
                 Field field = obj.getStructEntity().getFieldByName(key.getFieldName());
-                if (field == null) {
-                    throw new FieldNotFoundDatabaseException(clazz, key.getFieldName());
-                }
 
                 obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.type(), keyValue.getValue()));
             }

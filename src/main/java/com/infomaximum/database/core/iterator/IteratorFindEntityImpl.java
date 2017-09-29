@@ -3,7 +3,6 @@ package com.infomaximum.database.core.iterator;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.utils.IndexUtils;
-import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.core.structentity.StructEntityIndex;
 import com.infomaximum.database.datasource.DataSource;
@@ -40,7 +39,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         this.dataSource = dataSource;
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
-        StructEntity structEntity = HashStructEntities.getStructEntity(clazz);
+        StructEntity structEntity = StructEntity.getInstance(clazz);
         this.structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
 
         checkIndex(filters);

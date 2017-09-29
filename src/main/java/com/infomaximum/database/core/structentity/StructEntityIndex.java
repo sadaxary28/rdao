@@ -2,6 +2,7 @@ package com.infomaximum.database.core.structentity;
 
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
+import com.infomaximum.database.exeption.runtime.FieldNotFoundDatabaseException;
 import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 
 import java.util.*;
@@ -17,12 +18,7 @@ public class StructEntityIndex {
     public StructEntityIndex(StructEntity structEntity, Index index) throws StructEntityDatabaseException {
         List<Field> modifiableIndexFields = new ArrayList<>(index.fields().length);
         for (String fieldName: index.fields()) {
-            Field field = structEntity.getFieldByName(fieldName);
-            if (field == null) {
-                throw new StructEntityDatabaseException("Not found index: " + fieldName);
-            }
-
-            modifiableIndexFields.add(field);
+            modifiableIndexFields.add(structEntity.getFieldByName(fieldName));
         }
 
         //Сортируем, что бы хеш не ломался из-за перестановки местами полей

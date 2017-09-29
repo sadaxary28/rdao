@@ -1,11 +1,10 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.structentity.HashStructEntities;
 import com.infomaximum.database.core.structentity.StructEntity;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
-import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
+import com.infomaximum.database.utils.BaseEnum;
 import com.infomaximum.database.utils.EqualsUtils;
 
 import java.util.Date;
@@ -21,20 +20,19 @@ import java.util.concurrent.ConcurrentMap;
 public abstract class DomainObject {
 
     private final long id;
-
     private final StructEntity structEntity;
 
     private DataEnumerable dataSource = null;
-    private ConcurrentMap<String, Optional<Object>> fieldValues = null;
-    private volatile ConcurrentMap<String, Optional<Object>> waitWriteFieldValues = null;
+    private ConcurrentMap<String, Optional<Object>> loadedFieldValues = null;
+    private Map<String, Object> newFieldValues = null;
 
     public DomainObject(long id) {
         if (id < 1) {
             throw new IllegalArgumentException();
         }
         this.id = id;
-        this.structEntity = HashStructEntities.getStructEntity(this.getClass());
-        this.fieldValues = new ConcurrentHashMap<>();
+        this.structEntity = StructEntity.getInstance(this.getClass());
+        this.loadedFieldValues = new ConcurrentHashMap<>();
     }
 
     public long getId() {
@@ -42,42 +40,30 @@ public abstract class DomainObject {
     }
 
     public <T> T get(Class<T> type, String fieldName) throws DataSourceDatabaseException {
-        if (waitWriteFieldValues!=null && waitWriteFieldValues.containsKey(fieldName)) {
-            return (T) waitWriteFieldValues.get(fieldName).orElse(null);
-        } else if (fieldValues.containsKey(fieldName)) {
-            return (T) fieldValues.get(fieldName).orElse(null);
+        if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
+            return (T) newFieldValues.get(fieldName);
+        } else if (loadedFieldValues.containsKey(fieldName)) {
+            return (T) loadedFieldValues.get(fieldName).orElse(null);
         } else {
-            synchronized (this) {
-                if (!fieldValues.containsKey(fieldName)) {
-                    T value = dataSource.getField(type, fieldName, this);
-                    _setLoadedField(fieldName, value);
-                    return value;
-                } else {
-                    return (T) fieldValues.get(fieldName).orElse(null);
-                }
-            }
+            T value = dataSource.getField(type, fieldName, this);
+            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(fieldName, Optional.ofNullable(value));
+            return prevValue != null ? (T) prevValue.orElse(null) : value;
         }
     }
 
     protected void set(String field, Object value) {
-        if (waitWriteFieldValues == null) {
-            synchronized (this) {
-                if (waitWriteFieldValues == null) {
-                    waitWriteFieldValues = new ConcurrentHashMap<String, Optional<Object>>();
-                }
-            }
+        if (newFieldValues == null) {
+            newFieldValues = new HashMap<>();
         }
 
-        //Валидируем
         Field aField = structEntity.getFieldByName(field);
-        if (aField==null) throw new StructEntityDatabaseException("In entity " + getClass() + " not found field: " + field);
 
-        if (value!=null) {
-            //Проверяем на совпадение типов
-            if (!EqualsUtils.equalsType(value.getClass(), aField.type())) throw new IllegalTypeDatabaseException("Not equals type field in type value");
+        //Проверяем на совпадение типов
+        if (value != null && !EqualsUtils.equalsType(value.getClass(), aField.type())) {
+            throw new IllegalTypeDatabaseException("Not equals type field in type value");
         }
 
-        waitWriteFieldValues.put(field, Optional.ofNullable(value));
+        newFieldValues.put(field, value);
     }
 
     /**
@@ -86,7 +72,17 @@ public abstract class DomainObject {
      * @param value
      */
     protected void _setLoadedField(String name, Object value) {
-        fieldValues.put(name, Optional.ofNullable(value));
+        loadedFieldValues.put(name, Optional.ofNullable(value));
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
+     */
+    protected void _flushNewValues() {
+        for (Map.Entry<String, Object> entry : newFieldValues.entrySet()){
+            _setLoadedField(entry.getKey(), entry.getValue());
+        }
+        newFieldValues.clear();
     }
 
     protected String getString(String fieldName) throws DataSourceDatabaseException {
@@ -102,8 +98,7 @@ public abstract class DomainObject {
     }
 
     protected Date getDate(String fieldName) throws DataSourceDatabaseException {
-        long timestamp = get(Long.class, fieldName);
-        return new Date(timestamp);
+        return get(Date.class, fieldName);
     }
 
     protected Boolean getBoolean(String fieldName) throws DataSourceDatabaseException {
@@ -114,7 +109,7 @@ public abstract class DomainObject {
         return get(byte[].class, fieldName);
     }
 
-    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) throws DataSourceDatabaseException {
+    protected <T extends Enum & BaseEnum> T getEnum(Class<T> enumClass, String fieldName) throws DataSourceDatabaseException {
         return get(enumClass, fieldName);
     }
 
@@ -122,20 +117,21 @@ public abstract class DomainObject {
         return structEntity;
     }
 
-    protected Map<Field, Object> getLoadValues(){
-        return packMapValue(structEntity, fieldValues);
-    }
-
-    protected Map<Field, Object> writeValues(){
-        return packMapValue(structEntity, waitWriteFieldValues);
-    }
-
-    protected void flush() {
-        for (Map.Entry<String, Optional<Object>> entry: waitWriteFieldValues.entrySet()){
-            fieldValues.put(entry.getKey(), entry.getValue());
+    protected Map<Field, Object> getLoadedValues(){
+        Map<Field, Object> values = new HashMap<>(loadedFieldValues.size());
+        for (Map.Entry<String, Optional<Object>> entry: loadedFieldValues.entrySet()){
+            values.put(structEntity.getFieldByName(entry.getKey()), entry.getValue().orElse(null));
         }
+        return values;
     }
 
+    protected Map<Field, Object> getNewValues(){
+        Map<Field, Object> values = new HashMap<>(newFieldValues.size());
+        for (Map.Entry<String, Object> entry: newFieldValues.entrySet()){
+            values.put(structEntity.getFieldByName(entry.getKey()), entry.getValue());
+        }
+        return values;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -157,17 +153,5 @@ public abstract class DomainObject {
                 .append(getClass().getSuperclass().getName()).append('(')
                 .append("id: ").append(id)
                 .append(')').toString();
-    }
-
-    private static Map<Field, Object> packMapValue(StructEntity structEntity, Map<String, Optional<Object>> source){
-        Map<Field, Object> values = new HashMap<>();
-        for (Map.Entry<String, Optional<Object>> entry: source.entrySet()){
-
-            Field field=structEntity.getFieldByName(entry.getKey());
-            if (field==null) throw new RuntimeException("Что то совсем плохо ошибка в логике - такого быть не должно");
-
-            values.put(field, entry.getValue().orElse(null));
-        }
-        return values;
     }
 }

@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.domain.proxy;
 
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.utils.BaseEnum;
 
 import java.util.Date;
 
@@ -75,7 +76,7 @@ public class ProxyDomainObject extends DomainObject {
     }
 
     @Override
-    protected <T extends Enum> T getEnum(Class<T> enumClass, String fieldName) {
+    protected <T extends Enum & BaseEnum> T getEnum(Class<T> enumClass, String fieldName) {
         try {
             return super.getEnum(enumClass, fieldName);
         } catch (DataSourceDatabaseException e) {

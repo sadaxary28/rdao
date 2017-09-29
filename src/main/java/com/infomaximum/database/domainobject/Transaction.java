@@ -32,7 +32,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
         try {
-            Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
+            Entity entityAnnotation = StructEntity.getInstance(clazz).annotationEntity;
 
             long id = dataSource.nextId(entityAnnotation.name());
 
@@ -53,8 +53,8 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     public <T extends DomainObject & DomainObjectEditable> void save(final T object) throws DatabaseException {
         ensureTransaction();
 
-        Map<Field, Object> loadedValues = object.getLoadValues();
-        Map<Field, Object> newValues = object.writeValues();
+        Map<Field, Object> loadedValues = object.getLoadedValues();
+        Map<Field, Object> newValues = object.getNewValues();
 
         final String columnFamily = object.getStructEntity().annotationEntity.name();
         final List<Modifier> modifiers = new ArrayList<>();
@@ -104,7 +104,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
         dataSource.modify(modifiers, transactionId);
 
-        object.flush();
+        object._flushNewValues();
     }
 
     public <T extends DomainObject & DomainObjectEditable> void remove(final T object) throws DatabaseException {
@@ -143,10 +143,10 @@ public class Transaction implements AutoCloseable, DataEnumerable {
     public <T extends DomainObject> T get(Class<T> clazz, Set<String> loadingFields, long id) throws DataSourceDatabaseException {
         ensureTransaction();
 
-        Entity entityAnnotation = StructEntity.getEntityAnnotation(clazz);
+        String columnFamily = StructEntity.getInstance(clazz).annotationEntity.name();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
-        long iteratorId = dataSource.createIterator(entityAnnotation.name(), pattern, transactionId);
+        long iteratorId = dataSource.createIterator(columnFamily, pattern, transactionId);
 
         T obj;
         try {

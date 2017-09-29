@@ -82,7 +82,7 @@ public class IteratorFindEntityTest extends RocksDataTest {
 
             initAndFillStoreFiles(domainObjectSource, 100);
 
-            Field fieldValuesField = DomainObject.class.getDeclaredField("fieldValues");
+            Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
             fieldValuesField.setAccessible(true);
 
             Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
@@ -110,7 +110,7 @@ public class IteratorFindEntityTest extends RocksDataTest {
 
             initAndFillStoreFiles(domainObjectSource, 100);
 
-            Field fieldValuesField = DomainObject.class.getDeclaredField("fieldValues");
+            Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
             fieldValuesField.setAccessible(true);
 
             Map<String, Object> filter = new HashMap<String, Object>(){{put(StoreFileReadable.FIELD_SIZE, 9L);}};

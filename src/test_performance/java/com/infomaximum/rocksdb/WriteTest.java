@@ -13,7 +13,7 @@ public class WriteTest extends BaseTest {
     public void createNonIndexedRecords1() throws Exception {
         domainObjectSource.createEntity(RecordReadable.class);
 
-        PerfomanceTest.test(1000, step-> {
+        PerfomanceTest.test(100000, step-> {
             Transaction transaction = domainObjectSource.buildTransaction();
             RecordEditable rec = transaction.create(RecordEditable.class);
             rec.setString1("some value");
