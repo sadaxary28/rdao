@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.transaction.modifier;
+package com.infomaximum.database.datasource.modifier;
 
 import java.io.Serializable;
 

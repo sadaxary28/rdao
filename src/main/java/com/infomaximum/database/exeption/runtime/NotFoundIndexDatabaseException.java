@@ -9,11 +9,8 @@ import java.util.Collection;
  */
 public class NotFoundIndexDatabaseException extends RuntimeDatabaseException {
 
-    private final Class<? extends DomainObject> clazz;
-
     public NotFoundIndexDatabaseException(Class<? extends DomainObject> clazz, Collection<String> fileds) {
-        super("Not found index to fields [" + String.join(", ", fileds) + "], to " + clazz.getName());
-        this.clazz = clazz;
+        super("Not found index for fields [" + String.join(", ", fileds) + "] in " + clazz);
     }
 
 }

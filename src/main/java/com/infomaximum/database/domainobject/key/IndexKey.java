@@ -1,13 +1,11 @@
 package com.infomaximum.database.domainobject.key;
 
+import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.exeption.runtime.KeyCorruptedException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
-/**
- * Created by kris on 27.04.17.
- */
 public class IndexKey extends Key {
 
     private final long[] fieldValues;
@@ -27,7 +25,7 @@ public class IndexKey extends Key {
 
     @Override
     public byte[] pack() {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(8 + 8 * fieldValues.length);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length);
         for (int i = 0; i < fieldValues.length; ++i) {
             buffer.putLong(fieldValues[i]);
         }
@@ -36,8 +34,8 @@ public class IndexKey extends Key {
     }
 
     public static IndexKey unpack(final byte[] src) {
-        final int longCount = src.length / 8;
-        final int tail = src.length % 8;
+        final int longCount = src.length / ID_BYTE_SIZE;
+        final int tail = src.length % ID_BYTE_SIZE;
         if (longCount < 2 || tail != 0) {
             throw new KeyCorruptedException(src);
         }
@@ -51,11 +49,11 @@ public class IndexKey extends Key {
         return new IndexKey(buffer.getLong(), fieldValues);
     }
 
-    public static byte[] getKeyPrefix(final long[] fieldValues) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(8 * fieldValues.length);
+    public static KeyPattern buildKeyPattern(final long[] fieldValues) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * fieldValues.length);
         for (int i = 0; i < fieldValues.length; ++i) {
             buffer.putLong(fieldValues[i]);
         }
-        return buffer.array();
+        return new KeyPattern(buffer.array());
     }
 }

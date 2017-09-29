@@ -4,7 +4,7 @@ import org.rocksdb.RocksDBException;
 
 public class SequenceDBException extends RocksDBException {
 
-    public SequenceDBException() {
-        super("Sequence already exists.");
+    public SequenceDBException(String name) {
+        super("Sequence " + name + " already exists.");
     }
 }

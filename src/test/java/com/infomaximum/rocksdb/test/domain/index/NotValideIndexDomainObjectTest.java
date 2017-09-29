@@ -30,13 +30,13 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, "zzzzz", null);
+            domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>() {{ put("zzzzz", null);}});
             Assert.fail();
         } catch (Exception ignore) {}
 
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, new HashMap<String, Object>(){{
+            domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>(){{
                 put("xxxxx", null);
                 put("yyyyy", null);
             }});
@@ -45,5 +45,4 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
 
         rocksDataBase.close();
     }
-
 }

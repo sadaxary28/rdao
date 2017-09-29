@@ -27,7 +27,7 @@ public class Sequence {
         this.key = key;
 
         byte[] value = rocksDataBase.getRocksDB().get(columnFamilyHandle, key);
-        maxCacheValue = TypeConvert.getLong(value);
+        maxCacheValue = TypeConvert.unpackLong(value);
         counter = new AtomicLong(maxCacheValue);
         growCache();
     }

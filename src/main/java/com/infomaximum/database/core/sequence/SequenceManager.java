@@ -32,7 +32,7 @@ public class SequenceManager {
 
     public void createSequence(String name) throws RocksDBException {
         if (sequences.containsKey(name)) {
-            throw new SequenceDBException();
+            throw new SequenceDBException(name);
         }
 
         final byte[] key = createSequenceKey(name);
@@ -64,7 +64,7 @@ public class SequenceManager {
                     break;
                 }
 
-                String sequenceName = TypeConvert.getString(Arrays.copyOfRange(key, keyPrefix.length, key.length));
+                String sequenceName = TypeConvert.unpackString(Arrays.copyOfRange(key, keyPrefix.length, key.length));
                 sequences.put(sequenceName, new Sequence(rocksDataBase, defaultColumnFamily, key));
                 i.next();
             }

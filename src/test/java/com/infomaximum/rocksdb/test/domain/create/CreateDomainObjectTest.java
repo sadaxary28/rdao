@@ -1,7 +1,5 @@
 package com.infomaximum.rocksdb.test.domain.create;
 
-import com.infomaximum.database.core.transaction.Transaction;
-import com.infomaximum.database.core.transaction.engine.Monad;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -32,7 +30,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
 
         String fileName="application/json";
         String contentType="info.json";
@@ -40,20 +38,17 @@ public class CreateDomainObjectTest extends RocksDataTest {
         FormatType format = FormatType.B;
 
         //Добавляем объект
-        domainObjectSource.getEngineTransaction().execute(new Monad() {
-            @Override
-            public void action(Transaction transaction) throws Exception {
-                StoreFileEditable storeFile = domainObjectSource.create(StoreFileEditable.class);
+        domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                 storeFile.setContentType(contentType);
                 storeFile.setFileName(fileName);
                 storeFile.setSize(size);
                 storeFile.setFormat(format);
-                domainObjectSource.save(storeFile, transaction);
-            }
+                transaction.save(storeFile);
         });
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
         Assert.assertNotNull(storeFileCheckSave);
         Assert.assertEquals(fileName, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
@@ -62,5 +57,4 @@ public class CreateDomainObjectTest extends RocksDataTest {
 
         rocksDataBase.close();
     }
-
 }

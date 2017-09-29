@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb;
 
-import com.infomaximum.database.core.transaction.Transaction;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
@@ -13,11 +13,11 @@ public class WriteTest extends BaseTest {
     public void createNonIndexedRecords1() throws Exception {
         domainObjectSource.createEntity(RecordReadable.class);
 
-        PerfomanceTest.test(1000, step-> {
-            Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
-            RecordEditable rec = domainObjectSource.create(RecordEditable.class);
+        PerfomanceTest.test(100000, step-> {
+            Transaction transaction = domainObjectSource.buildTransaction();
+            RecordEditable rec = transaction.create(RecordEditable.class);
             rec.setString1("some value");
-            domainObjectSource.save(rec, transaction);
+            transaction.save(rec);
             transaction.commit();
         });
     }
@@ -26,11 +26,11 @@ public class WriteTest extends BaseTest {
     public void createNonIndexedRecords2() throws Exception {
         domainObjectSource.createEntity(RecordReadable.class);
 
-        Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
+        Transaction transaction = domainObjectSource.buildTransaction();
         PerfomanceTest.test(100000, step-> {
-            RecordEditable rec = domainObjectSource.create(RecordEditable.class);
+            RecordEditable rec = transaction.create(RecordEditable.class);
             rec.setString1("some value");
-            domainObjectSource.save(rec, transaction);
+            transaction.save(rec);
         });
         transaction.commit();
     }
@@ -39,12 +39,12 @@ public class WriteTest extends BaseTest {
     public void createIndexedRecords() throws Exception {
         domainObjectSource.createEntity(RecordIndexReadable.class);
 
-        Transaction transaction = domainObjectSource.getEngineTransaction().createTransaction();
+        Transaction transaction = domainObjectSource.buildTransaction();
         PerfomanceTest.test(100000, step-> {
-            RecordIndexEditable rec = domainObjectSource.create(RecordIndexEditable.class);
+            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
             rec.setString1(UUID.randomUUID().toString());
             rec.setLong1(RandomUtil.random.nextLong());
-            domainObjectSource.save(rec, transaction);
+            transaction.save(rec);
         });
         transaction.commit();
     }
