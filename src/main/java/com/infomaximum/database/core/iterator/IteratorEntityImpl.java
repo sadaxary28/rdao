@@ -1,6 +1,6 @@
 package com.infomaximum.database.core.iterator;
 
-import com.infomaximum.database.core.structentity.StructEntity;
+import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -31,7 +31,7 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
         this.dataSource = dataSource;
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
-        String columnFamily = StructEntity.getInstance(clazz).annotationEntity.name();
+        String columnFamily = StructEntity.getInstance(clazz).getName();
         KeyPattern keyPattern = FieldKey.buildKeyPattern(loadingFields != null ? loadingFields : Collections.emptySet());
         if (transactionId == -1) {
             this.iteratorId = dataSource.createIterator(columnFamily, keyPattern);

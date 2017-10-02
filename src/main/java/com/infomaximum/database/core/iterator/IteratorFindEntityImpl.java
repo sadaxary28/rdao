@@ -1,10 +1,10 @@
 package com.infomaximum.database.core.iterator;
 
-import com.infomaximum.database.core.anotation.Field;
+import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.utils.IndexUtils;
-import com.infomaximum.database.core.structentity.StructEntity;
-import com.infomaximum.database.core.structentity.StructEntityIndex;
+import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
@@ -14,7 +14,6 @@ import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
-import com.infomaximum.database.utils.EqualsUtils;
 
 import java.util.*;
 
@@ -26,9 +25,9 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     private final DataSource dataSource;
     private final DataEnumerable dataEnumerable;
     private final Class<E> clazz;
-    private final StructEntityIndex structEntityIndex;
+    private final EntityIndex entityIndex;
     private final long indexIteratorId;
-    private final List<Field> checkedFilterFields;
+    private final List<EntityField> checkedFilterFields;
     private final List<Object> filterValues;
     private final KeyPattern dataKeyPattern;
     private final long dataIteratorId;
@@ -40,19 +39,19 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
         StructEntity structEntity = StructEntity.getInstance(clazz);
-        this.structEntityIndex = structEntity.getStructEntityIndex(filters.keySet());
+        this.entityIndex = structEntity.getStructEntityIndex(filters.keySet());
 
         checkIndex(filters);
 
-        List<Field> filterFields = null;
+        List<EntityField> filterFields = null;
         List<Object> filterValues = null;
 
         long[] values = new long[filters.size()];
-        for (int i = 0; i < structEntityIndex.sortedFields.size(); ++i) {
-            Field field = structEntityIndex.sortedFields.get(i);
-            Object value = filters.get(field.name());
-            values[i] = IndexUtils.buildHash(field.type(), value);
-            if (IndexUtils.toLongCastable(field.type())) {
+        for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
+            EntityField field = entityIndex.sortedFields.get(i);
+            Object value = filters.get(field.getName());
+            values[i] = IndexUtils.buildHash(field.getType(), value);
+            if (IndexUtils.toLongCastable(field.getType())) {
                 continue;
             }
 
@@ -71,17 +70,17 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
 
         final KeyPattern indexKeyPattern = IndexKey.buildKeyPattern(values);
         if (transactionId == -1) {
-            this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, indexKeyPattern);
-            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.annotationEntity.name(), null) : -1;
+            this.indexIteratorId = dataSource.createIterator(entityIndex.columnFamily, indexKeyPattern);
+            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.getName(), null) : -1;
         } else {
-            this.indexIteratorId = dataSource.createIterator(structEntityIndex.columnFamily, indexKeyPattern, transactionId);
-            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.annotationEntity.name(), null, transactionId) : -1;
+            this.indexIteratorId = dataSource.createIterator(entityIndex.columnFamily, indexKeyPattern, transactionId);
+            this.dataIteratorId = dataKeyPattern != null ? dataSource.createIterator(structEntity.getName(), null, transactionId) : -1;
         }
 
         nextImpl();
     }
 
-    private KeyPattern buildDataKeyPattern(List<Field> fields1, Set<String> fields2) {
+    private KeyPattern buildDataKeyPattern(List<EntityField> fields1, Set<String> fields2) {
         if (fields2 == null) {
             fields2 = Collections.emptySet();
         }
@@ -91,7 +90,7 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
         }
 
         Set<String> fields = new HashSet<>(fields1.size() + fields2.size());
-        fields1.forEach(field -> fields.add(field.name()));
+        fields1.forEach(field -> fields.add(field.getName()));
         fields.addAll(fields2);
         return FieldKey.buildKeyPattern(fields);
     }
@@ -138,14 +137,14 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
     }
 
     private void checkIndex(final Map<String, Object> filters) {
-        if (structEntityIndex == null) {
+        if (entityIndex == null) {
             throw new NotFoundIndexDatabaseException(clazz, filters.keySet());
         }
 
-        for (Field field : structEntityIndex.sortedFields) {
-            Object filterValue = filters.get(field.name());
-            if (filterValue != null && !EqualsUtils.equalsType(field.type(), filterValue.getClass())) {
-                throw new RuntimeException("Not equals type field " + field.type() + " and type value " + filterValue.getClass());
+        for (EntityField field : entityIndex.sortedFields) {
+            Object filterValue = filters.get(field.getName());
+            if (filterValue != null) {
+                field.throwIfNotMatch(filterValue.getClass());
             }
         }
     }
@@ -167,8 +166,8 @@ public class IteratorFindEntityImpl<E extends DomainObject> implements IteratorE
             return true;
         }
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
-            Field field = checkedFilterFields.get(i);
-            if (!IndexUtils.equals(field.type(), filterValues.get(i), obj.get(field.type(), field.name()))) {
+            EntityField field = checkedFilterFields.get(i);
+            if (!IndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getType(), field.getName()))) {
                 return false;
             }
         }

@@ -5,6 +5,7 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.utils.EnumPacker;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**
@@ -17,7 +18,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
                 @Field(name = StoreFileReadable.FIELD_CONTENT_TYPE, type = String.class),
                 @Field(name = StoreFileReadable.FIELD_SIZE, type = Long.class),
                 @Field(name = StoreFileReadable.FIELD_SINGLE, type = Boolean.class),
-                @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class)
+                @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatPacker.class)
         },
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
@@ -32,7 +33,12 @@ public class StoreFileReadable extends DomainObject {
     public final static String FIELD_SINGLE="single";
     public final static String FIELD_FORMAT="format";
 
+    public static class FormatPacker extends EnumPacker<FormatType> {
 
+        public FormatPacker() {
+            super(FormatType.class);
+        }
+    }
 
     public StoreFileReadable(long id) {
         super(id);

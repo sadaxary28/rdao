@@ -1,4 +1,4 @@
-package com.infomaximum.database.core.structentity;
+package com.infomaximum.database.core.schema;
 
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
@@ -24,71 +24,78 @@ public class StructEntity {
     public final static java.lang.reflect.Field dataSourceField = getDataSourceField();
     private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
 
-    public final Entity annotationEntity;
-
     private final Class<? extends DomainObject> clazz;
-    private final Set<Field> fields;
-    private final Map<String, Field> nameToFields;
-    private final List<StructEntityIndex> structEntityIndices;
+    private final String name;
+    private final Set<EntityField> fields;
+    private final Map<String, EntityField> nameFields;
+    private final List<EntityIndex> indices;
 
     private StructEntity(Class<? extends DomainObject> clazz) {
-        this.clazz = clazz;
-        this.annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
+        final Entity annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
 
-        Set<Field> modifiableFields = new HashSet<>(annotationEntity.fields().length);
-        Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
+        this.clazz = clazz;
+        this.name = annotationEntity.name();
+
+        Set<EntityField> modifiableFields = new HashSet<>(annotationEntity.fields().length);
+        Map<String, EntityField> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
         for(Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
             if (modifiableNameToFields.containsKey(field.name())) {
-                throw new StructEntityDatabaseException("Поле " + field.name() + " уже объявлено в " + clazz.getName());
+                throw new StructEntityDatabaseException("Field " + field.name() + " already exists into " + clazz.getName());
             }
 
-            modifiableFields.add(field);
-            modifiableNameToFields.put(field.name(), field);
+            EntityField f = new EntityField(field);
+
+            modifiableFields.add(f);
+            modifiableNameToFields.put(f.getName(), f);
         }
 
-        this.nameToFields = Collections.unmodifiableMap(modifiableNameToFields);
+        this.nameFields = Collections.unmodifiableMap(modifiableNameToFields);
         this.fields = Collections.unmodifiableSet(modifiableFields);
 
-        List<StructEntityIndex> modifiableStructEntityIndices = new ArrayList<>(annotationEntity.indexes().length);
+        List<EntityIndex> modifiableStructEntityIndices = new ArrayList<>(annotationEntity.indexes().length);
         for (Index index: annotationEntity.indexes()) {
-            modifiableStructEntityIndices.add(new StructEntityIndex(this, index));
+            modifiableStructEntityIndices.add(new EntityIndex(index, this));
         }
 
-        this.structEntityIndices = Collections.unmodifiableList(modifiableStructEntityIndices);
+        this.indices = Collections.unmodifiableList(modifiableStructEntityIndices);
     }
 
-    public Field getFieldByName(String name) {
-        Field field = nameToFields.get(name);
+    public String getName() {
+        return name;
+    }
+
+    public EntityField getField(String name) {
+        EntityField field = nameFields.get(name);
         if (field == null) {
             throw new FieldNotFoundDatabaseException(clazz, name);
         }
         return field;
     }
 
-    public Set<Field> getFields() {
+    public Set<EntityField> getFields() {
         return fields;
     }
 
-    public StructEntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
-        for (StructEntityIndex structEntityIndex: structEntityIndices) {
-            if (structEntityIndex.sortedFields.size() != nameIndexFields.size()) {
+    public EntityIndex getStructEntityIndex(Collection<String> nameIndexFields) {
+        for (EntityIndex entityIndex : indices) {
+            if (entityIndex.sortedFields.size() != nameIndexFields.size()) {
                 continue;
             }
 
-            List<String> iNameIndexFields = structEntityIndex.sortedFields.stream().map(Field::name).collect(Collectors.toList());
+            List<String> iNameIndexFields = entityIndex.sortedFields.stream().map(EntityField::getName).collect(Collectors.toList());
 
             if (!iNameIndexFields.containsAll(nameIndexFields)) continue;
             if (!nameIndexFields.containsAll(iNameIndexFields)) continue;
 
-            return structEntityIndex;
+            return entityIndex;
         }
         return null;
     }
 
-    public List<StructEntityIndex> getStructEntityIndices() {
-        return structEntityIndices;
+    public List<EntityIndex> getIndices() {
+        return indices;
     }
 
     public static StructEntity getInstance(Class<? extends DomainObject> clazz) {

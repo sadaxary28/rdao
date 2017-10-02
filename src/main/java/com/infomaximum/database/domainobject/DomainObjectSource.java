@@ -1,10 +1,11 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
-import com.infomaximum.database.core.structentity.StructEntity;
-import com.infomaximum.database.core.structentity.StructEntityIndex;
+import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.key.FieldKey;
@@ -52,14 +53,14 @@ public class DomainObjectSource implements DataEnumerable {
     }
 
     @Override
-    public <T extends Object, U extends DomainObject> T getField(final Class<T> type, String fieldName, U object) throws DataSourceDatabaseException {
-        byte[] value = dataSource.getValue(object.getStructEntity().annotationEntity.name(), new FieldKey(object.getId(), fieldName).pack());
-        return (T) TypeConvert.unpack(type, value);
+    public <T extends Object, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException {
+        byte[] value = dataSource.getValue(object.getStructEntity().getName(), new FieldKey(object.getId(), field.getName()).pack());
+        return (T) TypeConvert.unpack(field.getType(), value, field.getPacker());
     }
 
     @Override
     public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
-        String columnFamily = StructEntity.getInstance(clazz).annotationEntity.name();
+        String columnFamily = StructEntity.getInstance(clazz).getName();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
         long iteratorId = dataSource.createIterator(columnFamily, pattern);
@@ -86,9 +87,9 @@ public class DomainObjectSource implements DataEnumerable {
 
     public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {
         StructEntity entity = StructEntity.getInstance(clazz);
-        dataSource.createColumnFamily(entity.annotationEntity.name());
-        dataSource.createSequence(entity.annotationEntity.name());
-        for (StructEntityIndex i : entity.getStructEntityIndices()) {
+        dataSource.createColumnFamily(entity.getName());
+        dataSource.createSequence(entity.getName());
+        for (EntityIndex i : entity.getIndices()) {
             dataSource.createColumnFamily(i.columnFamily);
         }
 
