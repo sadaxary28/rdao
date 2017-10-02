@@ -1,11 +1,11 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.iterator.IteratorEntityImpl;
 import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
-import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.EntityIndex;
+import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.modifier.Modifier;
@@ -13,9 +13,9 @@ import com.infomaximum.database.datasource.modifier.ModifierRemove;
 import com.infomaximum.database.datasource.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.IndexKey;
+import com.infomaximum.database.domainobject.utils.DomainIndexUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.*;
@@ -93,11 +93,11 @@ public class Transaction implements AutoCloseable, DataEnumerable {
             final IndexKey indexKey = new IndexKey(object.getId(), new long[entityIndex.sortedFields.size()]);
 
             // Remove old value-index
-            setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
+            DomainIndexUtils.setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
             modifiers.add(new ModifierRemove(indexColumnFamily, indexKey.pack(), false));
 
             // Add new value-index
-            setHashValues(entityIndex.sortedFields, newValues, indexKey.getFieldValues());
+            DomainIndexUtils.setHashValues(entityIndex.sortedFields, newValues, indexKey.getFieldValues());
             modifiers.add(new ModifierSet(indexColumnFamily, indexKey.pack()));
         }
 
@@ -124,7 +124,7 @@ public class Transaction implements AutoCloseable, DataEnumerable {
 
                 final IndexKey indexKey = new IndexKey(object.getId(), new long[entityIndex.sortedFields.size()]);
 
-                setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
+                DomainIndexUtils.setHashValues(entityIndex.sortedFields, loadedValues, indexKey.getFieldValues());
                 modifiers.add(new ModifierRemove(entityIndex.columnFamily, indexKey.pack(), false));
             }
         }
@@ -198,13 +198,6 @@ public class Transaction implements AutoCloseable, DataEnumerable {
             final byte[] key = new FieldKey(id, field.getName()).pack();
             final byte[] value = dataSource.getValue(columnFamily, key, transactionId);
             loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getPacker()));
-        }
-    }
-
-    private static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Object> values, long[] destination) {
-        for (int i = 0; i < sortedFields.size(); ++i) {
-            EntityField field = sortedFields.get(i);
-            destination[i] = IndexUtils.buildHash(field.getType(), values.get(field));
         }
     }
 }

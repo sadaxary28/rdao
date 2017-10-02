@@ -1,9 +1,5 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.utils.TypeConvert;
-
-import java.util.Collection;
 import java.util.Date;
 
 /**
