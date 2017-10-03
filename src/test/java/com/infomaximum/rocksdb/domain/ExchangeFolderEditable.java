@@ -10,7 +10,6 @@ import java.util.Date;
  */
 public class ExchangeFolderEditable extends ExchangeFolderReadable implements DomainObjectEditable {
 
-
     public ExchangeFolderEditable(long id){
         super(id);
     }
@@ -46,5 +45,9 @@ public class ExchangeFolderEditable extends ExchangeFolderReadable implements Do
 
     public void setSyncState(String syncState) {
         set(FIELD_SYNC_STATE, syncState);
+    }
+
+    public void setParentId(Long parentId) throws DatabaseException {
+        set(FIELD_PARENT_ID, parentId);
     }
 }

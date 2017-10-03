@@ -15,4 +15,6 @@ public @interface Field {
     String name();
     Class type();
     Class packerType() default Class.class;
+
+    Class foreignDependency() default Class.class;
 }

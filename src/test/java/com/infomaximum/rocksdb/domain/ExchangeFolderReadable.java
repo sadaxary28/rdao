@@ -18,6 +18,7 @@ import java.util.Date;
                 @Field(name = ExchangeFolderReadable.FIELD_USER_EMAIL, type = String.class),
                 @Field(name = ExchangeFolderReadable.FIELD_SYNC_DATE, type = Date.class),
                 @Field(name = ExchangeFolderReadable.FIELD_SYNC_STATE, type = String.class),
+                @Field(name = ExchangeFolderReadable.FIELD_PARENT_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
         },
         indexes = {
                 @Index(fields = {ExchangeFolderReadable.FIELD_USER_EMAIL, ExchangeFolderReadable.FIELD_UUID})
@@ -29,6 +30,7 @@ public class ExchangeFolderReadable extends DomainObject {
     public final static String FIELD_USER_EMAIL="user_email";
     public final static String FIELD_SYNC_DATE="sync_date";
     public final static String FIELD_SYNC_STATE="sync_state";
+    public final static String FIELD_PARENT_ID = "parent_id";
 
     public ExchangeFolderReadable(long id){
         super(id);
@@ -50,4 +52,7 @@ public class ExchangeFolderReadable extends DomainObject {
         return getString(FIELD_SYNC_STATE);
     }
 
+    public Long getParentId() throws DatabaseException {
+        return getLong(FIELD_PARENT_ID);
+    }
 }
