@@ -34,11 +34,7 @@ public class IndexKey extends Key {
     }
 
     public static IndexKey unpack(final byte[] src) {
-        final int longCount = src.length / ID_BYTE_SIZE;
-        final int tail = src.length % ID_BYTE_SIZE;
-        if (longCount < 2 || tail != 0) {
-            throw new KeyCorruptedException(src);
-        }
+        final int longCount = readLongCount(src);
 
         ByteBuffer buffer = TypeConvert.wrapBuffer(src);
         long[] fieldValues = new long[longCount - 1];
@@ -49,11 +45,25 @@ public class IndexKey extends Key {
         return new IndexKey(buffer.getLong(), fieldValues);
     }
 
+    public static long unpackId(final byte[] src) {
+        final int longCount = readLongCount(src);
+        return TypeConvert.wrapBuffer(src).getLong((longCount - 1) * ID_BYTE_SIZE);
+    }
+
     public static KeyPattern buildKeyPattern(final long[] fieldValues) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * fieldValues.length);
         for (int i = 0; i < fieldValues.length; ++i) {
             buffer.putLong(fieldValues[i]);
         }
         return new KeyPattern(buffer.array());
+    }
+
+    private static int readLongCount(final byte[] src) {
+        final int count = src.length / ID_BYTE_SIZE;
+        final int tail = src.length % ID_BYTE_SIZE;
+        if (count < 2 || tail != 0) {
+            throw new KeyCorruptedException(src);
+        }
+        return count;
     }
 }

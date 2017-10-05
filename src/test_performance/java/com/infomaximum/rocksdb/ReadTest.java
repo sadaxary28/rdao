@@ -2,6 +2,8 @@ package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
@@ -27,7 +29,7 @@ public class ReadTest  extends BaseTest {
         transaction.commit();
 
         PerfomanceTest.test(200, step -> {
-            try(IteratorEntity<RecordReadable> i = domainObjectSource.iterator(RecordReadable.class, null)) {
+            try(IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.VALUE)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
                 }
@@ -51,10 +53,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
-        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_STRING_1, fixedString);}};
+        final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
 
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, null, filter);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }
@@ -77,10 +79,10 @@ public class ReadTest  extends BaseTest {
         }
         transaction.commit();
 
-        final Map<String, Object> filter = new HashMap<String, Object>(){{put(RecordIndexEditable.FIELD_LONG_1, fixedLong);}};
+        final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
 
         PerfomanceTest.test(50, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, null, filter);
+            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
             while (i.hasNext()) {
                 RecordIndexEditable rec = i.next();
             }

@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
@@ -30,16 +31,13 @@ public class NotValideIndexDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>() {{ put("zzzzz", null);}});
+            domainObjectSource.find(StoreFileReadable.class, new IndexFilter("zzzzz", null));
             Assert.fail();
         } catch (Exception ignore) {}
 
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>(){{
-                put("xxxxx", null);
-                put("yyyyy", null);
-            }});
+            domainObjectSource.find(StoreFileReadable.class, new IndexFilter("xxxxx", null).appendField("yyyyy", null));
             Assert.fail();
         } catch (Exception ignore) {}
 

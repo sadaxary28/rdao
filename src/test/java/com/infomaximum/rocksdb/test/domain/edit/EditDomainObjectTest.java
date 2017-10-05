@@ -30,7 +30,7 @@ public class EditDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
 
         String fileName1 = "info1.json";
         String fileName2 = "info2.json";
@@ -49,7 +49,7 @@ public class EditDomainObjectTest extends RocksDataTest {
         }
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
         Assert.assertNotNull(storeFileCheckSave);
         Assert.assertEquals(fileName1, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
@@ -58,14 +58,14 @@ public class EditDomainObjectTest extends RocksDataTest {
 
         //Редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
                 obj.setFileName(fileName2);
                 obj.setSingle(true);
                 transaction.save(obj);
         });
 
         //Загружаем отредактированный объект
-        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
+        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
         Assert.assertNotNull(editFileCheckSave);
         Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
         Assert.assertEquals(contentType, editFileCheckSave.getContentType());
@@ -75,14 +75,14 @@ public class EditDomainObjectTest extends RocksDataTest {
 
         //Повторно редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
                 obj.setFileName(fileName1);
                 obj.setSingle(false);
                 transaction.save(obj);
         });
 
 
-        StoreFileReadable storeFileCheckSave2 = domainObjectSource.get(StoreFileReadable.class, null, 1L);
+        StoreFileReadable storeFileCheckSave2 = domainObjectSource.get(StoreFileReadable.class, 1L);
         Assert.assertNotNull(storeFileCheckSave2);
         Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());

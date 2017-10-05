@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
@@ -11,9 +10,6 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
 
-/**
- * Created by kris on 28.04.17.
- */
 public class DomainObjectUtils {
 
     public static class NextState {
@@ -43,7 +39,7 @@ public class DomainObjectUtils {
         }
     }
 
-    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataSource dataSource, long iteratorId, DataEnumerable dataEnumerable, NextState state) throws DataSourceDatabaseException {
+    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataEnumerable dataEnumerable, long iteratorId, NextState state) throws DataSourceDatabaseException {
         T obj = null;
         if (state != null && state.isEmpty()) {
             obj = buildDomainObject(clazz, state.nextId, dataEnumerable);
@@ -51,7 +47,7 @@ public class DomainObjectUtils {
         }
 
         while (true) {
-            KeyValue keyValue = dataSource.next(iteratorId);
+            KeyValue keyValue = dataEnumerable.next(iteratorId);
             if (keyValue == null) {
                 break;
             }

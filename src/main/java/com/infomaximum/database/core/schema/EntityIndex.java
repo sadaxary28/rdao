@@ -1,7 +1,6 @@
 package com.infomaximum.database.core.schema;
 
 import com.infomaximum.database.core.anotation.Index;
-import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
 
 import java.util.*;
 
@@ -13,7 +12,7 @@ public class EntityIndex {
     public final String columnFamily;
     public final List<EntityField> sortedFields;
 
-    protected EntityIndex(Index index, StructEntity parent) throws StructEntityDatabaseException {
+    protected EntityIndex(Index index, StructEntity parent) {
         List<EntityField> modifiableIndexFields = new ArrayList<>(index.fields().length);
         for (String fieldName: index.fields()) {
             modifiableIndexFields.add(parent.getField(fieldName));

@@ -30,7 +30,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
 
         String fileName="application/json";
         String contentType="info.json";
@@ -48,7 +48,7 @@ public class CreateDomainObjectTest extends RocksDataTest {
         });
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, null, 1L);
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
         Assert.assertNotNull(storeFileCheckSave);
         Assert.assertEquals(fileName, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());

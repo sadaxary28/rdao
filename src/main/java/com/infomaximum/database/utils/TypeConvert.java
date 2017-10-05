@@ -50,7 +50,7 @@ public class TypeConvert {
         return !ByteUtils.isNullOrEmpty(value) ? new Date(Longs.fromByteArray(value)) : null;
     }
 
-       public static byte[] pack(String value){
+    public static byte[] pack(String value){
         return value != null ? value.getBytes(TypeConvert.CHARSET) : EMPTY_BYTE_ARRAY;
     }
 

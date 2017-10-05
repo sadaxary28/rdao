@@ -36,4 +36,13 @@ public class ByteUtils {
     public static boolean isNullOrEmpty(byte[] value) {
         return value == null || value.length == 0;
     }
+
+    public static int indexOf(byte value, byte[] source) {
+        for (int i = 0; i < source.length; ++i) {
+            if (value == source[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

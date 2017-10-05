@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
@@ -44,10 +45,8 @@ public class ComboIndexDomainObjectTest extends RocksDataTest {
 
 
         //Ищем объект
-         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>(){{
-            put(ExchangeFolderReadable.FIELD_UUID, uuid);
-            put(ExchangeFolderReadable.FIELD_USER_EMAIL, userEmail);
-        }})) {
+         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter(ExchangeFolderReadable.FIELD_UUID, uuid)
+              .appendField(ExchangeFolderReadable.FIELD_USER_EMAIL, userEmail))) {
              ExchangeFolderReadable exchangeFolder = i.next();
              Assert.assertNotNull(exchangeFolder);
              Assert.assertEquals(uuid, exchangeFolder.getUuid());

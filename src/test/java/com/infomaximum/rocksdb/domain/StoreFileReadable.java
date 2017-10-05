@@ -3,6 +3,7 @@ package com.infomaximum.rocksdb.domain;
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
+import com.infomaximum.database.core.anotation.PrefixIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.utils.EnumPacker;
@@ -23,6 +24,9 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
                 @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME})
+        },
+        prefixIndexes = {
+                @PrefixIndex(name = StoreFileReadable.FIELD_FILE_NAME)
         }
 )
 public class StoreFileReadable extends DomainObject {
@@ -65,5 +69,4 @@ public class StoreFileReadable extends DomainObject {
     public FormatType getFormat() throws DatabaseException {
         return getEnum(FormatType.class, FIELD_FORMAT);
     }
-
 }

@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
@@ -42,16 +43,14 @@ public class IndexIteratorRemoveDomainObjectTest extends RocksDataTest {
 
         //Редактируем 1-й объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setSize(99);
                 transaction.save(storeFile);
         });
 
         //Ищем объекты по size
         int count=0;
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>() {{
-            put(StoreFileReadable.FIELD_SIZE, 100L);
-        }})) {
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 100L))) {
             while(iStoreFileReadable.hasNext()) {
                 StoreFileReadable storeFile = iStoreFileReadable.next();
 

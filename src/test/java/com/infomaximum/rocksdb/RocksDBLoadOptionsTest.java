@@ -20,7 +20,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
 
     @Before
     @Override
-    public void init() throws IOException {
+    public void init() throws Exception {
         super.init();
 
         optionsFilePath = Paths.get(pathDataBase.toString() + ".ini");
@@ -29,7 +29,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
 
     @After
     @Override
-    public void destroy() throws IOException {
+    public void destroy() throws Exception {
         optionsFilePath.toFile().delete();
 
         super.destroy();

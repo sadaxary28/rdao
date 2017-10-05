@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -31,15 +32,13 @@ public class NotFoundIndexDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(ExchangeFolderReadable.class);
 
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>() {{ put("uuid", "");}});
+            domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter("uuid", ""));
             Assert.fail();
         } catch (NotFoundIndexDatabaseException ignore) {}
 
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, null, new HashMap<String, Object>(){{
-                put(ExchangeFolderReadable.FIELD_UUID, "");
-                put(ExchangeFolderReadable.FIELD_SYNC_DATE, "");
-            }});
+            domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter(ExchangeFolderReadable.FIELD_UUID, "")
+                .appendField(ExchangeFolderReadable.FIELD_SYNC_DATE, ""));
             Assert.fail();
         } catch (NotFoundIndexDatabaseException ignore) {}
 
