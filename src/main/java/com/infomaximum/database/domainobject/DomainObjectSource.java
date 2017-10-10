@@ -1,9 +1,7 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.core.iterator.IteratorEntityImpl;
-import com.infomaximum.database.core.iterator.IteratorFindEntityImpl;
+import com.infomaximum.database.core.schema.EntityPrefixIndex;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.datasource.DataSource;
@@ -14,14 +12,7 @@ import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
-/**
- * Created by user on 19.04.2017.
- */
-public class DomainObjectSource implements DataEnumerable {
+public class DomainObjectSource extends DataEnumerable {
 
     public interface Monad {
 
@@ -33,10 +24,8 @@ public class DomainObjectSource implements DataEnumerable {
         public void action(final Transaction transaction) throws Exception;
     }
 
-    private final DataSource dataSource;
-
     public DomainObjectSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+        super(dataSource);
     }
 
     public void executeTransactional(final Monad operation) throws TransactionDatabaseException {
@@ -59,37 +48,19 @@ public class DomainObjectSource implements DataEnumerable {
     }
 
     @Override
-    public <T extends DomainObject> T get(final Class<T> clazz, final Set<String> loadingFields, long id) throws DataSourceDatabaseException {
-        String columnFamily = StructEntity.getInstance(clazz).getName();
-        KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
-
-        long iteratorId = dataSource.createIterator(columnFamily, pattern);
-
-        T obj;
-        try {
-            obj = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, this, null);
-        } finally {
-            dataSource.closeIterator(iteratorId);
-        }
-
-        return obj;
-    }
-
-    @Override
-    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, final Set<String> loadingFields, Map<String, Object> filters) throws DatabaseException {
-        return new IteratorFindEntityImpl(dataSource, this, clazz, loadingFields, filters, -1);
-    }
-
-    @Override
-    public <T extends DomainObject> IteratorEntity<T> iterator(final Class<T> clazz, final Set<String> loadingFields) throws DatabaseException {
-        return new IteratorEntityImpl(dataSource, this, clazz, loadingFields, -1);
+    public long createIterator(String columnFamily, KeyPattern pattern) throws DataSourceDatabaseException {
+        return dataSource.createIterator(columnFamily, pattern);
     }
 
     public <T extends DomainObject> void createEntity(final Class<T> clazz) throws DatabaseException {
         StructEntity entity = StructEntity.getInstance(clazz);
         dataSource.createColumnFamily(entity.getName());
         dataSource.createSequence(entity.getName());
-        for (EntityIndex i : entity.getIndices()) {
+        for (EntityIndex i : entity.getIndexes()) {
+            dataSource.createColumnFamily(i.columnFamily);
+        }
+
+        for (EntityPrefixIndex i : entity.getPrefixIndexes()) {
             dataSource.createColumnFamily(i.columnFamily);
         }
 

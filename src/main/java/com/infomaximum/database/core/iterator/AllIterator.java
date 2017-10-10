@@ -14,30 +14,20 @@ import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-/**
- * Created by kris on 30.04.17.
- */
-public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntity<E> {
+public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
 
-    private final DataSource dataSource;
     private final DataEnumerable dataEnumerable;
     private final Class<E> clazz;
-    private final long iteratorId;
+    private final long dataIteratorId;
 
     private E nextElement;
     private DomainObjectUtils.NextState state = new DomainObjectUtils.NextState();
 
-    public IteratorEntityImpl(DataSource dataSource, DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, long transactionId) throws DatabaseException {
-        this.dataSource = dataSource;
+    public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
         String columnFamily = StructEntity.getInstance(clazz).getName();
-        KeyPattern keyPattern = FieldKey.buildKeyPattern(loadingFields != null ? loadingFields : Collections.emptySet());
-        if (transactionId == -1) {
-            this.iteratorId = dataSource.createIterator(columnFamily, keyPattern);
-        } else {
-            this.iteratorId = dataSource.createIterator(columnFamily, keyPattern, transactionId);
-        }
+        this.dataIteratorId = dataEnumerable.createIterator(columnFamily, FieldKey.buildKeyPattern(loadingFields));
 
         nextImpl();
     }
@@ -60,11 +50,11 @@ public class IteratorEntityImpl<E extends DomainObject> implements IteratorEntit
 
     @Override
     public void close() {
-        dataSource.closeIterator(iteratorId);
+        dataEnumerable.closeIterator(dataIteratorId);
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
-        nextElement = DomainObjectUtils.nextObject(clazz, dataSource, iteratorId, dataEnumerable, state);
+        nextElement = DomainObjectUtils.nextObject(clazz, dataEnumerable, dataIteratorId, state);
         if (nextElement == null) {
             close();
         }

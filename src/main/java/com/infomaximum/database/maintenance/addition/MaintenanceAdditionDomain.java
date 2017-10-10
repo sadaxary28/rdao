@@ -10,10 +10,10 @@ import com.infomaximum.database.datasource.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.key.IndexKey;
-import com.infomaximum.database.domainobject.utils.DomainIndexUtils;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.runtime.ValidationDatabaseException;
+import com.infomaximum.database.utils.IndexUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +53,7 @@ public class MaintenanceAdditionDomain {
         boolean isContentEntity = isContent(columnFamilyEntity);
 
         //Проверяем каких индексов не хватает
-        for (EntityIndex entityIndex : structEntity.getIndices()) {
+        for (EntityIndex entityIndex : structEntity.getIndexes()) {
             String columnFamilyIndex = entityIndex.columnFamily;
 
             //Прверяем наличия ColumnFamily для индекса
@@ -70,7 +70,7 @@ public class MaintenanceAdditionDomain {
                 long transactionId = dataSource.beginTransaction();
                 final List<Modifier> modifiers = new ArrayList<>();
                 try {
-                    try (IteratorEntity<? extends DomainObject> ie = domainObjectSource.iterator(classEntity, null)) {
+                    try (IteratorEntity<? extends DomainObject> ie = domainObjectSource.find(classEntity, null)) {
                         while (ie.hasNext()) {
                             DomainObject self = ie.next();
 
@@ -79,9 +79,9 @@ public class MaintenanceAdditionDomain {
                             Map<EntityField, Object> values = new HashMap<>();
                             for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
                                 EntityField field = entityIndex.sortedFields.get(i);
-                                values.put(field, self.get(field.getType(), field.name));
+                                values.put(field, self.get(field.getType(), field.getName()));
                             }
-                            DomainIndexUtils.setHashValues(entityIndex.sortedFields, values, indexKey.getFieldValues());
+                            IndexUtils.setHashValues(entityIndex.sortedFields, values, indexKey.getFieldValues());
 
                             modifiers.add(new ModifierSet(columnFamilyIndex, indexKey.pack()));
                         }

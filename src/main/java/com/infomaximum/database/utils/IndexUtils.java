@@ -1,6 +1,10 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.core.schema.EntityField;
+
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by kris on 24.05.17.
@@ -9,6 +13,13 @@ public class IndexUtils {
 
     public static boolean toLongCastable(Class<?> type) {
         return type != String.class;
+    }
+
+    public static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Object> values, long[] destination) {
+        for (int i = 0; i < sortedFields.size(); ++i) {
+            EntityField field = sortedFields.get(i);
+            destination[i] = buildHash(field.getType(), values.get(field));
+        }
     }
 
     public static long buildHash(Class<?> type, Object value) {

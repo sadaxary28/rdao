@@ -24,4 +24,5 @@ public @interface Entity {
      * @return The indexes
      */
     Index[] indexes() default {};
+    PrefixIndex[] prefixIndexes() default {};
 }

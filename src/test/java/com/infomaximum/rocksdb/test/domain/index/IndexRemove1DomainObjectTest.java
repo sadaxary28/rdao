@@ -2,6 +2,7 @@ package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
@@ -32,8 +33,8 @@ public class IndexRemove1DomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 2L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
 
         //Добавляем объекты
         domainObjectSource.executeTransactional(transaction -> {
@@ -46,13 +47,13 @@ public class IndexRemove1DomainObjectTest extends RocksDataTest {
 
         //Редактируем 1-й объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, null, 1L);
+                StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1L);
                 storeFile.setSize(99);
                 transaction.save(storeFile);
         });
 
         //Ищем объекты по size
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, null, new HashMap<String, Object>(){{put("size", 100L);}})) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter("size", 100L))) {
             StoreFileReadable storeFile = i.next();
             Assert.assertNotNull(storeFile);
             Assert.assertEquals(100, storeFile.getSize());

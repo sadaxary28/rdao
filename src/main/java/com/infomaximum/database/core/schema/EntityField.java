@@ -6,9 +6,9 @@ import com.infomaximum.database.utils.EqualsUtils;
 
 public class EntityField {
 
-    public final String name;
-    public final Class type;
-    public final TypePacker packer;
+    private final String name;
+    private final Class type;
+    private final TypePacker packer;
 
     protected EntityField(Field field) {
         this.name = field.name();

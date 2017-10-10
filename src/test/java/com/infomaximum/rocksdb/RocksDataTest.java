@@ -12,18 +12,18 @@ import java.nio.file.Path;
 /**
  * Created by kris on 22.04.17.
  */
-public class RocksDataTest {
+public abstract class RocksDataTest {
 
     protected Path pathDataBase;
 
     @Before
-    public void init() throws IOException {
+    public void init() throws Exception {
         pathDataBase = Files.createTempDirectory("rocksdb");
         pathDataBase.toAbsolutePath().toFile().deleteOnExit();
     }
 
     @After
-    public void destroy() throws IOException {
+    public void destroy() throws Exception {
         FileUtils.deleteDirectory(pathDataBase.toAbsolutePath().toFile());
     }
 }

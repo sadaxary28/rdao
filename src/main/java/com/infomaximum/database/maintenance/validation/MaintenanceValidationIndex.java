@@ -34,7 +34,7 @@ public class MaintenanceValidationIndex {
             if (columnFamily.startsWith(structEntity.getName() + ".")) {
 
                 boolean isContainsIndex = false;
-                for (EntityIndex structEntityIndex : structEntity.getIndices()) {
+                for (EntityIndex structEntityIndex : structEntity.getIndexes()) {
                     if (structEntityIndex.columnFamily.equals(columnFamily)) {
                         isContainsIndex = true;
                         break;

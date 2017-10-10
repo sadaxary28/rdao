@@ -30,7 +30,7 @@ public class EditProxyDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(ProxyStoreFileReadable.class);
 
         //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(ProxyStoreFileReadable.class, null, 1L));
+        Assert.assertNull(domainObjectSource.get(ProxyStoreFileReadable.class, 1L));
 
         String fileName1 = "info1.json";
         String fileName2 = "info2.json";
@@ -49,7 +49,7 @@ public class EditProxyDomainObjectTest extends RocksDataTest {
         }
 
         //Загружаем сохраненый объект
-        ProxyStoreFileReadable storeFileCheckSave = domainObjectSource.get(ProxyStoreFileReadable.class, null, 1L);
+        ProxyStoreFileReadable storeFileCheckSave = domainObjectSource.get(ProxyStoreFileReadable.class, 1L);
         Assert.assertNotNull(storeFileCheckSave);
         Assert.assertEquals(fileName1, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
@@ -58,14 +58,14 @@ public class EditProxyDomainObjectTest extends RocksDataTest {
 
         //Редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-            ProxyStoreFileEditable obj = domainObjectSource.get(ProxyStoreFileEditable.class, null, 1L);
+            ProxyStoreFileEditable obj = domainObjectSource.get(ProxyStoreFileEditable.class, 1L);
             obj.setFileName(fileName2);
             obj.setSingle(true);
             transaction.save(obj);
         });
 
         //Загружаем отредактированный объект
-        ProxyStoreFileReadable editFileCheckSave = domainObjectSource.get(ProxyStoreFileReadable.class, null, 1L);
+        ProxyStoreFileReadable editFileCheckSave = domainObjectSource.get(ProxyStoreFileReadable.class, 1L);
         Assert.assertNotNull(editFileCheckSave);
         Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
         Assert.assertEquals(contentType, editFileCheckSave.getContentType());
@@ -74,13 +74,13 @@ public class EditProxyDomainObjectTest extends RocksDataTest {
 
         //Повторно редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-            ProxyStoreFileEditable obj = domainObjectSource.get(ProxyStoreFileEditable.class, null, 1L);
+            ProxyStoreFileEditable obj = domainObjectSource.get(ProxyStoreFileEditable.class, 1L);
             obj.setFileName(fileName1);
             obj.setSingle(false);
             transaction.save(obj);
         });
 
-        ProxyStoreFileReadable storeFileCheckSave2 = domainObjectSource.get(ProxyStoreFileReadable.class, null, 1L);
+        ProxyStoreFileReadable storeFileCheckSave2 = domainObjectSource.get(ProxyStoreFileReadable.class, 1L);
         Assert.assertNotNull(storeFileCheckSave2);
         Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());

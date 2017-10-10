@@ -29,9 +29,9 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         domainObjectSource.createEntity(StoreFileReadable.class);
 
         //Проверяем, что таких объектов нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 2L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 3L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
 
         //Добавляем объект
@@ -42,19 +42,19 @@ public class RemoveDomainObjectTest extends RocksDataTest {
         });
 
         //Проверяем что файлы сохранены
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, 2L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, 3L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
         //Удяляем 2-й объект
         domainObjectSource.executeTransactional(transaction -> {
-                transaction.remove(transaction.get(StoreFileEditable.class, null, 2L));
+                transaction.remove(transaction.get(StoreFileEditable.class, 2L));
         });
 
         //Проверяем, корректность удаления
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, null, 2L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, null, 3L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
         rocksDataBase.close();
     }
