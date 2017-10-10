@@ -9,8 +9,6 @@ import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class ReadTest extends DomainDataTest {
@@ -30,7 +28,7 @@ public class ReadTest extends DomainDataTest {
         transaction.commit();
 
         PerfomanceTest.test(200, step -> {
-            try(IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.VALUE)) {
+            try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
                 }
