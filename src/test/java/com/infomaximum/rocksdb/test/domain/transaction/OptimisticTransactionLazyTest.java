@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.test.domain.transaction;
 
-import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.database.domainobject.DomainObjectUtils;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
@@ -22,8 +22,6 @@ public class OptimisticTransactionLazyTest extends RocksDataTest {
             DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
             domainObjectSource.createEntity(StoreFileReadable.class);
 
-            StructEntity structEntityStoreFileReadable = StructEntity.getInstance(StoreFileReadable.class);
-
             String fileName = "aaa.txt";
             long size = 15L;
 
@@ -33,14 +31,11 @@ public class OptimisticTransactionLazyTest extends RocksDataTest {
                 storeFile1.setSize(size);
                 transaction.save(storeFile1);
 
-                long iteratorId = transaction.createIterator(structEntityStoreFileReadable.getName(), null);
-                try {
-                    StoreFileReadable storeFile2 = DomainObjectUtils.nextObject(StoreFileReadable.class, transaction, iteratorId, null);
+                try (IteratorEntity<StoreFileReadable> ie = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
+                    StoreFileReadable storeFile2 = ie.next();
 
                     Assert.assertEquals(fileName, storeFile2.getFileName());
                     Assert.assertEquals(size, storeFile2.getSize());
-                } finally {
-                    transaction.closeIterator(iteratorId);
                 }
             });
         }
