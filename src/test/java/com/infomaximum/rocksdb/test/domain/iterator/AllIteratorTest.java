@@ -1,21 +1,18 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.RocksDataBaseBuilder;
-import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
+
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
@@ -24,7 +21,7 @@ public class AllIteratorTest extends StoreFileDataTest {
 
     @Test
     public void orderingIterate() throws Exception {
-        try (IteratorEntity iteratorEmpty = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.VALUE)) {
+        try (IteratorEntity iteratorEmpty = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
             Assert.assertFalse(iteratorEmpty.hasNext());
             try {
                 iteratorEmpty.next();
@@ -40,7 +37,7 @@ public class AllIteratorTest extends StoreFileDataTest {
             }
         });
 
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.VALUE)) {
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
             int iteratedRecordCount = 0;
             long prevId = 0;
             while (iStoreFileReadable.hasNext()) {
@@ -64,7 +61,7 @@ public class AllIteratorTest extends StoreFileDataTest {
         fieldValuesField.setAccessible(true);
 
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.VALUE, loadingFields)) {
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iStoreFileReadable.hasNext()) {
                 StoreFileReadable storeFile = iStoreFileReadable.next();
@@ -87,7 +84,7 @@ public class AllIteratorTest extends StoreFileDataTest {
         Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
         fieldValuesField.setAccessible(true);
 
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.VALUE)) {
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
             int iteratedRecordCount = 0;
             while (iStoreFileReadable.hasNext()) {
                 StoreFileReadable storeFile = iStoreFileReadable.next();
@@ -116,7 +113,7 @@ public class AllIteratorTest extends StoreFileDataTest {
             obj.setSize(20);
             transaction.save(obj);
 
-            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, EmptyFilter.VALUE)) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
                 Assert.assertEquals(20L, i.next().getSize());
             }
 
