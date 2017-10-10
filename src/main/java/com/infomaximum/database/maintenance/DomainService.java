@@ -165,7 +165,7 @@ public class DomainService {
     private void indexData(Set<String> loadingFields, ModifierCreator recordCreator) throws DatabaseException {
         DomainObjectSource domainObjectSource = new DomainObjectSource(dataSource);
         long transactionId = dataSource.beginTransaction();
-        try (IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(domain.getObjectClass(), EmptyFilter.VALUE, loadingFields)) {
+        try (IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(domain.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {
             final List<Modifier> modifiers = new ArrayList<>();
 
             while (iter.hasNext()) {
