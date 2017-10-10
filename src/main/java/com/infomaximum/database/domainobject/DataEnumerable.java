@@ -44,7 +44,7 @@ public abstract class DataEnumerable {
     }
 
     public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DataSourceDatabaseException {
-        String columnFamily = StructEntity.getInstance(clazz).getName();
+        String columnFamily = StructEntity.getInstance(clazz).getColumnFamily();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
         long iteratorId = createIterator(columnFamily, pattern);

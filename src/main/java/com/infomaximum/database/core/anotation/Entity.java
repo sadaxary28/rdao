@@ -13,6 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface Entity {
 
+    String namespace();
     String name();
 
     Field[] fields();

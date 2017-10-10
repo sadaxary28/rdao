@@ -5,8 +5,8 @@ import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.core.anotation.PrefixIndex;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.runtime.FieldNotFoundDatabaseException;
-import com.infomaximum.database.exeption.runtime.StructEntityDatabaseException;
+import com.infomaximum.database.exeption.runtime.FieldNotFoundException;
+import com.infomaximum.database.exeption.runtime.StructEntityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +20,15 @@ import java.util.stream.Collectors;
  */
 public class StructEntity {
 
+    public final static String NAMESPACE_SEPARATOR = ".";
+
     private final static Logger log = LoggerFactory.getLogger(StructEntity.class);
 
     public final static java.lang.reflect.Field dataSourceField = getDataSourceField();
     private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
 
     private final Class<? extends DomainObject> clazz;
-    private final String name;
+    private final String columnFamily;
     private final Set<EntityField> fields;
     private final Map<String, EntityField> nameFields;
     private final List<EntityIndex> indexes;
@@ -36,7 +38,7 @@ public class StructEntity {
         final Entity annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
 
         this.clazz = clazz;
-        this.name = annotationEntity.name();
+        this.columnFamily = buildColumnFamily(annotationEntity);
 
         Set<EntityField> modifiableFields = new HashSet<>(annotationEntity.fields().length);
         Map<String, EntityField> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
@@ -44,7 +46,7 @@ public class StructEntity {
         for(Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
             if (modifiableNameToFields.containsKey(field.name())) {
-                throw new StructEntityDatabaseException("Field " + field.name() + " already exists into " + clazz.getName());
+                throw new StructEntityException("Field " + field.name() + " already exists into " + clazz.getName() + ".");
             }
 
             EntityField f = new EntityField(field);
@@ -59,14 +61,18 @@ public class StructEntity {
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
     }
 
-    public String getName() {
-        return name;
+    public String getColumnFamily() {
+        return columnFamily;
+    }
+
+    public Class<? extends DomainObject> getObjectClass() {
+        return clazz;
     }
 
     public EntityField getField(String name) {
         EntityField field = nameFields.get(name);
         if (field == null) {
-            throw new FieldNotFoundDatabaseException(clazz, name);
+            throw new FieldNotFoundException(clazz, name);
         }
         return field;
     }
@@ -130,16 +136,35 @@ public class StructEntity {
                 return clazz;
             }
             if (!DomainObject.class.isAssignableFrom(clazz.getSuperclass())) {
-                throw new StructEntityDatabaseException("Not found " + Entity.class + " annotation in " + clazz);
+                throw new StructEntityException("Not found " + Entity.class + " annotation in " + clazz + ".");
             }
             clazz = (Class<? extends DomainObject>) clazz.getSuperclass();
         }
+    }
+
+    private static String buildColumnFamily(Entity entity) {
+        return new StringBuilder(entity.namespace())
+                .append(NAMESPACE_SEPARATOR)
+                .append(entity.name())
+                .toString();
     }
 
     private List<EntityIndex> buildIndexes(Entity entity) {
         List<EntityIndex> result = new ArrayList<>(entity.indexes().length);
         for (Index index: entity.indexes()) {
             result.add(new EntityIndex(index, this));
+        }
+
+        for (Field field : entity.fields()) {
+            if (field.foreignDependency() == Class.class) {
+                continue;
+            }
+
+            if (field.type() != Long.class){
+                throw new StructEntityException("Foregn field " + field.name() + " must be " + Long.class + ".");
+            }
+
+            result.add(new EntityIndex(field.name(), this));
         }
 
         return Collections.unmodifiableList(result);

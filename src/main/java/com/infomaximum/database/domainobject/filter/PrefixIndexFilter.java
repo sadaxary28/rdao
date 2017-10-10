@@ -2,7 +2,7 @@ package com.infomaximum.database.domainobject.filter;
 
 public class PrefixIndexFilter implements Filter {
 
-    private String fieldName;
+    private final String fieldName;
     private String fieldValue;
 
     public PrefixIndexFilter(String fieldName, String fieldValue) {

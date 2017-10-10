@@ -10,7 +10,7 @@ import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.NotFoundIndexDatabaseException;
+import com.infomaximum.database.exeption.runtime.NotFoundIndexException;
 
 import java.util.*;
 
@@ -55,7 +55,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
 
         this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
         if (this.dataKeyPattern != null) {
-            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getName(), null);
+            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
         }
 
         this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, IndexKey.buildKeyPattern(values));
@@ -65,7 +65,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
 
     private void checkIndex(final Map<String, Object> filters) {
         if (entityIndex == null) {
-            throw new NotFoundIndexDatabaseException(clazz, filters.keySet());
+            throw new NotFoundIndexException(clazz, filters.keySet());
         }
 
         for (EntityField field : entityIndex.sortedFields) {

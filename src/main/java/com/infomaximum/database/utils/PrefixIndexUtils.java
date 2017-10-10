@@ -1,6 +1,14 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.core.schema.EntityPrefixIndex;
+import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.datasource.KeyValue;
+import com.infomaximum.database.datasource.modifier.Modifier;
+import com.infomaximum.database.datasource.modifier.ModifierRemove;
+import com.infomaximum.database.datasource.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.key.Key;
+import com.infomaximum.database.domainobject.key.PrefixIndexKey;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -69,7 +77,7 @@ public class PrefixIndexUtils {
      */
     public static List<String> splitSearchingTextIntoWords(String text) {
         List<String> result = new ArrayList<>();
-        PrefixIndexUtils.forEachWord(text,
+        forEachWord(text,
                 (beginIndex, endIndex) -> result.add(text.substring(beginIndex, endIndex).toLowerCase()));
         Collections.sort(result, searchingWordComparator);
         return result;
@@ -166,5 +174,72 @@ public class PrefixIndexUtils {
         }
 
         return matchCount == sortedSearchingWords.size();
+    }
+
+    public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
+                               DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+        if (lexemes.isEmpty()) {
+            return;
+        }
+
+        long iteratorId = dataSource.createIterator(index.columnFamily, null, transactionId);
+        try {
+            for (String lexeme : lexemes) {
+                dataSource.seekIterator(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                while (true) {
+                    KeyValue keyValue = dataSource.next(iteratorId);
+                    if (keyValue == null) {
+                        break;
+                    }
+
+                    byte[] newIds = removeId(id, keyValue.getValue());
+                    if (newIds == null) {
+                        continue;
+                    }
+
+                    if (newIds.length != 0) {
+                        destination.add(new ModifierSet(index.columnFamily, keyValue.getKey(), newIds));
+                    } else {
+                        destination.add(new ModifierRemove(index.columnFamily, keyValue.getKey(), false));
+                    }
+                }
+            }
+        } finally {
+            dataSource.closeIterator(iteratorId);
+        }
+    }
+
+    public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
+                               DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+        if (lexemes.isEmpty()) {
+            return;
+        }
+
+        long iteratorId = dataSource.createIterator(index.columnFamily, null, transactionId);
+        try {
+            for (String lexeme : lexemes) {
+                dataSource.seekIterator(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = dataSource.next(iteratorId);
+                byte[] key;
+                byte[] idsValue;
+                if (keyValue != null) {
+                    key = keyValue.getKey();
+
+                    if (getIdCount(keyValue.getValue()) < MAX_ID_COUNT_PER_BLOCK) {
+                        idsValue = appendId(id, keyValue.getValue());
+                    } else {
+                        PrefixIndexKey.decrementBlockNumber(key);
+                        idsValue = TypeConvert.pack(id);
+                    }
+                } else {
+                    key = new PrefixIndexKey(lexeme).pack();
+                    idsValue = TypeConvert.pack(id);
+                }
+
+                destination.add(new ModifierSet(index.columnFamily, key, idsValue));
+            }
+        } finally {
+            dataSource.closeIterator(iteratorId);
+        }
     }
 }

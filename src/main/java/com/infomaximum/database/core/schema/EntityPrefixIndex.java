@@ -9,12 +9,12 @@ public class EntityPrefixIndex {
 
     protected EntityPrefixIndex(PrefixIndex index, StructEntity parent) {
         this.field = parent.getField(index.name());
-        this.columnFamily = buildColumnFamilyName(parent.getName(), index.name());
+        this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), index.name());
 
         this.field.throwIfNotMatch(String.class);
     }
 
     private static String buildColumnFamilyName(String parentColumnFamily, String fieldName){
-        return new StringBuilder(parentColumnFamily).append(".prefixtextindex.").append(fieldName).toString();
+        return new StringBuilder(parentColumnFamily).append(StructEntity.NAMESPACE_SEPARATOR).append("prefixtextindex.").append(fieldName).toString();
     }
 }

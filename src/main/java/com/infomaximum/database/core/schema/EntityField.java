@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.schema;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
+import com.infomaximum.database.exeption.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.EqualsUtils;
 
 public class EntityField {
@@ -30,7 +30,7 @@ public class EntityField {
 
     public void throwIfNotMatch(Class type) {
         if (!EqualsUtils.equalsType(this.type, type)) {
-            throw new IllegalTypeDatabaseException(this.type, type);
+            throw new IllegalTypeException(this.type, type);
         }
     }
 
@@ -42,7 +42,7 @@ public class EntityField {
         try {
             return (TypePacker) packerClass.newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new IllegalTypeDatabaseException(e);
+            throw new IllegalTypeException(e);
         }
     }
 }

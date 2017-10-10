@@ -8,7 +8,6 @@ import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
-import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
@@ -50,7 +49,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
         this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields);
         if (this.dataKeyPattern != null) {
-            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getName(), null);
+            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
         }
 
         this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, indexKeyPattern);

@@ -19,14 +19,19 @@ public class EntityIndex {
         }
 
         //Сортируем, что бы хеш не ломался из-за перестановки местами полей
-        Collections.sort(modifiableIndexFields, (o1, o2) -> o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase()));
+        Collections.sort(modifiableIndexFields, Comparator.comparing(o -> o.getName().toLowerCase()));
 
-        this.columnFamily = buildColumnFamilyName(parent.getName(), modifiableIndexFields);
         this.sortedFields = Collections.unmodifiableList(modifiableIndexFields);
+        this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), this.sortedFields);
+    }
+
+    protected EntityIndex(String fieldName, StructEntity parent) {
+        this.sortedFields = Collections.singletonList(parent.getField(fieldName));
+        this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), this.sortedFields);
     }
 
     private static String buildColumnFamilyName(String parentColumnFamily, List<EntityField> modifiableIndexFields){
-        StringBuilder stringBuilder = new StringBuilder(parentColumnFamily).append(".index");
+        StringBuilder stringBuilder = new StringBuilder(parentColumnFamily).append(StructEntity.NAMESPACE_SEPARATOR).append("index");
         modifiableIndexFields.forEach(field -> stringBuilder.append('.').append(field.getName()).append(':').append(field.getType().getName()));
         return stringBuilder.toString();
     }
