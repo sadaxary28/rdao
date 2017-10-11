@@ -4,19 +4,20 @@ import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.rocksdb.test.DomainDataTest;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
 import java.util.UUID;
 
-public class ReadTest  extends BaseTest {
+public class ReadTest extends DomainDataTest {
 
     @Test
     public void iterateRecords() throws Exception {
         final int recordCount = 50 * 1000;
 
-        domainObjectSource.createEntity(RecordReadable.class);
+        createDomain(RecordReadable.class);
 
         Transaction transaction = domainObjectSource.buildTransaction();
         for (int i = 0; i < recordCount; ++i) {
@@ -39,7 +40,7 @@ public class ReadTest  extends BaseTest {
     public void findAllByStringIndexedRecords() throws Exception {
         final int recordCount = 100 * 1000;
 
-        domainObjectSource.createEntity(RecordIndexReadable.class);
+        createDomain(RecordIndexReadable.class);
 
         final String fixedString = "some value";
 
@@ -65,7 +66,7 @@ public class ReadTest  extends BaseTest {
     public void findAllByLongIndexedRecords() throws Exception {
         final int recordCount = 100 * 1000;
 
-        domainObjectSource.createEntity(RecordIndexReadable.class);
+        createDomain(RecordIndexReadable.class);
 
         final long fixedLong = 500;
 

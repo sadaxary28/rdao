@@ -1,17 +1,18 @@
 package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.domainobject.Transaction;
+import com.infomaximum.rocksdb.test.DomainDataTest;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
 import java.util.UUID;
 
-public class WriteTest extends BaseTest {
+public class WriteTest extends DomainDataTest {
 
     @Test
     public void createNonIndexedRecords1() throws Exception {
-        domainObjectSource.createEntity(RecordReadable.class);
+        createDomain(RecordReadable.class);
 
         PerfomanceTest.test(100000, step-> {
             Transaction transaction = domainObjectSource.buildTransaction();
@@ -24,7 +25,7 @@ public class WriteTest extends BaseTest {
 
     @Test
     public void createNonIndexedRecords2() throws Exception {
-        domainObjectSource.createEntity(RecordReadable.class);
+        createDomain(RecordReadable.class);
 
         Transaction transaction = domainObjectSource.buildTransaction();
         PerfomanceTest.test(100000, step-> {
@@ -37,7 +38,7 @@ public class WriteTest extends BaseTest {
 
     @Test
     public void createIndexedRecords() throws Exception {
-        domainObjectSource.createEntity(RecordIndexReadable.class);
+        createDomain(RecordIndexReadable.class);
 
         Transaction transaction = domainObjectSource.buildTransaction();
         PerfomanceTest.test(100000, step-> {

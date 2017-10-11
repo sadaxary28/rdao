@@ -2,13 +2,13 @@ package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.EntityPrefixIndex;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
-import com.infomaximum.database.domainobject.key.IndexKey;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
@@ -26,7 +26,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, PrefixIndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz);
-        StructEntity structEntity = StructEntity.getInstance(clazz);
+        StructEntity structEntity = Schema.getEntity(clazz);
         this.entityIndex = structEntity.getPrefixIndexes()
                 .stream()
                 .filter(entityPrefixIndex -> entityPrefixIndex.field.getName().equals(filter.getFieldName()))
@@ -50,7 +50,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
         this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields);
         if (this.dataKeyPattern != null) {
-            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getName(), null);
+            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
         }
 
         this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, indexKeyPattern);

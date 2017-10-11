@@ -9,7 +9,8 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
  * Created by user on 19.04.2017.
  */
 @Entity(
-        name = "com.infomaximum.StoreFile",
+        namespace = "com.infomaximum",
+        name = "StoreFile",
         fields = {
                 @Field(name = ProxyStoreFileReadable.FIELD_FILE_NAME, type = String.class),
                 @Field(name = ProxyStoreFileReadable.FIELD_CONTENT_TYPE, type = String.class),

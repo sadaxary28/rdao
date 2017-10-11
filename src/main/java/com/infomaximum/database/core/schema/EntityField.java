@@ -1,7 +1,8 @@
 package com.infomaximum.database.core.schema;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
+import com.infomaximum.database.exeption.runtime.IllegalTypeException;
+import com.infomaximum.database.exeption.runtime.StructEntityException;
 import com.infomaximum.database.utils.EqualsUtils;
 
 public class EntityField {
@@ -9,11 +10,25 @@ public class EntityField {
     private final String name;
     private final Class type;
     private final TypePacker packer;
+    private final StructEntity foreignDependency;
 
-    protected EntityField(Field field) {
+    EntityField(Field field, StructEntity parent) {
         this.name = field.name();
         this.type = field.type();
         this.packer = buildPacker(field.packerType());
+        if (field.foreignDependency() != Class.class) {
+            if (parent.getObjectClass() != field.foreignDependency()) {
+                this.foreignDependency = Schema.ensureEntity(field.foreignDependency());
+            } else {
+                this.foreignDependency = parent;
+            }
+        } else {
+            this.foreignDependency = null;
+        }
+
+        if (isForeign() && this.type != Long.class){
+            throw new StructEntityException("Foreign field " + field.name() + " must be " + Long.class + ".");
+        }
     }
 
     public String getName() {
@@ -28,9 +43,17 @@ public class EntityField {
         return packer;
     }
 
+    public boolean isForeign() {
+        return foreignDependency != null;
+    }
+
+    public StructEntity getForeignDependency() {
+        return foreignDependency;
+    }
+
     public void throwIfNotMatch(Class type) {
         if (!EqualsUtils.equalsType(this.type, type)) {
-            throw new IllegalTypeDatabaseException(this.type, type);
+            throw new IllegalTypeException(this.type, type);
         }
     }
 
@@ -42,7 +65,7 @@ public class EntityField {
         try {
             return (TypePacker) packerClass.newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new IllegalTypeDatabaseException(e);
+            throw new IllegalTypeException(e);
         }
     }
 }

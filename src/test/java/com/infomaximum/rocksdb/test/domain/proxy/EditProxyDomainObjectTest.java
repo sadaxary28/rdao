@@ -1,34 +1,27 @@
 package com.infomaximum.rocksdb.test.domain.proxy;
 
 import com.infomaximum.database.domainobject.Transaction;
-import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.rocksdb.RocksDataBase;
-import com.infomaximum.rocksdb.RocksDataBaseBuilder;
-import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
 import com.infomaximum.rocksdb.domain.proxy.ProxyStoreFileEditable;
 import com.infomaximum.rocksdb.domain.proxy.ProxyStoreFileReadable;
+import com.infomaximum.rocksdb.test.DomainDataTest;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by kris on 22.04.17.
  */
-public class EditProxyDomainObjectTest extends RocksDataTest {
+public class EditProxyDomainObjectTest extends DomainDataTest {
 
-    private final static Logger log = LoggerFactory.getLogger(EditProxyDomainObjectTest.class);
+    @Before
+    public void init() throws Exception {
+        super.init();
+
+        createDomain(ProxyStoreFileReadable.class);
+    }
 
     @Test
     public void run() throws Exception {
-        RocksDataBase rocksDataBase = new RocksDataBaseBuilder()
-                .withPath(pathDataBase)
-                .build();
-
-        DomainObjectSource domainObjectSource = new DomainObjectSource(new RocksDBDataSourceImpl(rocksDataBase));
-        domainObjectSource.createEntity(ProxyStoreFileReadable.class);
-
         //Проверяем, что такого объекта нет в базе
         Assert.assertNull(domainObjectSource.get(ProxyStoreFileReadable.class, 1L));
 
@@ -86,7 +79,5 @@ public class EditProxyDomainObjectTest extends RocksDataTest {
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());
         Assert.assertEquals(size, storeFileCheckSave2.getSize());
         Assert.assertEquals(false, storeFileCheckSave2.isSingle());
-
-        rocksDataBase.close();
     }
 }

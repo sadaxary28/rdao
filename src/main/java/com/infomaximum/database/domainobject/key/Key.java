@@ -4,7 +4,7 @@ public abstract class Key {
 
     public static final int ID_BYTE_SIZE = 8;
 
-    private final long id;
+    private long id;
 
     public Key(long id) {
         this.id = id;
@@ -12,6 +12,10 @@ public abstract class Key {
 
     public long getId() {
         return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public abstract byte[] pack();

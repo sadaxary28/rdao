@@ -1,14 +1,13 @@
 package com.infomaximum.database.utils;
 
 import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by kris on 24.05.17.
- */
 public class IndexUtils {
 
     public static boolean toLongCastable(Class<?> type) {
@@ -19,6 +18,13 @@ public class IndexUtils {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
             destination[i] = buildHash(field.getType(), values.get(field));
+        }
+    }
+
+    public static void setHashValues(final List<EntityField> sortedFields, final DomainObject object, long[] destination) throws DataSourceDatabaseException {
+        for (int i = 0; i < sortedFields.size(); ++i) {
+            EntityField field = sortedFields.get(i);
+            destination[i] = buildHash(field.getType(), object.get(field.getClass(), field.getName()));
         }
     }
 

@@ -91,6 +91,34 @@ public class IndexIteratorTest extends StoreFileDataTest {
     }
 
     @Test
+    public void loadNullableTwoFields() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            for (int i = 0; i < 10; i++) {
+                transaction.save(transaction.create(StoreFileEditable.class));
+            }
+        });
+
+        Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
+        fieldValuesField.setAccessible(true);
+
+        Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+        IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, null);
+        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
+            int iteratedRecordCount = 0;
+            while (iterator.hasNext()) {
+                StoreFileReadable storeFile = iterator.next();
+
+                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
+                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_FILE_NAME));
+                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_SIZE));
+                Assert.assertEquals(loadingFields.size(), fieldValues.size());
+                ++iteratedRecordCount;
+            }
+            Assert.assertEquals(10, iteratedRecordCount);
+        }
+    }
+
+    @Test
     public void loadZeroFields() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 100);
 

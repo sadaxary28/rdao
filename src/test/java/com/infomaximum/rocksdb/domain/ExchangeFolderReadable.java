@@ -12,7 +12,8 @@ import java.util.Date;
  * Created by kris on 27.06.17.
  */
 @Entity(
-        name = "com.infomaximum.exchange.ExchangeFolder",
+        namespace = "com.infomaximum.exchange",
+        name = "ExchangeFolder",
         fields = {
                 @Field(name = ExchangeFolderReadable.FIELD_UUID, type = String.class),
                 @Field(name = ExchangeFolderReadable.FIELD_USER_EMAIL, type = String.class),

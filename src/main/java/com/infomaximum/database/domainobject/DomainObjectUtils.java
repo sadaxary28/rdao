@@ -5,7 +5,7 @@ import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.IllegalTypeDatabaseException;
+import com.infomaximum.database.exeption.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
@@ -35,7 +35,7 @@ public class DomainObjectUtils {
 
             return domainObject;
         } catch (ReflectiveOperationException e) {
-            throw new IllegalTypeDatabaseException(e);
+            throw new IllegalTypeException(e);
         }
     }
 

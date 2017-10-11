@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.BaseEnum;
@@ -29,7 +30,7 @@ public abstract class DomainObject {
             throw new IllegalArgumentException();
         }
         this.id = id;
-        this.structEntity = StructEntity.getInstance(this.getClass());
+        this.structEntity = Schema.getEntity(this.getClass());
         this.loadedFieldValues = new ConcurrentHashMap<>();
     }
 

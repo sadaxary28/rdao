@@ -1,8 +1,6 @@
 package com.infomaximum.database.core.iterator;
 
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyPattern;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.domainobject.DataEnumerable;
@@ -10,7 +8,6 @@ import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
 
-import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -26,7 +23,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
-        String columnFamily = StructEntity.getInstance(clazz).getName();
+        String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         this.dataIteratorId = dataEnumerable.createIterator(columnFamily, FieldKey.buildKeyPattern(loadingFields));
 
         nextImpl();
