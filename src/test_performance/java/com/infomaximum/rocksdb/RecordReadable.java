@@ -6,7 +6,7 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DatabaseException;
 
 @Entity(
-        namespace = "com.infomaximum",
+        namespace = "com.infomaximum.store",
         name = "rocksdb.record",
         fields = {
                 @Field(name = RecordReadable.FIELD_STRING_1, type = String.class),

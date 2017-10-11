@@ -14,7 +14,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
  * Created by user on 19.04.2017.
  */
 @Entity(
-        namespace = "com.infomaximum",
+        namespace = "com.infomaximum.store",
         name = "StoreFile",
         fields = {
                 @Field(name = StoreFileReadable.FIELD_FILE_NAME, type = String.class),

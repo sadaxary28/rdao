@@ -21,14 +21,14 @@ import java.util.*;
 public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private long transactionId = -1;
-    private boolean foreignKeyEnabled = true;
+    private boolean foreignFieldEnabled = true;
 
     protected Transaction(DataSource dataSource) {
         super(dataSource);
     }
 
-    public void setForeignKeyEnabled(boolean value) {
-        this.foreignKeyEnabled = value;
+    public void setForeignFieldEnabled(boolean value) {
+        this.foreignFieldEnabled = value;
     }
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
@@ -226,7 +226,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        if (!foreignKeyEnabled || !field.isForeign()) {
+        if (!foreignFieldEnabled || !field.isForeign()) {
             return;
         }
 
@@ -237,7 +237,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private void validateRemovingObject(DomainObject obj) throws DatabaseException {
-        if (!foreignKeyEnabled) {
+        if (!foreignFieldEnabled) {
             return;
         }
 

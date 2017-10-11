@@ -60,8 +60,8 @@ public class DomainServiceTest extends DomainDataTest {
             }
         });
 
-        rocksDataBase.dropColumnFamily("com.infomaximum.StoreFile.prefixtextindex.file_name");
-        rocksDataBase.dropColumnFamily("com.infomaximum.StoreFile.index.size:java.lang.Long");
+        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.prefixtextindex.file_name");
+        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.index.size:java.lang.Long");
 
         new DomainService(dataSource).setCreationMode(true).execute(entity);
 
@@ -76,12 +76,12 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void validateUnknownColumnFamily() throws Exception {
-        new DomainService(dataSource).setCreationMode(true).execute(Schema.getEntity(StoreFileReadable.class));
+        createDomain(StoreFileReadable.class);
 
-        rocksDataBase.createColumnFamily("com.infomaximum.StoreFile.some_prefix");
+        rocksDataBase.createColumnFamily("com.infomaximum.store.StoreFile.some_prefix");
 
         try {
-            new DomainService(dataSource).execute(Schema.getEntity(StoreFileReadable.class));
+            new DomainService(dataSource).setCreationMode(false).execute(Schema.getEntity(StoreFileReadable.class));
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
             Assert.assertTrue(true);
