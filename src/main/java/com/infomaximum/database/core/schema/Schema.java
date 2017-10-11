@@ -8,7 +8,7 @@ public class Schema {
 
     public static class Builder {
 
-        private final List<Class<? extends DomainObject>> domainClasses = new ArrayList<>();
+        private final Set<Class<? extends DomainObject>> domainClasses = new HashSet<>();
 
         public Builder withDomain(Class<? extends DomainObject> clazz) {
             if (!domainClasses.add(clazz)) {
@@ -26,7 +26,7 @@ public class Schema {
 
     private final Set<StructEntity> domains;
 
-    private Schema(List<Class<? extends DomainObject>> domainClasses) {
+    private Schema(Set<Class<? extends DomainObject>> domainClasses) {
         Set<StructEntity> modifiableDomains = new HashSet<>(domainClasses.size());
         for (Class domain : domainClasses) {
             modifiableDomains.add(ensureEntity(domain));
