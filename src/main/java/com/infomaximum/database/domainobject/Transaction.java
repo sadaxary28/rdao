@@ -37,7 +37,6 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, this);
 
-            //TODO нужно сделать "похорошему", без такого "хака"
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (EntityField field: entity.getFields()) {
                 domainObject.set(field.getName(), null);
@@ -178,7 +177,11 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
 
         // Add new value-index
-        IndexUtils.setHashValues(index.sortedFields, newValues, indexKey.getFieldValues());
+        for (int i = 0; i < index.sortedFields.size(); ++i) {
+            EntityField field = index.sortedFields.get(i);
+            Object value = newValues.containsKey(field) ? newValues.get(field) : prevValues.get(field);
+            indexKey.getFieldValues()[i] = IndexUtils.buildHash(field.getType(), value);
+        }
         destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
     }
 
