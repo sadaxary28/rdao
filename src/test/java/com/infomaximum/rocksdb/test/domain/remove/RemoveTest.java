@@ -53,17 +53,8 @@ public class RemoveTest extends StoreFileDataTest {
             ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
             transaction.save(folder);
 
-            /*StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
-            transaction.save(file);*/
-        });
-
-        domainObjectSource.executeTransactional(transaction -> {
-            /*ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
-            transaction.save(folder);*/
-
             StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(1);
+            file.setFolderId(folder.getId());
             transaction.save(file);
         });
 
@@ -75,5 +66,24 @@ public class RemoveTest extends StoreFileDataTest {
         } catch (TransactionDatabaseException ex) {
             Assert.assertEquals(ForeignDependencyException.class, ex.getCause().getClass());
         }
+    }
+
+    @Test
+    public void removeReferencingObjects() throws Exception {
+        createDomain(ExchangeFolderReadable.class);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
+            transaction.save(folder);
+
+            StoreFileEditable file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
+        });
     }
 }

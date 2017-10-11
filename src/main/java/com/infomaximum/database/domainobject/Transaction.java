@@ -231,7 +231,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         long fkeyIdValue = ((Long) value).longValue();
-        if (dataSource.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
+        if (dataSource.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
             throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), field, fkeyIdValue);
         }
     }
