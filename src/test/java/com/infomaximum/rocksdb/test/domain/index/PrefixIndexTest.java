@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.Key;
@@ -30,7 +31,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
     public void init() throws Exception {
         super.init();
 
-        indexColumnFamily = StructEntity.getInstance(StoreFileReadable.class).getPrefixIndexes().get(0).columnFamily;
+        indexColumnFamily = Schema.getEntity(StoreFileReadable.class).getPrefixIndexes().get(0).columnFamily;
     }
 
     @Test

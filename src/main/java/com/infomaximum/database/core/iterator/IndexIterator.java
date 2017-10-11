@@ -1,6 +1,7 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
@@ -23,7 +24,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     public IndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz);
 
-        StructEntity structEntity = StructEntity.getInstance(clazz);
+        StructEntity structEntity = Schema.getEntity(clazz);
         Map<String, Object> filters = filter.getValues();
         this.entityIndex = structEntity.getIndex(filters.keySet());
 

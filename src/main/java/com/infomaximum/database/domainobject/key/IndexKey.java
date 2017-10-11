@@ -58,6 +58,10 @@ public class IndexKey extends Key {
         return new KeyPattern(buffer.array());
     }
 
+    public static KeyPattern buildKeyPattern(final long fieldValue) {
+        return new KeyPattern(TypeConvert.pack(fieldValue));
+    }
+
     private static int readLongCount(final byte[] src) {
         final int count = src.length / ID_BYTE_SIZE;
         final int tail = src.length % ID_BYTE_SIZE;

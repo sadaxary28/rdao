@@ -2,6 +2,7 @@ package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.EntityPrefixIndex;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
@@ -25,7 +26,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, PrefixIndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz);
-        StructEntity structEntity = StructEntity.getInstance(clazz);
+        StructEntity structEntity = Schema.getEntity(clazz);
         this.entityIndex = structEntity.getPrefixIndexes()
                 .stream()
                 .filter(entityPrefixIndex -> entityPrefixIndex.field.getName().equals(filter.getFieldName()))

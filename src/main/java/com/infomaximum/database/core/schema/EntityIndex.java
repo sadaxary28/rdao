@@ -12,21 +12,21 @@ public class EntityIndex {
     public final String columnFamily;
     public final List<EntityField> sortedFields;
 
-    protected EntityIndex(Index index, StructEntity parent) {
+    EntityIndex(Index index, StructEntity parent) {
         List<EntityField> modifiableIndexFields = new ArrayList<>(index.fields().length);
         for (String fieldName: index.fields()) {
             modifiableIndexFields.add(parent.getField(fieldName));
         }
 
         //Сортируем, что бы хеш не ломался из-за перестановки местами полей
-        Collections.sort(modifiableIndexFields, Comparator.comparing(o -> o.getName().toLowerCase()));
+        modifiableIndexFields.sort(Comparator.comparing(o -> o.getName().toLowerCase()));
 
         this.sortedFields = Collections.unmodifiableList(modifiableIndexFields);
         this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), this.sortedFields);
     }
 
-    protected EntityIndex(String fieldName, StructEntity parent) {
-        this.sortedFields = Collections.singletonList(parent.getField(fieldName));
+    EntityIndex(EntityField field, StructEntity parent) {
+        this.sortedFields = Collections.singletonList(field);
         this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), this.sortedFields);
     }
 

@@ -12,7 +12,6 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
         super(id);
     }
 
-
     public void setFileName(String fileName) {
         set(FIELD_FILE_NAME, fileName);
     }
@@ -31,5 +30,9 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
 
     public void setFormat(FormatType format) {
         set(FIELD_FORMAT, format);
+    }
+
+    public void setFolderId(long folderId) {
+        set(FIELD_FOLDER_ID, folderId);
     }
 }

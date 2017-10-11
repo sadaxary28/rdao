@@ -11,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -20,12 +18,21 @@ import java.util.stream.Collectors;
  */
 public class StructEntity {
 
-    public final static String NAMESPACE_SEPARATOR = ".";
-
     private final static Logger log = LoggerFactory.getLogger(StructEntity.class);
 
+    public static class Reference {
+
+        public final Class objClass;
+        public final EntityIndex fieldIndex;
+
+        private Reference(Class objClass, EntityIndex fieldIndex) {
+            this.objClass = objClass;
+            this.fieldIndex = fieldIndex;
+        }
+    }
+
+    public final static String NAMESPACE_SEPARATOR = ".";
     public final static java.lang.reflect.Field dataSourceField = getDataSourceField();
-    private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> structEntities = new ConcurrentHashMap<>();
 
     private final Class<? extends DomainObject> clazz;
     private final String columnFamily;
@@ -33,8 +40,9 @@ public class StructEntity {
     private final Map<String, EntityField> nameFields;
     private final List<EntityIndex> indexes;
     private final List<EntityPrefixIndex> prefixIndexes;
+    private final List<Reference> referencingForeignFields = new ArrayList<>();
 
-    private StructEntity(Class<? extends DomainObject> clazz) {
+    StructEntity(Class<? extends DomainObject> clazz) {
         final Entity annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
 
         this.clazz = clazz;
@@ -49,16 +57,24 @@ public class StructEntity {
                 throw new StructEntityException("Field " + field.name() + " already exists into " + clazz.getName() + ".");
             }
 
-            EntityField f = new EntityField(field);
+            EntityField f = new EntityField(field, this);
 
             modifiableFields.add(f);
             modifiableNameToFields.put(f.getName(), f);
+
+            if (f.isForeign()) {
+                registerToForeignEntity(f);
+            }
         }
 
         this.nameFields = Collections.unmodifiableMap(modifiableNameToFields);
         this.fields = Collections.unmodifiableSet(modifiableFields);
         this.indexes = buildIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
+    }
+
+    private void registerToForeignEntity(EntityField foreignField) {
+        foreignField.getForeignDependency().referencingForeignFields.add(new Reference(clazz, buildForeignIndex(foreignField)));
     }
 
     public String getColumnFamily() {
@@ -105,17 +121,8 @@ public class StructEntity {
         return prefixIndexes;
     }
 
-    public static StructEntity getInstance(Class<? extends DomainObject> clazz) {
-        Class<? extends DomainObject> entityClass = StructEntity.getAnnotationClass(clazz);
-
-        StructEntity domainObjectFields = structEntities.get(entityClass);
-        if (domainObjectFields != null) {
-            return domainObjectFields;
-        }
-
-        StructEntity newValue = new StructEntity(entityClass);
-        domainObjectFields = structEntities.putIfAbsent(entityClass, newValue);
-        return domainObjectFields != null ? domainObjectFields : newValue;
+    public List<Reference> getReferencingForeignFields() {
+        return referencingForeignFields;
     }
 
     private static java.lang.reflect.Field getDataSourceField() {
@@ -130,7 +137,7 @@ public class StructEntity {
         return field;
     }
 
-    private static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
+    public static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
         while (true) {
             if (clazz.isAnnotationPresent(Entity.class)) {
                 return clazz;
@@ -155,19 +162,23 @@ public class StructEntity {
             result.add(new EntityIndex(index, this));
         }
 
-        for (Field field : entity.fields()) {
-            if (field.foreignDependency() == Class.class) {
+        for (EntityField field : fields) {
+            if (!field.isForeign()) {
                 continue;
             }
 
-            if (field.type() != Long.class){
-                throw new StructEntityException("Foregn field " + field.name() + " must be " + Long.class + ".");
+            if (result.stream().anyMatch(index -> index.sortedFields.size() == 1 && index.sortedFields.get(0) == field)) {
+                continue;
             }
 
-            result.add(new EntityIndex(field.name(), this));
+            result.add(buildForeignIndex(field));
         }
 
         return Collections.unmodifiableList(result);
+    }
+
+    private EntityIndex buildForeignIndex(EntityField foreignField) {
+        return new EntityIndex(foreignField, this);
     }
 
     private List<EntityPrefixIndex> buildPrefixIndexes(Entity entity) {

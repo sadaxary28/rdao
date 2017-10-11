@@ -1,5 +1,6 @@
 package com.infomaximum.database.maintenance;
 
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -12,36 +13,33 @@ import java.util.stream.Collectors;
 /*
  Не потоко безопасный класс
  */
-public class DatabaseService {
+public class SchemaService {
 
     private final DataSource dataSource;
 
     private boolean isCreationMode = false;
 
     private String namespace;
-    private Set<StructEntity> domains = new HashSet<>();
-
     private String namespacePrefix;
+    private Schema schema;
 
-    public DatabaseService(DataSource dataSource) {
+    public SchemaService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public DatabaseService setCreationMode(boolean value) {
+    public SchemaService setCreationMode(boolean value) {
         this.isCreationMode = value;
         return this;
     }
 
-    public DatabaseService setNamespace(String namespace) {
+    public SchemaService setNamespace(String namespace) {
         this.namespace = namespace;
         this.namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
         return this;
     }
 
-    public DatabaseService withDomain(Class<? extends DomainObject> clazz) {
-        if (!domains.add(StructEntity.getInstance(clazz))) {
-            throw new RuntimeException("Class " + clazz + " or same class already exists.");
-        }
+    public SchemaService setSchema(Schema schema) {
+        this.schema = schema;
         return this;
     }
 
@@ -54,7 +52,7 @@ public class DatabaseService {
 
         DomainService domainService = new DomainService(dataSource)
                 .setCreationMode(isCreationMode);
-        for (StructEntity domain : domains) {
+        for (StructEntity domain : schema.getDomains()) {
             domainService.execute(domain);
         }
 
@@ -63,7 +61,7 @@ public class DatabaseService {
 
     private void validateConsistentNames() throws InconsistentDatabaseException {
         Set<String> processedNames = new HashSet<>();
-        for (StructEntity domain : domains) {
+        for (StructEntity domain : schema.getDomains()) {
             if (processedNames.contains(domain.getColumnFamily())) {
                 throw new InconsistentDatabaseException("Column family " + domain.getColumnFamily() + " into " + domain.getObjectClass() + " already exists.");
             }
@@ -81,7 +79,7 @@ public class DatabaseService {
                 .stream()
                 .filter(s -> s.startsWith(namespacePrefix))
                 .collect(Collectors.toSet());
-        for (StructEntity domain : domains) {
+        for (StructEntity domain : schema.getDomains()) {
             DomainService.removeDomainColumnFamiliesFrom(columnFamilies, domain);
         }
 

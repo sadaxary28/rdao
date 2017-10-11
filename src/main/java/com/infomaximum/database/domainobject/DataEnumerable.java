@@ -5,7 +5,7 @@ import com.infomaximum.database.core.iterator.AllIterator;
 import com.infomaximum.database.core.iterator.PrefixIndexIterator;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
@@ -28,7 +28,7 @@ public abstract class DataEnumerable {
         this.dataSource = dataSource;
     }
 
-    public abstract <T extends Object, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException;
+    public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException;
     public abstract long createIterator(String columnFamily, final KeyPattern pattern) throws DataSourceDatabaseException;
 
     public void seekIterator(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException {
@@ -44,7 +44,7 @@ public abstract class DataEnumerable {
     }
 
     public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DataSourceDatabaseException {
-        String columnFamily = StructEntity.getInstance(clazz).getColumnFamily();
+        String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         KeyPattern pattern = FieldKey.buildKeyPattern(id, loadingFields != null ? loadingFields : Collections.emptySet());
 
         long iteratorId = createIterator(columnFamily, pattern);
