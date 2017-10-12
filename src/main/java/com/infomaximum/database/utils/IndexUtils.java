@@ -1,5 +1,6 @@
 package com.infomaximum.database.utils;
 
+import com.google.common.primitives.UnsignedInts;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
@@ -34,7 +35,7 @@ public class IndexUtils {
         }
 
         if (type == Long.class) {
-            return ((Long) value).longValue();
+            return (Long) value;
         } else if (type == String.class) {
             return hash(TypeConvert.pack(((String) value).toLowerCase()));
         } else if (type == Integer.class) {
@@ -62,18 +63,15 @@ public class IndexUtils {
 
     /**
      * http://www.azillionmonkeys.com/qed/hash.html
-     * @param data
-     * @return
      */
     private static long hash(final byte[] data) {
-        if (data == null || data.length == 0) {
+        if (data == null) {
             return 0;
         }
 
         int len = data.length;
-        long hash = len;
-        long tmp;
-        int rem;
+        int hash = len;
+        int tmp, rem;
 
         rem = len & 3;
         len >>>= 2;
@@ -81,27 +79,28 @@ public class IndexUtils {
         /* Main loop */
         int pos = 0;
         for (; len > 0; --len) {
-            hash += (data[pos++] | (data[pos++] << 8));
-            tmp = ((data[pos++] | (data[pos++] << 8)) << 11) ^ hash;
+            hash += get16bits(data, pos);
+            tmp = (get16bits(data, pos + 2) << 11) ^ hash;
             hash = ((hash << 16) ^ tmp);
             hash += (hash >>> 11);
+            pos += 4;
         }
 
         /* Handle end cases */
         switch (rem) {
             case 3:
-                hash += (data[pos++] | (data[pos++] << 8));
+                hash += get16bits(data, pos);
                 hash ^= (hash << 16);
-                hash ^= (data[pos++] << 18);
+                hash ^= ((data[pos + 2] & 0xff) << 18);
                 hash += (hash >>> 11);
                 break;
             case 2:
-                hash += (data[pos++] | (data[pos++] << 8));
+                hash += get16bits(data, pos);
                 hash ^= (hash << 11);
                 hash += (hash >>> 17);
                 break;
             case 1:
-                hash += data[pos++];
+                hash += (data[pos] & 0xff);
                 hash ^= (hash << 10);
                 hash += (hash >>> 1);
                 break;
@@ -115,6 +114,10 @@ public class IndexUtils {
         hash ^= (hash << 25);
         hash += (hash >>> 6);
 
-        return hash & 0xFFFFFFFF;
+        return UnsignedInts.toLong(hash);
+    }
+
+    private static int get16bits(byte[] data, int startIndex) {
+        return (data[startIndex] & 0xff) + ((data[startIndex + 1] << 8) & 0xffff);
     }
 }
