@@ -15,6 +15,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
     private final Class<E> clazz;
+    private Set<String> loadingFields;
     private final long dataIteratorId;
 
     private E nextElement;
@@ -23,6 +24,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
+        this.loadingFields = loadingFields;
         String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         this.dataIteratorId = dataEnumerable.createIterator(columnFamily, FieldKey.buildKeyPattern(loadingFields));
 
@@ -51,7 +53,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
-        nextElement = DomainObjectUtils.nextObject(clazz, dataEnumerable, dataIteratorId, state);
+        nextElement = DomainObjectUtils.nextObject(clazz, loadingFields, dataEnumerable, dataIteratorId, state);
         if (nextElement == null) {
             close();
         }
