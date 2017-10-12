@@ -2,7 +2,6 @@ package com.infomaximum.rocksdb.test.domain.edit;
 
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.exeption.ForeignDependencyException;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
@@ -89,8 +88,8 @@ public class EditDomainObjectTest extends StoreFileDataTest {
                 transaction.save(file);
             });
             Assert.fail();
-        } catch (TransactionDatabaseException ex) {
-            Assert.assertEquals(ForeignDependencyException.class, ex.getCause().getClass());
+        } catch (ForeignDependencyException ex) {
+            Assert.assertTrue(true);
         }
     }
 }

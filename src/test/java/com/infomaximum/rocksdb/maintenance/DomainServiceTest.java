@@ -7,6 +7,7 @@ import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exeption.runtime.ColumnFamilyNotFoundException;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
@@ -26,7 +27,7 @@ public class DomainServiceTest extends DomainDataTest {
     }
 
     @Test
-    public void createAll() throws DatabaseException {
+    public void createAll() throws Exception {
         testNotWorking();
 
         new DomainService(dataSource).setCreationMode(true).execute(Schema.getEntity(StoreFileReadable.class));
@@ -88,16 +89,16 @@ public class DomainServiceTest extends DomainDataTest {
         }
     }
 
-    private void testNotWorking() {
+    private void testNotWorking() throws Exception {
         try {
             testWorking();
             Assert.fail();
-        } catch (DatabaseException ignoring) {
+        } catch (DatabaseException | ColumnFamilyNotFoundException ignoring) {
             Assert.assertTrue(true);
         }
     }
 
-    private void testWorking() throws DatabaseException {
+    private void testWorking() throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("Test");

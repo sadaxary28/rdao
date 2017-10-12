@@ -5,7 +5,6 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 public class DomainObjectSource extends DataEnumerable {
@@ -24,12 +23,10 @@ public class DomainObjectSource extends DataEnumerable {
         super(dataSource);
     }
 
-    public void executeTransactional(final Monad operation) throws TransactionDatabaseException {
+    public void executeTransactional(final Monad operation) throws Exception {
         try (Transaction transaction = buildTransaction()) {
             operation.action(transaction);
             transaction.commit();
-        } catch (Exception ex) {
-            throw new TransactionDatabaseException("Exception execute transaction", ex);
         }
     }
 

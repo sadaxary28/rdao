@@ -1,11 +1,9 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
@@ -167,7 +165,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         Assert.assertEquals(0, currentLexemes.size());
     }
 
-    private ByteBuffer createRecords(int recordCount) throws TransactionDatabaseException {
+    private ByteBuffer createRecords(int recordCount) throws Exception {
         ByteBuffer idsBuffer = TypeConvert.allocateBuffer(recordCount * Key.ID_BYTE_SIZE);
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; ++i) {

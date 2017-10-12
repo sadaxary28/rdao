@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.remove;
 
 import com.infomaximum.database.exeption.ForeignDependencyException;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
@@ -63,8 +62,8 @@ public class RemoveTest extends StoreFileDataTest {
                 transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
             });
             Assert.fail();
-        } catch (TransactionDatabaseException ex) {
-            Assert.assertEquals(ForeignDependencyException.class, ex.getCause().getClass());
+        } catch (ForeignDependencyException ex) {
+            Assert.assertTrue(true);
         }
     }
 

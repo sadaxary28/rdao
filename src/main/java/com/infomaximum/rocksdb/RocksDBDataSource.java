@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.core.datasource;
+package com.infomaximum.rocksdb;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -27,7 +27,7 @@ import java.util.function.Function;
 /**
  * Created by user on 20.04.2017.
  */
-public class RocksDBDataSourceImpl implements DataSource {
+public class RocksDBDataSource implements DataSource {
 
     private final long ROCKS_OBJECT_LIFE_TIME_IN_MIN = 10;
 
@@ -59,7 +59,7 @@ public class RocksDBDataSourceImpl implements DataSource {
         }
     }
 
-    public RocksDBDataSourceImpl(RocksDataBase rocksDataBase) throws RocksDBException {
+    public RocksDBDataSource(RocksDataBase rocksDataBase) throws RocksDBException {
         this.rocksDataBase = rocksDataBase;
         this.sequenceManager = new SequenceManager(rocksDataBase);
 
