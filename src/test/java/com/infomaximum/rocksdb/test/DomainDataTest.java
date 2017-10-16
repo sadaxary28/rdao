@@ -40,6 +40,7 @@ public abstract class DomainDataTest extends RocksDataTest {
         new Schema.Builder().withDomain(clazz).build();
         new DomainService(dataSource)
                 .setCreationMode(true)
-                .execute(Schema.getEntity(clazz));
+                .setDomain(Schema.getEntity(clazz))
+                .execute();
     }
 }

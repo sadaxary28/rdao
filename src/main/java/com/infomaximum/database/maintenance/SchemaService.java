@@ -49,10 +49,11 @@ public class SchemaService {
 
         validateConsistentNames();
 
-        DomainService domainService = new DomainService(dataSource)
-                .setCreationMode(isCreationMode);
         for (StructEntity domain : schema.getDomains()) {
-            domainService.execute(domain);
+            new DomainService(dataSource)
+                    .setCreationMode(isCreationMode)
+                    .setDomain(domain)
+                    .execute();
         }
 
         validateUnknownColumnFamilies();

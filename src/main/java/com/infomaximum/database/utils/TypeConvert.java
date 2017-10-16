@@ -35,7 +35,11 @@ public class TypeConvert {
     }
 
     public static Integer unpackInteger(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? Ints.fromByteArray(value) : null;
+        return !ByteUtils.isNullOrEmpty(value) ? unpackInt(value) : null;
+    }
+
+    public static int unpackInt(byte[] value){
+        return Ints.fromByteArray(value);
     }
 
     public static Long unpackLong(byte[] value){

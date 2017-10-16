@@ -136,11 +136,13 @@ public abstract class DomainObject {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null) return false;
         if (this == o) return true;
-        if (!DomainObject.class.isAssignableFrom(o.getClass())) return false;
+        if (o == null) return false;
+
         DomainObject that = (DomainObject) o;
-        return id == that.id;
+
+        return structEntity == that.structEntity &&
+               id == that.id;
     }
 
     @Override

@@ -22,7 +22,7 @@ public abstract class EnumPacker<T extends Enum<?> & BaseEnum> implements TypePa
             return null;
         }
 
-        int enumValue = Ints.fromByteArray(value);
+        int enumValue = TypeConvert.unpackInt(value);
         for(T e : enumConstants) {
             if(enumValue == e.intValue()) {
                 return e;

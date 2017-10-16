@@ -49,8 +49,12 @@ public class DomainService {
         return this;
     }
 
-    public void execute(StructEntity domain) throws DatabaseException {
-        this.domain = domain;
+    public DomainService setDomain(StructEntity value) {
+        this.domain = value;
+        return this;
+    }
+
+    public void execute() throws DatabaseException {
         final String dataColumnFamily = domain.getColumnFamily();
 
         if (!dataSource.containsSequence(dataColumnFamily)) {

@@ -30,7 +30,10 @@ public class DomainServiceTest extends DomainDataTest {
     public void createAll() throws Exception {
         testNotWorking();
 
-        new DomainService(dataSource).setCreationMode(true).execute(Schema.getEntity(StoreFileReadable.class));
+        new DomainService(dataSource)
+                .setCreationMode(true)
+                .setDomain(Schema.getEntity(StoreFileReadable.class))
+                .execute();
 
         testWorking();
     }
@@ -39,18 +42,18 @@ public class DomainServiceTest extends DomainDataTest {
     public void createPartial() throws Exception {
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
         rocksDataBase.dropColumnFamily(entity.getColumnFamily());
         testNotWorking();
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
         testWorking();
     }
 
     @Test
     public void createIndexAndIndexingData() throws Exception {
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
 
         domainObjectSource.executeTransactional(transaction -> {
             for (long i = 0; i < 100; ++i) {
@@ -64,7 +67,7 @@ public class DomainServiceTest extends DomainDataTest {
         rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.prefixtextindex.file_name");
         rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.index.size:java.lang.Long");
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
 
         try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
             Assert.assertNotNull(iter.next());
@@ -82,7 +85,7 @@ public class DomainServiceTest extends DomainDataTest {
         rocksDataBase.createColumnFamily("com.infomaximum.store.StoreFile.some_prefix");
 
         try {
-            new DomainService(dataSource).setCreationMode(false).execute(Schema.getEntity(StoreFileReadable.class));
+            new DomainService(dataSource).setCreationMode(false).setDomain(Schema.getEntity(StoreFileReadable.class)).execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
             Assert.assertTrue(true);
