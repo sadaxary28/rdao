@@ -7,6 +7,7 @@ import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exeption.runtime.ColumnFamilyNotFoundException;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
@@ -26,10 +27,13 @@ public class DomainServiceTest extends DomainDataTest {
     }
 
     @Test
-    public void createAll() throws DatabaseException {
+    public void createAll() throws Exception {
         testNotWorking();
 
-        new DomainService(dataSource).setCreationMode(true).execute(Schema.getEntity(StoreFileReadable.class));
+        new DomainService(dataSource)
+                .setCreationMode(true)
+                .setDomain(Schema.getEntity(StoreFileReadable.class))
+                .execute();
 
         testWorking();
     }
@@ -38,18 +42,18 @@ public class DomainServiceTest extends DomainDataTest {
     public void createPartial() throws Exception {
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
         rocksDataBase.dropColumnFamily(entity.getColumnFamily());
         testNotWorking();
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
         testWorking();
     }
 
     @Test
     public void createIndexAndIndexingData() throws Exception {
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
 
         domainObjectSource.executeTransactional(transaction -> {
             for (long i = 0; i < 100; ++i) {
@@ -60,10 +64,10 @@ public class DomainServiceTest extends DomainDataTest {
             }
         });
 
-        rocksDataBase.dropColumnFamily("com.infomaximum.StoreFile.prefixtextindex.file_name");
-        rocksDataBase.dropColumnFamily("com.infomaximum.StoreFile.index.size:java.lang.Long");
+        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.prefixtextindex.file_name");
+        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.index.size:java.lang.Long");
 
-        new DomainService(dataSource).setCreationMode(true).execute(entity);
+        new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
 
         try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
             Assert.assertNotNull(iter.next());
@@ -76,28 +80,28 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void validateUnknownColumnFamily() throws Exception {
-        new DomainService(dataSource).setCreationMode(true).execute(Schema.getEntity(StoreFileReadable.class));
+        createDomain(StoreFileReadable.class);
 
-        rocksDataBase.createColumnFamily("com.infomaximum.StoreFile.some_prefix");
+        rocksDataBase.createColumnFamily("com.infomaximum.store.StoreFile.some_prefix");
 
         try {
-            new DomainService(dataSource).execute(Schema.getEntity(StoreFileReadable.class));
+            new DomainService(dataSource).setCreationMode(false).setDomain(Schema.getEntity(StoreFileReadable.class)).execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
             Assert.assertTrue(true);
         }
     }
 
-    private void testNotWorking() {
+    private void testNotWorking() throws Exception {
         try {
             testWorking();
             Assert.fail();
-        } catch (DatabaseException ignoring) {
+        } catch (DatabaseException | ColumnFamilyNotFoundException ignoring) {
             Assert.assertTrue(true);
         }
     }
 
-    private void testWorking() throws DatabaseException {
+    private void testWorking() throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("Test");

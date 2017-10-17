@@ -15,15 +15,17 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     final DataEnumerable dataEnumerable;
     final Class<E> clazz;
+    final Set<String> loadingFields;
 
     long indexIteratorId = -1;
     KeyPattern dataKeyPattern = null;
     long dataIteratorId = -1;
     E nextElement;
 
-    BaseIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz) throws DataSourceDatabaseException {
+    BaseIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DataSourceDatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
+        this.loadingFields = loadingFields;
     }
 
     @Override
@@ -69,13 +71,13 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     E findObject(long id) throws DataSourceDatabaseException {
         if (dataKeyPattern == null) {
-            return DomainObjectUtils.buildDomainObject(clazz, id, dataEnumerable);
+            return DomainObjectUtils.buildDomainObject(clazz, id, loadingFields, dataEnumerable);
         }
 
         dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(id));
         dataEnumerable.seekIterator(dataIteratorId, dataKeyPattern);
 
-        E obj = DomainObjectUtils.nextObject(clazz, dataEnumerable, dataIteratorId, null);
+        E obj = DomainObjectUtils.nextObject(clazz, loadingFields, dataEnumerable, dataIteratorId, null);
         return checkFilter(obj) ? obj : null;
     }
 

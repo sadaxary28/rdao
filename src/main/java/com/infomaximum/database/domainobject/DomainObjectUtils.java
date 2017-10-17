@@ -9,6 +9,7 @@ import com.infomaximum.database.exeption.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
+import java.util.Collection;
 
 public class DomainObjectUtils {
 
@@ -24,7 +25,15 @@ public class DomainObjectUtils {
         }
     }
 
-    public static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, DataEnumerable dataSource) {
+    public static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, Collection<String> preInitializedFields, DataEnumerable dataSource) {
+        T obj = buildDomainObject(clazz, id, dataSource);
+        for (String field : preInitializedFields) {
+            obj._setLoadedField(field, null);
+        }
+        return obj;
+    }
+
+    private static <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, DataEnumerable dataSource) {
         try {
             Constructor<T> constructor = clazz.getConstructor(long.class);
 
@@ -39,10 +48,13 @@ public class DomainObjectUtils {
         }
     }
 
-    public static <T extends DomainObject> T nextObject(final Class<T> clazz, DataEnumerable dataEnumerable, long iteratorId, NextState state) throws DataSourceDatabaseException {
+    public static <T extends DomainObject> T nextObject(final Class<T> clazz, Collection<String> preInitializedFields
+            , DataEnumerable dataEnumerable
+            , long iteratorId
+            , NextState state) throws DataSourceDatabaseException {
         T obj = null;
         if (state != null && state.isEmpty()) {
-            obj = buildDomainObject(clazz, state.nextId, dataEnumerable);
+            obj = buildDomainObject(clazz, state.nextId, preInitializedFields, dataEnumerable);
             state.clear();
         }
 
@@ -55,7 +67,7 @@ public class DomainObjectUtils {
             FieldKey key = FieldKey.unpack(keyValue.getKey());
             if (key.isBeginningObject()) {
                 if (obj == null) {
-                    obj = buildDomainObject(clazz, key.getId(), dataEnumerable);
+                    obj = buildDomainObject(clazz, key.getId(), preInitializedFields, dataEnumerable);
                     continue;
                 }
 

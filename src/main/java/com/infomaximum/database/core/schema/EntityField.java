@@ -27,7 +27,7 @@ public class EntityField {
         }
 
         if (isForeign() && this.type != Long.class){
-            throw new StructEntityException("Foreign field " + field.name() + " must be " + Long.class + ".");
+            throw new StructEntityException("Type of foreign field " + field.name() + " must be " + Long.class + ".");
         }
     }
 

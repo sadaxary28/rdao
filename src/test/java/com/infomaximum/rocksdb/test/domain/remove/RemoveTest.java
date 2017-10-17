@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.remove;
 
 import com.infomaximum.database.exeption.ForeignDependencyException;
-import com.infomaximum.database.exeption.TransactionDatabaseException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
@@ -53,17 +52,8 @@ public class RemoveTest extends StoreFileDataTest {
             ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
             transaction.save(folder);
 
-            /*StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
-            transaction.save(file);*/
-        });
-
-        domainObjectSource.executeTransactional(transaction -> {
-            /*ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
-            transaction.save(folder);*/
-
             StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(1);
+            file.setFolderId(folder.getId());
             transaction.save(file);
         });
 
@@ -72,8 +62,27 @@ public class RemoveTest extends StoreFileDataTest {
                 transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
             });
             Assert.fail();
-        } catch (TransactionDatabaseException ex) {
-            Assert.assertEquals(ForeignDependencyException.class, ex.getCause().getClass());
+        } catch (ForeignDependencyException ex) {
+            Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void removeReferencingObjects() throws Exception {
+        createDomain(ExchangeFolderReadable.class);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
+            transaction.save(folder);
+
+            StoreFileEditable file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
+        });
     }
 }

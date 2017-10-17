@@ -22,7 +22,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     private final List<Object> filterValues;
 
     public IndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IndexFilter filter) throws DataSourceDatabaseException {
-        super(dataEnumerable, clazz);
+        super(dataEnumerable, clazz, loadingFields);
 
         StructEntity structEntity = Schema.getEntity(clazz);
         Map<String, Object> filters = filter.getValues();

@@ -163,7 +163,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         }
     }
 
-    private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws DatabaseException {
+    private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; i++) {
                 StoreFileEditable obj = transaction.create(StoreFileEditable.class);

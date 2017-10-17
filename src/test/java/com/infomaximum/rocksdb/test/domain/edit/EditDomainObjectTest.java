@@ -1,6 +1,8 @@
 package com.infomaximum.rocksdb.test.domain.edit;
 
 import com.infomaximum.database.domainobject.Transaction;
+import com.infomaximum.database.exeption.ForeignDependencyException;
+import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
@@ -13,7 +15,7 @@ import org.junit.Test;
 public class EditDomainObjectTest extends StoreFileDataTest {
 
     @Test
-    public void run() throws Exception {
+    public void main() throws Exception {
         //Проверяем, что такого объекта нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
 
@@ -73,5 +75,21 @@ public class EditDomainObjectTest extends StoreFileDataTest {
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());
         Assert.assertEquals(size, storeFileCheckSave2.getSize());
         Assert.assertEquals(false, storeFileCheckSave2.isSingle());
+    }
+
+    @Test
+    public void updateByNonExistenceObject() throws Exception {
+        createDomain(ExchangeFolderReadable.class);
+
+        try {
+            domainObjectSource.executeTransactional(transaction -> {
+                StoreFileEditable file = transaction.create(StoreFileEditable.class);
+                file.setFolderId(256);
+                transaction.save(file);
+            });
+            Assert.fail();
+        } catch (ForeignDependencyException ex) {
+            Assert.assertTrue(true);
+        }
     }
 }

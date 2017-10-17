@@ -3,7 +3,6 @@ package com.infomaximum.database.maintenance;
 import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.InconsistentDatabaseException;
 
@@ -50,10 +49,11 @@ public class SchemaService {
 
         validateConsistentNames();
 
-        DomainService domainService = new DomainService(dataSource)
-                .setCreationMode(isCreationMode);
         for (StructEntity domain : schema.getDomains()) {
-            domainService.execute(domain);
+            new DomainService(dataSource)
+                    .setCreationMode(isCreationMode)
+                    .setDomain(domain)
+                    .execute();
         }
 
         validateUnknownColumnFamilies();
@@ -75,8 +75,7 @@ public class SchemaService {
     }
 
     private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
-        Set<String> columnFamilies = Arrays.asList(dataSource.getColumnFamilies())
-                .stream()
+        Set<String> columnFamilies = Arrays.stream(dataSource.getColumnFamilies())
                 .filter(s -> s.startsWith(namespacePrefix))
                 .collect(Collectors.toSet());
         for (StructEntity domain : schema.getDomains()) {

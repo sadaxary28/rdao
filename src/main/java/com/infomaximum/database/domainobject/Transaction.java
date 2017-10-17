@@ -21,14 +21,14 @@ import java.util.*;
 public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private long transactionId = -1;
-    private boolean foreignKeyEnabled = true;
+    private boolean foreignFieldEnabled = true;
 
     protected Transaction(DataSource dataSource) {
         super(dataSource);
     }
 
-    public void setForeignKeyEnabled(boolean value) {
-        this.foreignKeyEnabled = value;
+    public void setForeignFieldEnabled(boolean value) {
+        this.foreignFieldEnabled = value;
     }
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
@@ -37,7 +37,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             long id = dataSource.nextId(entity.getColumnFamily());
 
-            T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, this);
+            T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, Collections.emptyList(), this);
 
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (EntityField field: entity.getFields()) {
@@ -226,18 +226,18 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        if (!foreignKeyEnabled || !field.isForeign()) {
+        if (!foreignFieldEnabled || !field.isForeign()) {
             return;
         }
 
         long fkeyIdValue = ((Long) value).longValue();
-        if (dataSource.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
+        if (dataSource.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
             throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), field, fkeyIdValue);
         }
     }
 
     private void validateRemovingObject(DomainObject obj) throws DatabaseException {
-        if (!foreignKeyEnabled) {
+        if (!foreignFieldEnabled) {
             return;
         }
 

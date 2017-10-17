@@ -5,7 +5,7 @@ import com.infomaximum.database.exeption.TransactionNotFoundException;
 import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.core.datasource.RocksDBDataSourceImpl;
+import com.infomaximum.rocksdb.RocksDBDataSource;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,7 +14,7 @@ public class TransactionTest extends RocksDataTest {
     @Test
     public void beginThanCommit() throws Exception {
         try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            DataSource dataSource = new RocksDBDataSourceImpl(rocksDataBase);
+            DataSource dataSource = new RocksDBDataSource(rocksDataBase);
 
             long transactionId = dataSource.beginTransaction();
             dataSource.commitTransaction(transactionId);
@@ -33,7 +33,7 @@ public class TransactionTest extends RocksDataTest {
     @Test
     public void beginThanRollback() throws Exception {
         try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            DataSource dataSource = new RocksDBDataSourceImpl(rocksDataBase);
+            DataSource dataSource = new RocksDBDataSource(rocksDataBase);
 
             long transactionId = dataSource.beginTransaction();
             dataSource.rollbackTransaction(transactionId);
@@ -52,7 +52,7 @@ public class TransactionTest extends RocksDataTest {
     @Test
     public void commit() throws Exception {
         try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            DataSource dataSource = new RocksDBDataSourceImpl(rocksDataBase);
+            DataSource dataSource = new RocksDBDataSource(rocksDataBase);
 
             long transactionId = dataSource.beginTransaction();
             dataSource.commitTransaction(transactionId);

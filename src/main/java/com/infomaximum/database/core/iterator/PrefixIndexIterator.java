@@ -25,7 +25,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
     private ByteBuffer loadingIds = null;
 
     public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, PrefixIndexFilter filter) throws DataSourceDatabaseException {
-        super(dataEnumerable, clazz);
+        super(dataEnumerable, clazz, loadingFields);
         StructEntity structEntity = Schema.getEntity(clazz);
         this.entityIndex = structEntity.getPrefixIndexes()
                 .stream()

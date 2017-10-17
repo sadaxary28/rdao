@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.exeption.runtime.ColumnFamilyNotFoundException;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.*;
 
@@ -28,7 +29,11 @@ public class RocksDataBase implements AutoCloseable {
     }
 
     public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) {
-        return columnFamilies.get(columnFamilyName);
+        ColumnFamilyHandle cf = columnFamilies.get(columnFamilyName);
+        if (cf == null) {
+            throw new ColumnFamilyNotFoundException(columnFamilyName);
+        }
+        return cf;
     }
 
     public ColumnFamilyHandle getDefaultColumnFamily() {

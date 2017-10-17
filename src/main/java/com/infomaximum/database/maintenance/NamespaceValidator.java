@@ -29,8 +29,7 @@ public class NamespaceValidator {
     }
 
     private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
-        List<String> columnFamilies = Arrays.asList(dataSource.getColumnFamilies());
-        for (String columnFamily : columnFamilies) {
+        for (String columnFamily : dataSource.getColumnFamilies()) {
             if (!contains(columnFamily)) {
                 throw new InconsistentDatabaseException("Unknown column family " + columnFamily + " .");
             }

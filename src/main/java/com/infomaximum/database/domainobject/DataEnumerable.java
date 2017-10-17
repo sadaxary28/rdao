@@ -51,7 +51,7 @@ public abstract class DataEnumerable {
 
         T obj;
         try {
-            obj = DomainObjectUtils.nextObject(clazz, this, iteratorId, null);
+            obj = DomainObjectUtils.nextObject(clazz, loadingFields, this, iteratorId, null);
         } finally {
             dataSource.closeIterator(iteratorId);
         }
