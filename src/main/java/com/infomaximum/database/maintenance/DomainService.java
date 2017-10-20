@@ -130,10 +130,14 @@ public class DomainService {
                 return;
             }
 
-            final Set<String> indexingFields = Collections.singleton(index.field.getName());
+            final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+            final Set<String> lexemes = new HashSet<>();
 
             indexData(indexingFields, (obj, transactionId, destination) -> {
-                Collection<String> lexemes = PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, index.field.getName()));
+                lexemes.clear();
+                for (EntityField field : index.sortedFields) {
+                    PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, field.getName()), lexemes);
+                }
                 PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, destination, dataSource, transactionId);
             });
         } else if (existsIndexedValues) {

@@ -64,7 +64,7 @@ public class DomainServiceTest extends DomainDataTest {
             }
         });
 
-        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.prefixtextindex.file_name");
+        rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.prefixindex.file_name:java.lang.String");
         rocksDataBase.dropColumnFamily("com.infomaximum.store.StoreFile.index.size:java.lang.Long");
 
         new DomainService(dataSource).setCreationMode(true).setDomain(entity).execute();
@@ -73,7 +73,7 @@ public class DomainServiceTest extends DomainDataTest {
             Assert.assertNotNull(iter.next());
         }
 
-        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME, "tes"))) {
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME,"tes"))) {
             Assert.assertNotNull(iter.next());
         }
     }

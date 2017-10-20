@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
+import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
@@ -7,17 +8,75 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.LongBuffer;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class PrefixIndexUtilsTest {
+
+    @Test
+    public void diffIndexedLexemes() {
+        final Set<String> deletingLexemes = new HashSet<>();
+        final Set<String> insertingLexemes = new HashSet<>();
+        final List<Integer> fields = Arrays.asList(1, 2, 3);
+        Map<Integer, Object> prevValues = new HashMap<>();
+        Map<Integer, Object> newValues = new HashMap<>();
+
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        newValues.put(1, "test01 test02 test03");
+        newValues.put(2, "test12 test12 test13");
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        newValues.put(1, "test12 test12 test13");
+        newValues.put(2, "test01 test02 test03");
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        newValues.put(1, "test01 test02 test");
+        newValues.put(2, "test13 test");
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(new HashSet<>(Arrays.asList("test03", "test12")), deletingLexemes);
+        Assert.assertEquals(new HashSet<>(Arrays.asList("test")), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        newValues.put(1, null);
+        newValues.put(2, null);
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(new HashSet<>(Arrays.asList("test01", "test02", "test03", "test12", "test13")), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+
+        prevValues.put(1, "test01 test02 test03");
+        prevValues.put(2, "test12 test12 test13");
+        newValues.put(1, "test01 test02 test03");
+        newValues.put(2, null);
+        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
+        Assert.assertEquals(new HashSet<>(Arrays.asList("test12", "test13")), deletingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+    }
 
     @Test
     public void splitIndexedWhitespaceBeginingText() {
         final String text = " Привет Медвед infom.COM  com  test...2d sop@ru \n \r";
 
-        Set<String> lexemes = PrefixIndexUtils.splitIndexingTextIntoLexemes(text);
+        Set<String> lexemes = new HashSet<>();
+        PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertTrue(lexemes.remove("привет"));
         Assert.assertTrue(lexemes.remove("медвед"));
         Assert.assertTrue(lexemes.remove("infom.com"));
@@ -33,7 +92,8 @@ public class PrefixIndexUtilsTest {
     public void splitIndexedText() {
         final String text = "Привет Медвед infom.COM  com  ...test...2d sop@ru";
 
-        Set<String> lexemes = PrefixIndexUtils.splitIndexingTextIntoLexemes(text);
+        Set<String> lexemes = new HashSet<>();
+        PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertTrue(lexemes.remove("привет"));
         Assert.assertTrue(lexemes.remove("медвед"));
         Assert.assertTrue(lexemes.remove("infom.com"));
@@ -119,12 +179,17 @@ public class PrefixIndexUtilsTest {
 
     @Test
     public void contains() {
-        final String text = " Привет Медвед infom.COM COM  com  test...2d sop@ru \n \r";
+        final String[] texts = {" Привет Медвед infom.COM COM  com  test...2d sop@ru \n \r", "ru.yandex perl"};
+        List<String> tempList = new ArrayList<>();
 
-        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив мед"), text));
-        Assert.assertFalse(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив прив"), text));
-        Assert.assertFalse(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив мед мед мед мед мед мед мед мед мед мед"), text));
-        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" прив \n мед "), text));
-        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" tes co com sop@ "), text));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив мед"), texts, tempList));
+        Assert.assertFalse(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив прив"), texts, tempList));
+        Assert.assertFalse(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords("прив мед мед мед мед мед мед мед мед мед мед"), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" прив \n мед "), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" tes co com sop@ "), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" ru "), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru "), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru 2d"), texts, tempList));
+        Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru yand"), texts, tempList));
     }
 }

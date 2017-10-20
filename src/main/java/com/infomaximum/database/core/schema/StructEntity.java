@@ -3,7 +3,6 @@ package com.infomaximum.database.core.schema;
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
-import com.infomaximum.database.core.anotation.PrefixIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.runtime.FieldNotFoundException;
 import com.infomaximum.database.exeption.runtime.StructEntityException;
@@ -11,11 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-/**
- * Created by kris on 26.04.17.
- */
 public class StructEntity {
 
     private final static Logger log = LoggerFactory.getLogger(StructEntity.class);
@@ -98,17 +93,27 @@ public class StructEntity {
     }
 
     public EntityIndex getIndex(Collection<String> indexedFields) {
-        for (EntityIndex entityIndex : indexes) {
-            if (entityIndex.sortedFields.size() != indexedFields.size()) {
+        for (EntityIndex index : indexes) {
+            if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
 
-            List<String> iNameIndexFields = entityIndex.sortedFields.stream().map(EntityField::getName).collect(Collectors.toList());
+            if (index.sortedFields.stream().map(EntityField::getName).allMatch(indexedFields::contains)) {
+                return index;
+            }
+        }
+        return null;
+    }
 
-            if (!iNameIndexFields.containsAll(indexedFields)) continue;
-            if (!indexedFields.containsAll(iNameIndexFields)) continue;
+    public EntityPrefixIndex getPrefixIndex(Collection<String> indexedFields) {
+        for (EntityPrefixIndex index : prefixIndexes) {
+            if (index.sortedFields.size() != indexedFields.size()) {
+                continue;
+            }
 
-            return entityIndex;
+            if (index.sortedFields.stream().map(EntityField::getName).allMatch(indexedFields::contains)) {
+                return index;
+            }
         }
         return null;
     }
@@ -137,7 +142,7 @@ public class StructEntity {
         return field;
     }
 
-    public static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
+    static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
         while (true) {
             if (clazz.isAnnotationPresent(Entity.class)) {
                 return clazz;
@@ -183,7 +188,7 @@ public class StructEntity {
 
     private List<EntityPrefixIndex> buildPrefixIndexes(Entity entity) {
         List<EntityPrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
-        for (PrefixIndex index: entity.prefixIndexes()) {
+        for (Index index: entity.prefixIndexes()) {
             result.add(new EntityPrefixIndex(index, this));
         }
 

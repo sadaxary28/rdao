@@ -23,16 +23,14 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     private List<String> searchingWords;
     private ByteBuffer loadingIds = null;
+    private String[] values;
+
+    private List<String> tempList;
 
     public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, PrefixIndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz, loadingFields);
         StructEntity structEntity = Schema.getEntity(clazz);
-        this.entityIndex = structEntity.getPrefixIndexes()
-                .stream()
-                .filter(entityPrefixIndex -> entityPrefixIndex.field.getName().equals(filter.getFieldName()))
-                .findFirst()
-                .get();
-
+        this.entityIndex = structEntity.getPrefixIndex(filter.getFieldNames());
         this.searchingWords = PrefixIndexUtils.splitSearchingTextIntoWords(filter.getFieldValue());
         if (this.searchingWords.isEmpty()) {
             return;
@@ -41,8 +39,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
         KeyPattern indexKeyPattern = PrefixIndexKey.buildKeyPatternForFind(searchingWords.get(searchingWords.size() - 1));
         List<EntityField> additionLoadingFields;
         if (this.searchingWords.size() > 1) {
-            additionLoadingFields = Collections.singletonList(entityIndex.field);
-
+            additionLoadingFields = entityIndex.sortedFields;
         } else {
             additionLoadingFields = Collections.emptyList();
             this.searchingWords = Collections.emptyList();
@@ -51,6 +48,8 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
         this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields);
         if (this.dataKeyPattern != null) {
             this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
+            this.values = new String[entityIndex.sortedFields.size()];
+            this.tempList = new ArrayList<>();
         }
 
         this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, indexKeyPattern);
@@ -83,7 +82,10 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     @Override
     boolean checkFilter(E obj) throws DataSourceDatabaseException {
-        return PrefixIndexUtils.contains(searchingWords, obj.get(String.class, entityIndex.field.getName()));
+        for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
+            values[i] = obj.get(String.class, entityIndex.sortedFields.get(i).getName());
+        }
+        return PrefixIndexUtils.contains(searchingWords, values, tempList);
     }
 }
 
