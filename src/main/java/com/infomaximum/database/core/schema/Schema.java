@@ -39,6 +39,10 @@ public class Schema {
         return domains;
     }
 
+    public boolean isEmpty() {
+        return domains.isEmpty();
+    }
+
     public static StructEntity getEntity(Class<? extends DomainObject> clazz) {
         return entities.get(StructEntity.getAnnotationClass(clazz));
     }
