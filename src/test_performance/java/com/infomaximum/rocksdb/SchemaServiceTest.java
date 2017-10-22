@@ -30,7 +30,7 @@ public class SchemaServiceTest extends DomainDataTest {
 
         SchemaService schemaService = new SchemaService(dataSource)
                 .setNamespace("com.infomaximum.store")
-                .setCreationMode(false)
+                .setChangeMode(false)
                 .setSchema(new Schema.Builder()
                         .withDomain(StoreFileEditable.class)
                         .build());

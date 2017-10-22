@@ -16,24 +16,27 @@ public class SchemaService {
 
     private final DataSource dataSource;
 
-    private boolean isCreationMode = false;
-
+    private ChangeMode changeModeMode = ChangeMode.NONE;
+    private boolean isValidationMode = false;
     private String namespace;
-    private String namespacePrefix;
     private Schema schema;
 
     public SchemaService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public SchemaService setCreationMode(boolean value) {
-        this.isCreationMode = value;
+    public SchemaService setChangeMode(ChangeMode value) {
+        this.changeModeMode = value;
+        return this;
+    }
+
+    public SchemaService setValidationMode(boolean value) {
+        this.isValidationMode = value;
         return this;
     }
 
     public SchemaService setNamespace(String namespace) {
         this.namespace = namespace;
-        this.namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
         return this;
     }
 
@@ -51,15 +54,23 @@ public class SchemaService {
 
         for (StructEntity domain : schema.getDomains()) {
             new DomainService(dataSource)
-                    .setCreationMode(isCreationMode)
+                    .setChangeMode(changeModeMode)
+                    .setValidationMode(isValidationMode)
                     .setDomain(domain)
                     .execute();
         }
 
-        validateUnknownColumnFamilies();
+        validate();
+    }
+
+    private void validate() throws DatabaseException {
+        if (isValidationMode) {
+            validateUnknownColumnFamilies();
+        }
     }
 
     private void validateConsistentNames() throws InconsistentDatabaseException {
+        final String namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
         Set<String> processedNames = new HashSet<>();
         for (StructEntity domain : schema.getDomains()) {
             if (processedNames.contains(domain.getColumnFamily())) {
@@ -75,6 +86,7 @@ public class SchemaService {
     }
 
     private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
+        final String namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
         Set<String> columnFamilies = Arrays.stream(dataSource.getColumnFamilies())
                 .filter(s -> s.startsWith(namespacePrefix))
                 .collect(Collectors.toSet());

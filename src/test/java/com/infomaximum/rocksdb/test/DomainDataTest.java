@@ -5,6 +5,7 @@ import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
@@ -39,7 +40,8 @@ public abstract class DomainDataTest extends RocksDataTest {
     protected void createDomain(Class<? extends DomainObject> clazz) throws DatabaseException {
         new Schema.Builder().withDomain(clazz).build();
         new DomainService(dataSource)
-                .setCreationMode(true)
+                .setChangeMode(ChangeMode.CREATION)
+                .setValidationMode(true)
                 .setDomain(Schema.getEntity(clazz))
                 .execute();
     }
