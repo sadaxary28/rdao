@@ -1,24 +1,24 @@
 package com.infomaximum.rocksdb.domain.type;
 
-import com.infomaximum.rocksdb.core.struct.enums.PersistentEnumId;
+import com.infomaximum.database.utils.BaseEnum;
 
 /**
  * Created by kris on 16.06.17.
  */
-public enum FormatType implements PersistentEnumId {
+public enum FormatType implements BaseEnum {
 
     A(1),
 
     B(2);
 
-    private final int id;
+    private final int value;
 
-    FormatType(int id) {
-        this.id = id;
+    FormatType(int value) {
+        this.value = value;
     }
 
     @Override
-    public int getId() {
-        return id;
+    public int intValue() {
+        return value;
     }
 }

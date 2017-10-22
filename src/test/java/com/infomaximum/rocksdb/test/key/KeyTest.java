@@ -1,9 +1,9 @@
 package com.infomaximum.rocksdb.test.key;
 
-import com.infomaximum.rocksdb.core.objectsource.utils.key.Key;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyAvailability;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyField;
-import com.infomaximum.rocksdb.core.objectsource.utils.key.KeyIndex;
+import com.infomaximum.database.domainobject.key.Key;
+import com.infomaximum.database.domainobject.key.FieldKey;
+import com.infomaximum.database.domainobject.key.IndexKey;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,16 +16,17 @@ import java.util.UUID;
 public class KeyTest {
 
     @Test
-    public void testAvailabilityKey() throws Exception {
+    public void testBeginningKey() throws Exception {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
 
-            KeyAvailability key = new KeyAvailability(id);
+            FieldKey key = new FieldKey(id);
 
-            String sKey = key.pack();
+            byte[] sKey = key.pack();
 
-            KeyAvailability checkKey = (KeyAvailability) Key.parse(sKey);
+            FieldKey checkKey = FieldKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
+            Assert.assertTrue(checkKey.isBeginningObject());
         }
     }
 
@@ -35,13 +36,14 @@ public class KeyTest {
             long id = Math.abs(RandomUtil.random.nextLong());
             String fieldName = UUID.randomUUID().toString().toLowerCase().replace("-", "");
 
-            KeyField key = new KeyField(id, fieldName);
+            FieldKey key = new FieldKey(id, fieldName);
 
-            String sKey = key.pack();
+            byte[] sKey = key.pack();
 
-            KeyField checkKey = (KeyField) Key.parse(sKey);
+            FieldKey checkKey = FieldKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
             Assert.assertEquals(fieldName, checkKey.getFieldName());
+            Assert.assertFalse(checkKey.isBeginningObject());
         }
     }
 
@@ -50,17 +52,15 @@ public class KeyTest {
     public void testIndexKey() throws Exception {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
-            String index = UUID.randomUUID().toString().toLowerCase().replace("-", "");
-            int hash = Math.abs(RandomUtil.random.nextInt());
+            long[] values = { Math.abs(RandomUtil.random.nextLong()), Math.abs(RandomUtil.random.nextLong())};
 
-            KeyIndex key = new KeyIndex(id, index, hash);
+            IndexKey key = new IndexKey(id, values);
 
-            String sKey = key.pack();
+            byte[] sKey = key.pack();
 
-            KeyIndex checkKey = (KeyIndex) Key.parse(sKey);
+            IndexKey checkKey = IndexKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
-            Assert.assertEquals(index, checkKey.getIndex());
-            Assert.assertEquals(hash, checkKey.getHash());
+            Assert.assertArrayEquals(values, checkKey.getFieldValues());
         }
     }
 }
