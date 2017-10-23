@@ -1,20 +1,15 @@
 package com.infomaximum.database.core.schema;
 
-import com.infomaximum.database.core.anotation.PrefixIndex;
+import com.infomaximum.database.core.anotation.Index;
 
-public class EntityPrefixIndex {
+public class EntityPrefixIndex extends BaseIndex {
 
-    public final String columnFamily;
-    public final EntityField field;
-
-    protected EntityPrefixIndex(PrefixIndex index, StructEntity parent) {
-        this.field = parent.getField(index.name());
-        this.columnFamily = buildColumnFamilyName(parent.getColumnFamily(), index.name());
-
-        this.field.throwIfNotMatch(String.class);
+    EntityPrefixIndex(Index index, StructEntity parent) {
+        super(index, parent);
     }
 
-    private static String buildColumnFamilyName(String parentColumnFamily, String fieldName){
-        return new StringBuilder(parentColumnFamily).append(StructEntity.NAMESPACE_SEPARATOR).append("prefixtextindex.").append(fieldName).toString();
+    @Override
+    String getTypeMarker() {
+        return "prefixindex";
     }
 }

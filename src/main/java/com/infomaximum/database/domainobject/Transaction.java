@@ -61,7 +61,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // update indexed values
         Map<EntityField, Object> loadedValues = object.getLoadedValues();
         for (EntityIndex index : object.getStructEntity().getIndexes()){
-            if (isChangedIndex(index, newValues)) {
+            if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
                 updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
             }
@@ -69,9 +69,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // update prefix-indexed values
         for (EntityPrefixIndex index: object.getStructEntity().getPrefixIndexes()) {
-            if (newValues.containsKey(index.field)) {
-                tryLoadField(columnFamily, object.getId(), index.field, loadedValues);
-                updateIndexedValue(index, object.getId(), (String) loadedValues.get(index.field), (String) newValues.get(index.field), modifiers);
+            if (anyChanged(index.sortedFields, newValues)) {
+                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
             }
         }
 
@@ -114,8 +114,8 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // delete prefix-indexed values
         for (EntityPrefixIndex index: obj.getStructEntity().getPrefixIndexes()) {
-            tryLoadField(columnFamily, obj.getId(), index.field, loadedValues);
-            removeIndexedValue(index, obj.getId(), (String) loadedValues.get(index.field), modifiers);
+            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
         }
 
         // delete self-object
@@ -198,22 +198,26 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
     }
 
-    private void updateIndexedValue(EntityPrefixIndex index, long id, String prevTextValue, String newTextValue, List<Modifier> destination) throws DataSourceDatabaseException {
-        List<String> deletingLexemes = new ArrayList<>();
-        List<String> insertingLexemes = new ArrayList<>();
-        PrefixIndexUtils.diffIndexedLexemes(prevTextValue, newTextValue, deletingLexemes, insertingLexemes);
+    private void updateIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) throws DataSourceDatabaseException {
+        Set<String> deletingLexemes = new HashSet<>();
+        Set<String> insertingLexemes = new HashSet<>();
+        PrefixIndexUtils.diffIndexedLexemes(index.sortedFields, prevValues, newValues, deletingLexemes, insertingLexemes);
 
         PrefixIndexUtils.removeIndexedLexemes(index, id, deletingLexemes, destination, dataSource, transactionId);
         PrefixIndexUtils.insertIndexedLexemes(index, id, insertingLexemes, destination, dataSource, transactionId);
     }
 
-    private void removeIndexedValue(EntityPrefixIndex index, long id, String textValue, List<Modifier> destination) throws DataSourceDatabaseException {
-        Collection<String> lexemes = PrefixIndexUtils.splitIndexingTextIntoLexemes(textValue);
+    private void removeIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) throws DataSourceDatabaseException {
+        Set<String> lexemes = new HashSet<>();
+        for (EntityField field : index.sortedFields) {
+            PrefixIndexUtils.splitIndexingTextIntoLexemes((String) values.get(field), lexemes);
+        }
+
         PrefixIndexUtils.removeIndexedLexemes(index, id, lexemes, destination, dataSource, transactionId);
     }
 
-    private static boolean isChangedIndex(EntityIndex index, Map<EntityField, Object> newValues) {
-        for (EntityField iField: index.sortedFields) {
+    private static boolean anyChanged(List<EntityField> fields, Map<EntityField, Object> newValues) {
+        for (EntityField iField: fields) {
             if (newValues.containsKey(iField)) {
                 return true;
             }
@@ -230,7 +234,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        long fkeyIdValue = ((Long) value).longValue();
+        long fkeyIdValue = (Long) value;
         if (dataSource.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
             throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), field, fkeyIdValue);
         }

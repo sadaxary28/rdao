@@ -23,14 +23,23 @@ public class PrefixIndexUtils {
 
     public static final int MAX_ID_COUNT_PER_BLOCK = 1024;
 
-    private static final Comparator<String> searchingWordComparator = (left, right) -> left.length() - right.length();
+    private static final Comparator<String> searchingWordComparator = Comparator.comparingInt(String::length);
 
-    public static void diffIndexedLexemes(String prevText, String newText, List<String> outDeletingLexemes, List<String> outInsertingLexemes) {
+    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Object> prevValues, Map<T, Object> newValues,
+                                              Set<String> outDeletingLexemes, Set<String> outInsertingLexemes) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
 
-        Set<String> prevLexemes = splitIndexingTextIntoLexemes(prevText);
-        Set<String> newLexemes = splitIndexingTextIntoLexemes(newText);
+        Set<String> prevLexemes = new HashSet<>();
+        Set<String> newLexemes = new HashSet<>();
+
+        for (T field : fields) {
+            String prevText = (String) prevValues.get(field);
+            PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
+
+            String newText = newValues.containsKey(field) ? (String) newValues.get(field) : prevText;
+            PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
+        }
 
         for (String newLexeme : newLexemes) {
             if (!prevLexemes.contains(newLexeme)) {
@@ -83,21 +92,18 @@ public class PrefixIndexUtils {
         return result;
     }
 
-    public static Set<String> splitIndexingTextIntoLexemes(final String text) {
+    public static void splitIndexingTextIntoLexemes(final String text, Collection<String> inOutLexemes) {
         if (text == null || text.isEmpty()) {
-            return Collections.emptySet();
+            return;
         }
 
-        final Set<String> result = new HashSet<>();
         forEachWord(text, (beginIndex, endIndex) -> {
-            splitIntoLexeme(text.substring(beginIndex, endIndex).toLowerCase(), result);
+            splitIntoLexeme(text.substring(beginIndex, endIndex).toLowerCase(), inOutLexemes);
             return true;
         });
-
-        return result;
     }
 
-    private static void splitIntoLexeme(final String word, Set<String> destination) {
+    private static void splitIntoLexeme(final String word, Collection<String> destination) {
         int beginLexemePos = 0;
         for (int i = 0; i < word.length(); ++i) {
             char c = word.charAt(i);
@@ -152,21 +158,25 @@ public class PrefixIndexUtils {
 
     /**
      * @param sortedSearchingWords is sorted list by length of word
-     * @param srcText
+     * @param indexingTexts
      * @return
      */
-    public static boolean contains(final List<String> sortedSearchingWords, final String srcText) {
-        List<String> srcWords = splitSearchingTextIntoWords(srcText);
-        if (sortedSearchingWords.size() > srcWords.size()){
+    public static boolean contains(final List<String> sortedSearchingWords, final String[] indexingTexts, List<String> tempList) {
+        tempList.clear();
+        for (String text : indexingTexts) {
+            splitIndexingTextIntoLexemes(text, tempList);
+        }
+        tempList.sort(searchingWordComparator);
+        if (sortedSearchingWords.size() > tempList.size()){
             return false;
         }
 
         int matchCount = 0;
         for (int i = 0; i < sortedSearchingWords.size(); ++i) {
             String word = sortedSearchingWords.get(i);
-            for (int j = 0; j < srcWords.size(); ++j) {
-                if (srcWords.get(j).startsWith(word)) {
-                    srcWords.remove(j);
+            for (int j = 0; j < tempList.size(); ++j) {
+                if (tempList.get(j).startsWith(word)) {
+                    tempList.remove(j);
                     ++matchCount;
                     break;
                 }
@@ -177,7 +187,7 @@ public class PrefixIndexUtils {
     }
 
     public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                               DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
@@ -210,7 +220,7 @@ public class PrefixIndexUtils {
     }
 
     public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                               DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }

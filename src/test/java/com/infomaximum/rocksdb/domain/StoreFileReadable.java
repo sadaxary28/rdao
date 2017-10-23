@@ -3,7 +3,6 @@ package com.infomaximum.rocksdb.domain;
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
-import com.infomaximum.database.core.anotation.PrefixIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
@@ -29,7 +28,8 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
                 @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME})
         },
         prefixIndexes = {
-                @PrefixIndex(name = StoreFileReadable.FIELD_FILE_NAME)
+                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME}),
+                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE})
         }
 )
 public class StoreFileReadable extends DomainObject {

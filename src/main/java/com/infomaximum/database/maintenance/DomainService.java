@@ -1,10 +1,7 @@
 package com.infomaximum.database.maintenance;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.schema.EntityIndex;
-import com.infomaximum.database.core.schema.EntityPrefixIndex;
-import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.core.schema.*;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.modifier.Modifier;
 import com.infomaximum.database.datasource.modifier.ModifierSet;
@@ -26,16 +23,22 @@ import java.util.stream.Collectors;
 public class DomainService {
 
     @FunctionalInterface
-    public interface ModifierCreator {
+    private interface ModifierCreator {
 
         void apply(final DomainObject obj, long transactionId, List<Modifier> destination) throws DatabaseException;
+    }
+
+    @FunctionalInterface
+    private interface IndexAction {
+        void apply() throws DatabaseException;
     }
 
     private final int MAX_BATCH_SIZE = 8192;
 
     private final DataSource dataSource;
 
-    private boolean isCreationMode = false;
+    private ChangeMode changeMode = ChangeMode.NONE;
+    private boolean isValidationMode = false;
 
     private StructEntity domain;
     private boolean existsData = false;
@@ -44,8 +47,13 @@ public class DomainService {
         this.dataSource = dataSource;
     }
 
-    public DomainService setCreationMode(boolean value) {
-        this.isCreationMode = value;
+    public DomainService setChangeMode(ChangeMode value) {
+        this.changeMode = value;
+        return this;
+    }
+
+    public DomainService setValidationMode(boolean value) {
+        this.isValidationMode = value;
         return this;
     }
 
@@ -58,32 +66,28 @@ public class DomainService {
         final String dataColumnFamily = domain.getColumnFamily();
 
         if (!dataSource.containsSequence(dataColumnFamily)) {
-            if (isCreationMode) {
+            if (changeMode == ChangeMode.CREATION) {
                 dataSource.createSequence(dataColumnFamily);
-            } else {
+            } else if (isValidationMode) {
                 throw new InconsistentDatabaseException("Sequence " + dataColumnFamily + " not found.");
             }
         }
 
-        if (dataSource.containsColumnFamily(dataColumnFamily)) {
-            existsData = existsKeys(dataColumnFamily);
-        } else if (isCreationMode) {
-            dataSource.createColumnFamily(dataColumnFamily);
-            existsData = false;
-        } else {
-            throw new InconsistentDatabaseException("Domain " + dataColumnFamily + " not found.");
-        }
+        existsData = ensureColumnFamily(dataColumnFamily);
 
         for (EntityIndex index : domain.getIndexes()) {
-            ensureIndex(index);
+            ensureIndex(index, () -> doIndex(index));
         }
 
         for (EntityPrefixIndex index : domain.getPrefixIndexes()) {
-            ensureIndex(index);
+            ensureIndex(index, () -> doPrefixIndex(index));
         }
 
-        validateUnknownColumnFamilies();
-        validateIntegrity();
+        if (changeMode == ChangeMode.REMOVAL) {
+            remove();
+        }
+
+        validate();
     }
 
     static void removeDomainColumnFamiliesFrom(Set<String> columnFamilies, final StructEntity domain) {
@@ -98,73 +102,91 @@ public class DomainService {
         }
     }
 
-    private void ensureIndex(EntityIndex index) throws DatabaseException {
-        final String columnFamily = index.columnFamily;
-        final boolean existsIndexedValues = ensureIndexColumnFamily(columnFamily);
-
-        if (existsData) {
-            if (existsIndexedValues || !isCreationMode) {
-                return;
-            }
-
-            final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
-            final IndexKey indexKey = new IndexKey(0, new long[index.sortedFields.size()]);
-
-            indexData(indexingFields, (obj, transactionId, destination) -> {
-                indexKey.setId(obj.getId());
-                IndexUtils.setHashValues(index.sortedFields, obj, indexKey.getFieldValues());
-
-                destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
-            });
-        } else if (existsIndexedValues) {
-            throw new InconsistentDatabaseException("Index " + columnFamily + " is not empty, but " + domain.getColumnFamily() + " is empty.");
+    private void remove() throws DatabaseException {
+        for (String columnFamily : getColumnFamilies()) {
+            dataSource.dropColumnFamily(columnFamily);
         }
     }
 
-    private void ensureIndex(EntityPrefixIndex index) throws DatabaseException {
-        final String columnFamily = index.columnFamily;
-        final boolean existsIndexedValues = ensureIndexColumnFamily(columnFamily);
+    private void validate() throws DatabaseException {
+        if (!isValidationMode) {
+            return;
+        }
+
+        validateUnknownColumnFamilies();
+
+        if (changeMode != ChangeMode.REMOVAL) {
+            validateIntegrity();
+        }
+    }
+
+    private <T extends BaseIndex> void ensureIndex(T index, IndexAction indexAction) throws DatabaseException {
+        final boolean existsIndexedValues = ensureColumnFamily(index.columnFamily);
 
         if (existsData) {
-            if (existsIndexedValues || !isCreationMode) {
+            if (existsIndexedValues || changeMode != ChangeMode.CREATION) {
                 return;
             }
 
-            final Set<String> indexingFields = Collections.singleton(index.field.getName());
-
-            indexData(indexingFields, (obj, transactionId, destination) -> {
-                Collection<String> lexemes = PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, index.field.getName()));
-                PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, destination, dataSource, transactionId);
-            });
-        } else if (existsIndexedValues) {
-            throw new InconsistentDatabaseException("Index " + columnFamily + " is not empty, but " + domain.getColumnFamily() + " is empty.");
+            indexAction.apply();
+        } else if (existsIndexedValues && isValidationMode) {
+            throw new InconsistentDatabaseException("Index " + index.columnFamily + " is not empty, but " + domain.getColumnFamily() + " is empty.");
         }
+    }
+
+    private void doIndex(EntityIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+        final IndexKey indexKey = new IndexKey(0, new long[index.sortedFields.size()]);
+
+        indexData(indexingFields, (obj, transactionId, destination) -> {
+            indexKey.setId(obj.getId());
+            IndexUtils.setHashValues(index.sortedFields, obj, indexKey.getFieldValues());
+
+            destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
+        });
+    }
+
+    private void doPrefixIndex(EntityPrefixIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+        final Set<String> lexemes = new HashSet<>();
+
+        indexData(indexingFields, (obj, transactionId, destination) -> {
+            lexemes.clear();
+            for (EntityField field : index.sortedFields) {
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, field.getName()), lexemes);
+            }
+            PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, destination, dataSource, transactionId);
+        });
+    }
+
+    private Set<String> getColumnFamilies() {
+        final String namespacePrefix = domain.getColumnFamily() + StructEntity.NAMESPACE_SEPARATOR;
+        Set<String> result = Arrays.stream(dataSource.getColumnFamilies())
+                .filter(s -> s.startsWith(namespacePrefix))
+                .collect(Collectors.toSet());
+        result.add(domain.getColumnFamily());
+        return result;
     }
 
     private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
-        final String namespacePrefix = domain.getColumnFamily() + StructEntity.NAMESPACE_SEPARATOR;
-        Set<String> columnFamilies = Arrays.stream(dataSource.getColumnFamilies())
-                .filter(s -> s.startsWith(namespacePrefix))
-                .collect(Collectors.toSet());
-
+        Set<String> columnFamilies = getColumnFamilies();
         removeDomainColumnFamiliesFrom(columnFamilies, domain);
-
         if (!columnFamilies.isEmpty()) {
             throw new InconsistentDatabaseException(domain.getObjectClass() + " contains unknown column families " + String.join(", ", columnFamilies) + ".");
         }
     }
 
-    private boolean ensureIndexColumnFamily(String columnFamily) throws DatabaseException {
+    private boolean ensureColumnFamily(String columnFamily) throws DatabaseException {
         if (dataSource.containsColumnFamily(columnFamily)) {
             return existsKeys(columnFamily);
         }
 
-        if (isCreationMode) {
+        if (changeMode == ChangeMode.CREATION) {
             dataSource.createColumnFamily(columnFamily);
-            return false;
+        } else if (isValidationMode) {
+            throw new InconsistentDatabaseException("Column family " + columnFamily + " not found.");
         }
-
-        throw new InconsistentDatabaseException("Index " + columnFamily + " not found.");
+        return false;
     }
 
     private void indexData(Set<String> loadingFields, ModifierCreator recordCreator) throws DatabaseException {

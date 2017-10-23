@@ -4,6 +4,7 @@ import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.exeption.ForeignDependencyException;
 import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.SchemaService;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
@@ -20,7 +21,7 @@ public class SchemaServiceTest extends DomainDataTest {
 
         new SchemaService(dataSource)
                 .setNamespace("com.infomaximum.store")
-                .setCreationMode(false)
+                .setValidationMode(true)
                 .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
                 .execute();
 
@@ -32,7 +33,7 @@ public class SchemaServiceTest extends DomainDataTest {
         try {
             new SchemaService(dataSource)
                     .setNamespace("com.infomaximum.store")
-                    .setCreationMode(false)
+                    .setValidationMode(true)
                     .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
                     .execute();
             Assert.fail();
@@ -42,10 +43,21 @@ public class SchemaServiceTest extends DomainDataTest {
     }
 
     @Test
+    public void removeInvalidScheme() throws DatabaseException {
+        new SchemaService(dataSource)
+                .setNamespace("com.infomaximum.store")
+                .setChangeMode(ChangeMode.REMOVAL)
+                .setValidationMode(false)
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .execute();
+    }
+
+    @Test
     public void createAndValidateScheme() throws DatabaseException {
         new SchemaService(dataSource)
                 .setNamespace("com.infomaximum.store")
-                .setCreationMode(true)
+                .setChangeMode(ChangeMode.CREATION)
+                .setValidationMode(true)
                 .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
                 .execute();
         Assert.assertTrue(true);
@@ -60,7 +72,7 @@ public class SchemaServiceTest extends DomainDataTest {
         try {
             new SchemaService(dataSource)
                     .setNamespace("com.infomaximum.store")
-                    .setCreationMode(false)
+                    .setValidationMode(true)
                     .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
                     .execute();
             Assert.fail();
@@ -77,7 +89,7 @@ public class SchemaServiceTest extends DomainDataTest {
 
         new SchemaService(dataSource)
                 .setNamespace("com.infomaximum.store")
-                .setCreationMode(false)
+                .setValidationMode(true)
                 .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
                 .execute();
         Assert.assertTrue(true);
@@ -99,7 +111,7 @@ public class SchemaServiceTest extends DomainDataTest {
         try {
             new SchemaService(dataSource)
                     .setNamespace("com.infomaximum.store")
-                    .setCreationMode(false)
+                    .setValidationMode(true)
                     .setSchema(new Schema.Builder()
                             .withDomain(StoreFileEditable.class)
                             .build())
@@ -129,7 +141,7 @@ public class SchemaServiceTest extends DomainDataTest {
 
         new SchemaService(dataSource)
                 .setNamespace("com.infomaximum.store")
-                .setCreationMode(false)
+                .setValidationMode(true)
                 .setSchema(new Schema.Builder()
                         .withDomain(StoreFileEditable.class)
                         .build())

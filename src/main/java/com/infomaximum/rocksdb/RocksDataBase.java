@@ -65,8 +65,10 @@ public class RocksDataBase implements AutoCloseable {
 
     public void dropColumnFamily(String columnFamilyName) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = columnFamilies.remove(columnFamilyName);
-        getRocksDB().dropColumnFamily(columnFamilyHandle);
-        columnFamilyHandle.close();
+        if (columnFamilyHandle != null) {
+            getRocksDB().dropColumnFamily(columnFamilyHandle);
+            columnFamilyHandle.close();
+        }
     }
 
     @Override

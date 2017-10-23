@@ -16,7 +16,7 @@ import java.util.*;
 public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
     @Test
-    public void find() throws Exception {
+    public void findByOneField() throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("привет всем");
@@ -50,7 +50,7 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
         filter.setFieldValue("вс");
         testFind(filter, 1, 3, 4, 5);
 
-        filter.setFieldValue("com");
+        filter.setFieldValue("вс com");
         testFind(filter, 3);
 
         filter.setFieldValue(".");
@@ -58,6 +58,56 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
         filter.setFieldValue("прив info");
         testFind(filter, 3);
+    }
+
+    @Test
+    public void findByTwoField() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет всем");
+            obj.setContentType("test1");
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет");
+            obj.setContentType("test2 test21");
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("ПРИВЕТ ВСЕМ info.com");
+            obj.setContentType("test3 3test");
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("всем");
+            obj.setContentType("4test");
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("прИВет всЕм .dor");
+            obj.setContentType("5test rest");
+            transaction.save(obj);
+        });
+
+        final PrefixIndexFilter filter = new PrefixIndexFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "");
+
+        filter.setFieldValue("ghbdtn");
+        testFind(filter);
+
+        filter.setFieldValue("привет test21");
+        testFind(filter, 2);
+
+        filter.setFieldValue("вс test");
+        testFind(filter, 1, 3);
+
+        filter.setFieldValue("test вс com");
+        testFind(filter, 3);
+
+        filter.setFieldValue("4test");
+        testFind(filter, 4);
+
+        filter.setFieldValue("5te res");
+        testFind(filter, 5);
     }
 
     @Test
@@ -85,12 +135,17 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
     private void testFind(PrefixIndexFilter filter, List<Long> expectedIds) throws DatabaseException {
         List<Long> temp = new ArrayList<>(expectedIds);
+
+        List<Long> foundIds = new ArrayList<>(temp.size());
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
             while (iterator.hasNext()) {
-                StoreFileReadable obj = iterator.next();
-                Assert.assertTrue(temp.remove(obj.getId()));
+                foundIds.add(iterator.next().getId());
             }
-            Assert.assertEquals(0, temp.size());
         }
+
+        temp.sort(Long::compareTo);
+        foundIds.sort(Long::compareTo);
+
+        Assert.assertEquals(temp, foundIds);
     }
 }
