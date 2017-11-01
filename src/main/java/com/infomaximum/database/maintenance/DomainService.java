@@ -148,7 +148,7 @@ public class DomainService {
 
     private void doPrefixIndex(EntityPrefixIndex index) throws DatabaseException {
         final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
-        final Set<String> lexemes = new HashSet<>();
+        final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
 
         indexData(indexingFields, (obj, transactionId, destination) -> {
             lexemes.clear();
