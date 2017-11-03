@@ -52,7 +52,7 @@ public class PrefixIndexUtilsTest {
         newValues.put(2, "test13 test");
         PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
         Assert.assertEquals(new HashSet<>(Arrays.asList("test03", "test12")), deletingLexemes);
-        Assert.assertEquals(new HashSet<>(Arrays.asList("test")), insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
 
         prevValues.put(1, "test01 test02 test03");
         prevValues.put(2, "test12 test12 test13");
@@ -73,14 +73,14 @@ public class PrefixIndexUtilsTest {
 
     @Test
     public void splitIndexedWhitespaceBeginingText() {
-        final String text = " Привет Медвед infom.COM  com  test...2d sop@ru \n \r";
+        final String text = " Привет comparator Медвед infom.COM  com   cOmpa comPArat test...2d sop@ru \n \r";
 
-        Set<String> lexemes = new HashSet<>();
+        SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertTrue(lexemes.remove("привет"));
         Assert.assertTrue(lexemes.remove("медвед"));
         Assert.assertTrue(lexemes.remove("infom.com"));
-        Assert.assertTrue(lexemes.remove("com"));
+        Assert.assertTrue(lexemes.remove("comparator"));
         Assert.assertTrue(lexemes.remove("test...2d"));
         Assert.assertTrue(lexemes.remove("2d"));
         Assert.assertTrue(lexemes.remove("sop@ru"));
@@ -92,7 +92,7 @@ public class PrefixIndexUtilsTest {
     public void splitIndexedText() {
         final String text = "Привет Медвед infom.COM  com  ...test...2d sop@ru";
 
-        Set<String> lexemes = new HashSet<>();
+        SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertTrue(lexemes.remove("привет"));
         Assert.assertTrue(lexemes.remove("медвед"));

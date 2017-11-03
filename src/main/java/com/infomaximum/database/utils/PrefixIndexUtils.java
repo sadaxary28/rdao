@@ -25,13 +25,17 @@ public class PrefixIndexUtils {
 
     private static final Comparator<String> searchingWordComparator = Comparator.comparingInt(String::length);
 
+    public static SortedSet<String> buildSortedSet() {
+        return new TreeSet<>(Comparator.reverseOrder());
+    }
+
     public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Object> prevValues, Map<T, Object> newValues,
-                                              Set<String> outDeletingLexemes, Set<String> outInsertingLexemes) {
+                                              Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
 
-        Set<String> prevLexemes = new HashSet<>();
-        Set<String> newLexemes = new HashSet<>();
+        SortedSet<String> prevLexemes = buildSortedSet();
+        SortedSet<String> newLexemes = buildSortedSet();
 
         for (T field : fields) {
             String prevText = (String) prevValues.get(field);
@@ -92,7 +96,22 @@ public class PrefixIndexUtils {
         return result;
     }
 
-    public static void splitIndexingTextIntoLexemes(final String text, Collection<String> inOutLexemes) {
+    public static void splitIndexingTextIntoLexemes(final String text, SortedSet<String> inOutLexemes) {
+        splitIndexingTextIntoLexemes(text, (Collection<String>) inOutLexemes);
+
+        for (Iterator<String> i = inOutLexemes.iterator(); i.hasNext();) {
+            String target = i.next();
+            while (i.hasNext()) {
+                if (target.startsWith(i.next())) {
+                    i.remove();
+                    continue;
+                }
+                break;
+            }
+        }
+    }
+
+    private static void splitIndexingTextIntoLexemes(final String text, Collection<String> inOutLexemes) {
         if (text == null || text.isEmpty()) {
             return;
         }
