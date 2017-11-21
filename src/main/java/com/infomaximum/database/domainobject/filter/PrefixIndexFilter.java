@@ -1,6 +1,9 @@
 package com.infomaximum.database.domainobject.filter;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PrefixIndexFilter implements Filter {
 
@@ -12,12 +15,12 @@ public class PrefixIndexFilter implements Filter {
         this.fieldValue = fieldValue;
     }
 
-    public PrefixIndexFilter(List<String> fieldNames, String fieldValue) {
-        this.fieldNames = new HashSet<>(fieldNames);
+    public PrefixIndexFilter(Collection<String> fieldNames, String fieldValue) {
+        this.fieldNames = Collections.unmodifiableSet(new HashSet<>(fieldNames));
         this.fieldValue = fieldValue;
     }
 
-    public Collection<String> getFieldNames() {
+    public Set<String> getFieldNames() {
         return fieldNames;
     }
 

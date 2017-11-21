@@ -199,8 +199,8 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private void updateIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) throws DataSourceDatabaseException {
-        Set<String> deletingLexemes = new HashSet<>();
-        Set<String> insertingLexemes = new HashSet<>();
+        List<String> deletingLexemes = new ArrayList<>();
+        List<String> insertingLexemes = new ArrayList<>();
         PrefixIndexUtils.diffIndexedLexemes(index.sortedFields, prevValues, newValues, deletingLexemes, insertingLexemes);
 
         PrefixIndexUtils.removeIndexedLexemes(index, id, deletingLexemes, destination, dataSource, transactionId);
@@ -208,7 +208,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private void removeIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) throws DataSourceDatabaseException {
-        Set<String> lexemes = new HashSet<>();
+        SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         for (EntityField field : index.sortedFields) {
             PrefixIndexUtils.splitIndexingTextIntoLexemes((String) values.get(field), lexemes);
         }
