@@ -38,18 +38,16 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily, null);
+        long iteratorId = dataSource.createIterator(indexColumnFamily);
         try {
-            while (true) {
-                KeyValue keyValue = dataSource.next(iteratorId);
-                if (keyValue == null) {
-                    break;
-                }
-
+            KeyValue keyValue = dataSource.seek(iteratorId, null);
+            while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
                 Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
                 Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+
+                keyValue = dataSource.next(iteratorId);
             }
         } finally {
             dataSource.closeIterator(iteratorId);
@@ -67,14 +65,10 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily, null);
+        long iteratorId = dataSource.createIterator(indexColumnFamily);
         try {
-            while (true) {
-                KeyValue keyValue = dataSource.next(iteratorId);
-                if (keyValue == null) {
-                    break;
-                }
-
+            KeyValue keyValue = dataSource.seek(iteratorId, null);
+            while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER - 1, key.getBlockNumber());
                 Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
@@ -85,6 +79,8 @@ public class PrefixIndexTest extends StoreFileDataTest {
                 Assert.assertArrayEquals(bufferForFullBlock.array(), keyValue.getValue());
 
                 Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
+
+                keyValue = dataSource.next(iteratorId);
             }
         } finally {
             dataSource.closeIterator(iteratorId);
@@ -112,18 +108,16 @@ public class PrefixIndexTest extends StoreFileDataTest {
         }
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily, null);
+        long iteratorId = dataSource.createIterator(indexColumnFamily);
         try {
-            while (true) {
-                KeyValue keyValue = dataSource.next(iteratorId);
-                if (keyValue == null) {
-                    break;
-                }
-
+            KeyValue keyValue = dataSource.seek(iteratorId, null);
+            while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
                 Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
                 Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+
+                keyValue = dataSource.next(iteratorId);
             }
         } finally {
             dataSource.closeIterator(iteratorId);
@@ -145,18 +139,16 @@ public class PrefixIndexTest extends StoreFileDataTest {
         });
 
         List<String> currentLexemes = new ArrayList<>(Arrays.asList("test", "string", "inform@mail.", "mail."));
-        long iteratorId = dataSource.createIterator(indexColumnFamily, null);
+        long iteratorId = dataSource.createIterator(indexColumnFamily);
         try {
-            while (true) {
-                KeyValue keyValue = dataSource.next(iteratorId);
-                if (keyValue == null) {
-                    break;
-                }
-
+            KeyValue keyValue = dataSource.seek(iteratorId, null);
+            while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
                 Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
                 Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+
+                keyValue = dataSource.next(iteratorId);
             }
         } finally {
             dataSource.closeIterator(iteratorId);

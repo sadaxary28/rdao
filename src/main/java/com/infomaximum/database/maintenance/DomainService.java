@@ -213,9 +213,9 @@ public class DomainService {
     }
 
     private boolean existsKeys(String columnFamily) throws DataSourceDatabaseException {
-        long iteratorId = dataSource.createIterator(columnFamily, null);
+        long iteratorId = dataSource.createIterator(columnFamily);
         try {
-            return dataSource.next(iteratorId) != null;
+            return dataSource.seek(iteratorId, null) != null;
         } finally {
             dataSource.closeIterator(iteratorId);
         }

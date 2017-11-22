@@ -211,26 +211,21 @@ public class PrefixIndexUtils {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, null, transactionId);
+        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
         try {
             for (String lexeme : lexemes) {
-                dataSource.seekIterator(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
-                while (true) {
-                    KeyValue keyValue = dataSource.next(iteratorId);
-                    if (keyValue == null) {
-                        break;
-                    }
-
+                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                while (keyValue != null) {
                     byte[] newIds = removeId(id, keyValue.getValue());
-                    if (newIds == null) {
-                        continue;
+                    if (newIds != null) {
+                        if (newIds.length != 0) {
+                            destination.add(new ModifierSet(index.columnFamily, keyValue.getKey(), newIds));
+                        } else {
+                            destination.add(new ModifierRemove(index.columnFamily, keyValue.getKey(), false));
+                        }
                     }
 
-                    if (newIds.length != 0) {
-                        destination.add(new ModifierSet(index.columnFamily, keyValue.getKey(), newIds));
-                    } else {
-                        destination.add(new ModifierRemove(index.columnFamily, keyValue.getKey(), false));
-                    }
+                    keyValue = dataSource.next(iteratorId);
                 }
             }
         } finally {
@@ -244,11 +239,10 @@ public class PrefixIndexUtils {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, null, transactionId);
+        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
         try {
             for (String lexeme : lexemes) {
-                dataSource.seekIterator(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
-                KeyValue keyValue = dataSource.next(iteratorId);
+                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
                 byte[] key;
                 byte[] idsValue;
                 if (keyValue != null) {

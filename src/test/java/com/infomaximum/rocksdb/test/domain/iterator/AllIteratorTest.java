@@ -1,11 +1,16 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.core.schema.Schema;
+import com.infomaximum.database.core.schema.StructEntity;
+import com.infomaximum.database.datasource.modifier.ModifierRemove;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exeption.UnexpectedEndObjectException;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.domain.type.FormatType;
@@ -18,6 +23,28 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 public class AllIteratorTest extends StoreFileDataTest {
+
+    @Test
+    public void checkInnerStructure() throws Exception {
+        final int insertedRecordCount = 10;
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+        long transactionId = dataSource.beginTransaction();
+        try {
+            dataSource.modify(Arrays.asList(new ModifierRemove(Schema.getEntity(StoreFileReadable.class).getColumnFamily(), TypeConvert.pack(2L), false)), transactionId);
+        } finally {
+            dataSource.commitTransaction(transactionId);
+        }
+
+        try (IteratorEntity iterator = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, Collections.singleton(StoreFileReadable.FIELD_SIZE))) {
+            while (iterator.hasNext()) {
+                iterator.next();
+            }
+            Assert.fail();
+        } catch (UnexpectedEndObjectException e) {
+            Assert.assertTrue(true);
+        }
+    }
 
     @Test
     public void orderingIterate() throws Exception {

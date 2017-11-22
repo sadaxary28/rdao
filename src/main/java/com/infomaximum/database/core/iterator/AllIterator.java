@@ -2,7 +2,6 @@ package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
@@ -15,20 +14,23 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
     private final Class<E> clazz;
-    private Set<String> loadingFields;
+    private final Set<String> loadingFields;
     private final long dataIteratorId;
 
     private E nextElement;
-    private DomainObjectUtils.NextState state = new DomainObjectUtils.NextState();
+    private DataEnumerable.NextState state = new DataEnumerable.NextState();
 
     public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.clazz = clazz;
         this.loadingFields = loadingFields;
         String columnFamily = Schema.getEntity(clazz).getColumnFamily();
-        this.dataIteratorId = dataEnumerable.createIterator(columnFamily, FieldKey.buildKeyPattern(loadingFields));
+        this.dataIteratorId = dataEnumerable.createIterator(columnFamily);
 
-        nextImpl();
+        nextElement = dataEnumerable.seekObject(clazz, loadingFields, dataIteratorId, FieldKey.buildKeyPattern(loadingFields), state);
+        if (nextElement == null) {
+            close();
+        }
     }
 
     @Override
@@ -53,7 +55,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
-        nextElement = DomainObjectUtils.nextObject(clazz, loadingFields, dataEnumerable, dataIteratorId, state);
+        nextElement = dataEnumerable.nextObject(clazz, loadingFields, dataIteratorId, state);
         if (nextElement == null) {
             close();
         }

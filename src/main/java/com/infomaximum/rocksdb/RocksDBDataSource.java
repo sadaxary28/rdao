@@ -13,7 +13,6 @@ import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.IteratorNotFoundException;
 import com.infomaximum.database.exeption.TransactionNotFoundException;
 import com.infomaximum.database.utils.ByteUtils;
-import com.infomaximum.rocksdb.RocksDataBase;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -42,12 +41,11 @@ public class RocksDBDataSource implements DataSource {
         public final RocksIterator iterator;
         private KeyPattern pattern;
 
-        public IteratorWrap(RocksIterator iterator, final KeyPattern pattern) {
+        IteratorWrap(RocksIterator iterator) {
             this.iterator = iterator;
-            seek(pattern);
         }
 
-        public void seek(KeyPattern pattern) {
+        void seek(KeyPattern pattern) {
             this.pattern = pattern;
 
             if (pattern == null || pattern.getPrefix() == null) {
@@ -55,6 +53,43 @@ public class RocksDBDataSource implements DataSource {
             }
             else {
                 iterator.seek(pattern.getPrefix());
+            }
+        }
+
+        KeyValue getKeyValue() throws DataSourceDatabaseException {
+            if (iterator.isValid()) {
+                return new KeyValue(iterator.key(), iterator.value());
+            }
+
+            throwIfFail();
+            return null;
+        }
+
+        KeyValue findMatched() throws DataSourceDatabaseException {
+            while (iterator.isValid()) {
+                byte[] key = iterator.key();
+                if (pattern != null) {
+                    int matchResult = pattern.match(key);
+                    if (matchResult == KeyPattern.MATCH_RESULT_CONTINUE) {
+                        iterator.next();
+                        continue;
+                    } else if (matchResult == KeyPattern.MATCH_RESULT_UNSUCCESS) {
+                        return null;
+                    }
+                }
+
+                return new KeyValue(key, iterator.value());
+            }
+
+            throwIfFail();
+            return null;
+        }
+
+        private void throwIfFail() throws DataSourceDatabaseException {
+            try {
+                iterator.status();
+            } catch (RocksDBException e) {
+                throw new DataSourceDatabaseException(e);
             }
         }
     }
@@ -109,41 +144,6 @@ public class RocksDBDataSource implements DataSource {
         try {
             ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
             return transaction.get(columnFamilyHandle, rocksDataBase.getReadOptions(), key);
-        } catch (RocksDBException e) {
-            throw new DataSourceDatabaseException(e);
-        }
-    }
-
-    @Override
-    public KeyValue next(long iteratorId) throws DataSourceDatabaseException {
-        IteratorWrap iter = (IteratorWrap) iterators.getIfPresent(iteratorId);
-        if (iter == null) {
-            throw new IteratorNotFoundException(iteratorId);
-        }
-
-        RocksIterator iterator = iter.iterator;
-        try {
-            while (true) {
-                if (!iterator.isValid()) {
-                    iterator.status();
-                    return null;
-                }
-
-                byte[] key = iterator.key();
-                if (iter.pattern != null) {
-                    int matchResult = iter.pattern.match(key);
-                    if (matchResult == KeyPattern.MATCH_RESULT_CONTINUE) {
-                        iterator.next();
-                        continue;
-                    } else if (matchResult == KeyPattern.MATCH_RESULT_UNSUCCESS) {
-                        return null;
-                    }
-                }
-
-                KeyValue keyValue = new KeyValue(key, iterator.value());
-                iterator.next();
-                return keyValue;
-            }
         } catch (RocksDBException e) {
             throw new DataSourceDatabaseException(e);
         }
@@ -233,38 +233,69 @@ public class RocksDBDataSource implements DataSource {
     }
 
     @Override
-    public long createIterator(String columnFamily, final KeyPattern pattern) throws DataSourceDatabaseException {
-        return createIterator(columnFamily, pattern, columnFamilyHandle -> rocksDataBase.getRocksDB().newIterator(columnFamilyHandle, rocksDataBase.getReadOptions()));
+    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
+        return createIterator(columnFamily, columnFamilyHandle -> rocksDataBase.getRocksDB().newIterator(columnFamilyHandle, rocksDataBase.getReadOptions()));
     }
 
     @Override
-    public long createIterator(String columnFamily, final KeyPattern pattern, long transactionId) throws DataSourceDatabaseException {
+    public long createIterator(String columnFamily, long transactionId) throws DataSourceDatabaseException {
         Transaction transaction = (Transaction) transactions.getIfPresent(transactionId);
         if (transaction == null) {
             throw new TransactionNotFoundException(transactionId);
         }
 
-        return createIterator(columnFamily, pattern, columnFamilyHandle -> transaction.getIterator(rocksDataBase.getReadOptions(), columnFamilyHandle));
+        return createIterator(columnFamily, columnFamilyHandle -> transaction.getIterator(rocksDataBase.getReadOptions(), columnFamilyHandle));
     }
 
-    private long createIterator(final String columnFamily, final KeyPattern pattern, Function<ColumnFamilyHandle, RocksIterator> iteratorGetter) {
+    private long createIterator(final String columnFamily, Function<ColumnFamilyHandle, RocksIterator> iteratorGetter) {
         ColumnFamilyHandle columnFamilyHandle = rocksDataBase.getColumnFamilyHandle(columnFamily);
         RocksIterator rocksIterator = iteratorGetter.apply(columnFamilyHandle);
 
         long iteratorId = seqRocksObject.getAndIncrement();
-        iterators.put(iteratorId, new IteratorWrap(rocksIterator, pattern));
+        iterators.put(iteratorId, new IteratorWrap(rocksIterator));
 
         return iteratorId;
     }
 
     @Override
-    public void seekIterator(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException {
+    public KeyValue seek(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException {
         IteratorWrap iter = (IteratorWrap) iterators.getIfPresent(iteratorId);
         if (iter == null) {
             throw new IteratorNotFoundException(iteratorId);
         }
 
         iter.seek(pattern);
+        return iter.findMatched();
+    }
+
+    @Override
+    public KeyValue next(long iteratorId) throws DataSourceDatabaseException {
+        IteratorWrap iter = (IteratorWrap) iterators.getIfPresent(iteratorId);
+        if (iter == null) {
+            throw new IteratorNotFoundException(iteratorId);
+        }
+
+        iter.iterator.next();
+        return iter.findMatched();
+    }
+
+    @Override
+    public KeyValue step(long iteratorId, StepDirection direction) throws DataSourceDatabaseException {
+        IteratorWrap iter = (IteratorWrap) iterators.getIfPresent(iteratorId);
+        if (iter == null) {
+            throw new IteratorNotFoundException(iteratorId);
+        }
+
+        switch (direction) {
+            case FORWARD:
+                iter.iterator.next();
+                break;
+            case BACKWARD:
+                iter.iterator.prev();
+                break;
+        }
+
+        return iter.getKeyValue();
     }
 
     @Override

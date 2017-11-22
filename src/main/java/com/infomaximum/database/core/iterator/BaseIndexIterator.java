@@ -4,7 +4,6 @@ import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.DomainObjectUtils;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
@@ -71,13 +70,12 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     E findObject(long id) throws DataSourceDatabaseException {
         if (dataKeyPattern == null) {
-            return DomainObjectUtils.buildDomainObject(clazz, id, loadingFields, dataEnumerable);
+            return dataEnumerable.buildDomainObject(clazz, id, loadingFields);
         }
 
         dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(id));
-        dataEnumerable.seekIterator(dataIteratorId, dataKeyPattern);
 
-        E obj = DomainObjectUtils.nextObject(clazz, loadingFields, dataEnumerable, dataIteratorId, null);
+        E obj = dataEnumerable.seekObject(clazz, loadingFields, dataIteratorId, dataKeyPattern, null);
         return checkFilter(obj) ? obj : null;
     }
 
