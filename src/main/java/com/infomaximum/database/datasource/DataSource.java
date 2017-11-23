@@ -10,6 +10,10 @@ import java.util.List;
  */
 public interface DataSource {
 
+    enum StepDirection {
+        FORWARD, BACKWARD
+    }
+
     long nextId(String sequenceName) throws DataSourceDatabaseException;
 
     byte[] getValue(String columnFamily, final byte[] key) throws DataSourceDatabaseException;
@@ -20,10 +24,11 @@ public interface DataSource {
     void commitTransaction(long transactionId) throws DataSourceDatabaseException;
     void rollbackTransaction(long transactionId) throws DataSourceDatabaseException;
 
-    long createIterator(String columnFamily, final KeyPattern pattern) throws DataSourceDatabaseException;
-    long createIterator(String columnFamily, final KeyPattern pattern, long transactionId) throws DataSourceDatabaseException;
-    void seekIterator(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException;
+    long createIterator(String columnFamily) throws DataSourceDatabaseException;
+    long createIterator(String columnFamily, long transactionId) throws DataSourceDatabaseException;
+    KeyValue seek(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException;
     KeyValue next(long iteratorId) throws DataSourceDatabaseException;
+    KeyValue step(long iteratorId, StepDirection direction) throws DataSourceDatabaseException;
     void closeIterator(long iteratorId);
 
     boolean containsColumnFamily(String name);

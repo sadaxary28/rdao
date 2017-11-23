@@ -47,26 +47,24 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
         this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields);
         if (this.dataKeyPattern != null) {
-            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
+            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily());
             this.values = new String[entityIndex.sortedFields.size()];
             this.tempList = new ArrayList<>();
         }
 
-        this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, indexKeyPattern);
+        this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily);
+        KeyValue keyValue = dataEnumerable.seek(indexIteratorId, indexKeyPattern);
+        this.loadingIds = keyValue != null ? TypeConvert.wrapBuffer(keyValue.getValue()) : null;
 
         nextImpl();
     }
 
     @Override
     void nextImpl() throws DataSourceDatabaseException {
-        while (true) {
-            if (loadingIds == null || !loadingIds.hasRemaining()) {
+        while (loadingIds != null) {
+            if (!loadingIds.hasRemaining()) {
                 KeyValue keyValue = dataEnumerable.next(indexIteratorId);
-                if (keyValue == null) {
-                    break;
-                }
-
-                loadingIds = TypeConvert.wrapBuffer(keyValue.getValue());
+                loadingIds = keyValue != null ? TypeConvert.wrapBuffer(keyValue.getValue()) : null;
                 continue;
             }
 

@@ -21,6 +21,8 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     private final List<EntityField> checkedFilterFields;
     private final List<Object> filterValues;
 
+    private KeyValue indexKeyValue;
+
     public IndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz, loadingFields);
 
@@ -56,10 +58,11 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
 
         this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
         if (this.dataKeyPattern != null) {
-            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily(), null);
+            this.dataIteratorId = dataEnumerable.createIterator(structEntity.getColumnFamily());
         }
 
-        this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily, IndexKey.buildKeyPattern(values));
+        this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily);
+        this.indexKeyValue = dataEnumerable.seek(indexIteratorId, IndexKey.buildKeyPattern(values));
 
         nextImpl();
     }
@@ -79,14 +82,10 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
 
     @Override
     void nextImpl() throws DataSourceDatabaseException {
-        while (true) {
-            KeyValue keyValue = dataEnumerable.next(indexIteratorId);
-            if (keyValue == null) {
-                break;
-            }
-
-            nextElement = findObject(IndexKey.unpackId(keyValue.getKey()));
+        while (indexKeyValue != null) {
+            nextElement = findObject(IndexKey.unpackId(indexKeyValue.getKey()));
             if (nextElement != null) {
+                indexKeyValue = dataEnumerable.next(indexIteratorId);
                 return;
             }
         }

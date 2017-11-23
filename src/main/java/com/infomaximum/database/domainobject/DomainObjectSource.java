@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
@@ -41,7 +40,7 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     @Override
-    public long createIterator(String columnFamily, KeyPattern pattern) throws DataSourceDatabaseException {
-        return dataSource.createIterator(columnFamily, pattern);
+    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
+        return dataSource.createIterator(columnFamily);
     }
 }

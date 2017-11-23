@@ -37,7 +37,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             long id = dataSource.nextId(entity.getColumnFamily());
 
-            T domainObject = DomainObjectUtils.buildDomainObject(clazz, id, Collections.emptyList(), this);
+            T domainObject = buildDomainObject(clazz, id, Collections.emptyList());
 
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (EntityField field: entity.getFields()) {
@@ -133,10 +133,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     @Override
-    public long createIterator(String columnFamily, KeyPattern pattern) throws DataSourceDatabaseException {
+    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
         ensureTransaction();
 
-        return dataSource.createIterator(columnFamily, pattern, transactionId);
+        return dataSource.createIterator(columnFamily, transactionId);
     }
 
     public void commit() throws DataSourceDatabaseException {
@@ -252,9 +252,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         KeyPattern keyPattern = IndexKey.buildKeyPattern(obj.getId());
         for (StructEntity.Reference ref : references) {
-            long iteratorId = dataSource.createIterator(ref.fieldIndex.columnFamily, keyPattern, transactionId);
+            long iteratorId = dataSource.createIterator(ref.fieldIndex.columnFamily, transactionId);
             try {
-                KeyValue keyValue = dataSource.next(iteratorId);
+                KeyValue keyValue = dataSource.seek(iteratorId, keyPattern);
                 if (keyValue != null) {
                     long referencingId = IndexKey.unpackId(keyValue.getKey());
                     throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
