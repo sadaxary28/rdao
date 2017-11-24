@@ -28,15 +28,23 @@ public class KeyPattern implements Serializable {
     }
 
     private byte[] prefix;
+    private final boolean strictMatching;
     private final Postfix[] orPatterns;
 
     public KeyPattern(byte[] prefix, Postfix[] orPatterns) {
         this.prefix = prefix;
+        this.strictMatching = true;
         this.orPatterns = orPatterns;
     }
 
+    public KeyPattern(byte[] prefix, boolean strictMatching) {
+        this.prefix = prefix;
+        this.strictMatching = strictMatching;
+        this.orPatterns = null;
+    }
+
     public KeyPattern(byte[] prefix) {
-        this(prefix, null);
+        this(prefix, true);
     }
 
     public KeyPattern(Postfix[] orPatterns) {
@@ -52,8 +60,10 @@ public class KeyPattern implements Serializable {
     }
 
     public int match(final byte[] key) {
-        if (prefix != null && !ByteUtils.startsWith(prefix, key)) {
-            return MATCH_RESULT_UNSUCCESS;
+        if (prefix != null) {
+            if (strictMatching && !ByteUtils.startsWith(prefix, key)) {
+                return MATCH_RESULT_UNSUCCESS;
+            }
         }
 
         if (orPatterns == null) {
