@@ -2,7 +2,7 @@ package com.infomaximum.database.domainobject.key;
 
 public abstract class Key {
 
-    public static final int ID_BYTE_SIZE = 8;
+    public static final int ID_BYTE_SIZE = Long.BYTES;
 
     private long id;
 

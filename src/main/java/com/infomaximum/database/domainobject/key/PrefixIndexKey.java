@@ -10,7 +10,7 @@ import java.util.Arrays;
 public class PrefixIndexKey {
 
     public static final int FIRST_BLOCK_NUMBER = Integer.MAX_VALUE;
-    public static final int BLOCK_NUMBER_BYTE_SIZE = 4;
+    public static final int BLOCK_NUMBER_BYTE_SIZE = Integer.BYTES;
     public static final byte LEXEME_TERMINATOR = 0;
 
     private final String lexeme;
