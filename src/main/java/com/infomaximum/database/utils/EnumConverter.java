@@ -1,13 +1,14 @@
 package com.infomaximum.database.utils;
 
-import com.google.common.primitives.Ints;
-import com.infomaximum.database.core.schema.TypePacker;
+import com.google.common.primitives.UnsignedInts;
+import com.google.common.primitives.UnsignedLongs;
+import com.infomaximum.database.core.schema.TypeConverter;
 
-public abstract class EnumPacker<T extends Enum<?> & BaseEnum> implements TypePacker<T> {
+public abstract class EnumConverter<T extends Enum<?> & BaseEnum> implements TypeConverter<T> {
 
     private final T[] enumConstants;
 
-    protected EnumPacker(Class<T> clazz) {
+    protected EnumConverter(Class<T> clazz) {
         this.enumConstants = clazz.getEnumConstants();
     }
 
@@ -29,5 +30,10 @@ public abstract class EnumPacker<T extends Enum<?> & BaseEnum> implements TypePa
             }
         }
         throw new RuntimeException("Not found enum value " + enumValue + " into " + getClass());
+    }
+
+    @Override
+    public long buildHash(T value) {
+        return value != null ? UnsignedInts.toLong(value.intValue()) : 0;
     }
 }

@@ -6,7 +6,7 @@ import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.utils.EnumPacker;
+import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**
@@ -20,12 +20,13 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
                 @Field(name = StoreFileReadable.FIELD_CONTENT_TYPE, type = String.class),
                 @Field(name = StoreFileReadable.FIELD_SIZE, type = Long.class),
                 @Field(name = StoreFileReadable.FIELD_SINGLE, type = Boolean.class),
-                @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatPacker.class),
+                @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
                 @Field(name = StoreFileReadable.FIELD_FOLDER_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class)
         },
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
-                @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME})
+                @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
+                @Index(fields = {StoreFileReadable.FIELD_FORMAT})
         },
         prefixIndexes = {
                 @Index(fields = {StoreFileReadable.FIELD_FILE_NAME}),
@@ -41,9 +42,9 @@ public class StoreFileReadable extends DomainObject {
     public final static String FIELD_FORMAT="format";
     public final static String FIELD_FOLDER_ID = "folder_id";
 
-    public static class FormatPacker extends EnumPacker<FormatType> {
+    public static class FormatConverter extends EnumConverter<FormatType> {
 
-        public FormatPacker() {
+        public FormatConverter() {
             super(FormatType.class);
         }
     }

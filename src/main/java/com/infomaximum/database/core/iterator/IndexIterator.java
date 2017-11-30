@@ -39,7 +39,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
         for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
             EntityField field = entityIndex.sortedFields.get(i);
             Object value = filters.get(field.getName());
-            values[i] = IndexUtils.buildHash(field.getType(), value);
+            values[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
             if (IndexUtils.toLongCastable(field.getType())) {
                 continue;
             }

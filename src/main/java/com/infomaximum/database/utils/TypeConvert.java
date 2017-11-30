@@ -2,7 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.core.schema.TypePacker;
+import com.infomaximum.database.core.schema.TypeConverter;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -90,7 +90,7 @@ public class TypeConvert {
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static <T> Object unpack(Class<T> type, byte[] value, TypePacker<T> packer){
+    public static <T> Object unpack(Class<T> type, byte[] value, TypeConverter<T> packer){
         if (packer != null) {
             return packer.unpack(value);
         } else if (type == String.class) {
@@ -109,9 +109,9 @@ public class TypeConvert {
         throw new RuntimeException("Unsupported type " + type);
     }
 
-    public static <T> byte[] pack(Class<T> type, Object value, TypePacker<T> packer){
-        if (packer != null) {
-            return packer.pack((T) value);
+    public static <T> byte[] pack(Class<T> type, Object value, TypeConverter<T> converter){
+        if (converter != null) {
+            return converter.pack((T) value);
         } else if (type == String.class) {
             return pack((String) value);
         } else if (type == Long.class) {

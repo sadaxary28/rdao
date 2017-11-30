@@ -2,6 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.UnsignedInts;
 import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.core.schema.TypeConverter;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
@@ -18,18 +19,22 @@ public class IndexUtils {
     public static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Object> values, long[] destination) {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
-            destination[i] = buildHash(field.getType(), values.get(field));
+            destination[i] = buildHash(field.getType(), values.get(field), field.getConverter());
         }
     }
 
     public static void setHashValues(final List<EntityField> sortedFields, final DomainObject object, long[] destination) throws DataSourceDatabaseException {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
-            destination[i] = buildHash(field.getType(), object.get(field.getClass(), field.getName()));
+            destination[i] = buildHash(field.getType(), object.get(field.getClass(), field.getName()), field.getConverter());
         }
     }
 
-    public static long buildHash(Class<?> type, Object value) {
+    public static <T> long buildHash(Class<T> type, Object value, TypeConverter<T> converter) {
+        if (converter != null) {
+            return converter.buildHash((T)value);
+        }
+
         if (value == null) {
             return 0;
         }
@@ -39,11 +44,11 @@ public class IndexUtils {
         } else if (type == String.class) {
             return hash(TypeConvert.pack(((String) value).toLowerCase()));
         } else if (type == Integer.class) {
-            return ((Integer) value).longValue();
+            return UnsignedInts.toLong((Integer) value);
         } else if (type == Boolean.class) {
             return ((Boolean) value) ? 1 : 0;
         } else if (type == Date.class) {
-            return ((Date)value).getTime();
+            return ((Date) value).getTime();
         } else {
             throw new IllegalArgumentException("Unsupported type " + type + " for hashing.");
         }

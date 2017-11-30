@@ -163,7 +163,7 @@ public abstract class DataEnumerable {
                 break;
             }
             EntityField field = obj.getStructEntity().getField(key.getFieldName());
-            obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getPacker()));
+            obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
     }
 }
