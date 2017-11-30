@@ -90,7 +90,7 @@ public class PrefixIndexUtilsTest {
 
     @Test
     public void splitIndexedText() {
-        final String text = "Привет Медвед infom.COM  com  ...test...2d sop@ru";
+        final String text = "Привет Медвед infom.COM  i com  ...test...2d sop@ru м м мед медв";
 
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
@@ -108,46 +108,36 @@ public class PrefixIndexUtilsTest {
 
     @Test
     public void appendId() {
-        byte[] bytes = TypeConvert.allocateBuffer(Key.ID_BYTE_SIZE).putLong(100).array();
-        bytes = PrefixIndexUtils.appendId(10, bytes);
-        LongBuffer buffer = TypeConvert.wrapBuffer(bytes).asLongBuffer();
-        Assert.assertEquals(100, buffer.get());
-        Assert.assertEquals(10, buffer.get());
-        Assert.assertEquals(2, buffer.position());
+        byte[] bytes = TypeConvert.pack(100L);
+        bytes = PrefixIndexUtils.appendId(200, bytes);
+        bytes = PrefixIndexUtils.appendId(20, bytes);
+        bytes = PrefixIndexUtils.appendId(30, bytes);
+        bytes = PrefixIndexUtils.appendId(400, bytes);
+
+        assertArrayEquals(new long[] {20, 30, 100, 200, 400}, bytes);
     }
 
     @Test
     public void removeId() {
-        byte[] bytes = TypeConvert.allocateBuffer(4 * Key.ID_BYTE_SIZE)
-                .putLong(100)
-                .putLong(200)
-                .putLong(30)
-                .putLong(400)
-                .array();
+        byte[] bytes = TypeConvert.pack(100L);
+        bytes = PrefixIndexUtils.appendId(200, bytes);
+        bytes = PrefixIndexUtils.appendId(30, bytes);
+        bytes = PrefixIndexUtils.appendId(400, bytes);
 
         byte[] newBytes = PrefixIndexUtils.removeId(10, bytes);
         Assert.assertNull(newBytes);
 
         newBytes = PrefixIndexUtils.removeId(200, bytes);
-        LongBuffer buffer = TypeConvert.wrapBuffer(newBytes).asLongBuffer();
-        Assert.assertEquals(100, buffer.get());
-        Assert.assertEquals(30, buffer.get());
-        Assert.assertEquals(400, buffer.get());
-        Assert.assertEquals(3, buffer.position());
+        assertArrayEquals(new long[] {30, 100, 400 }, newBytes);
 
         newBytes = PrefixIndexUtils.removeId(400, newBytes);
-        buffer = TypeConvert.wrapBuffer(newBytes).asLongBuffer();
-        Assert.assertEquals(100, buffer.get());
-        Assert.assertEquals(30, buffer.get());
-        Assert.assertEquals(2, buffer.position());
+        assertArrayEquals(new long[] {30, 100 }, newBytes);
 
         newBytes = PrefixIndexUtils.removeId(100, newBytes);
-        buffer = TypeConvert.wrapBuffer(newBytes).asLongBuffer();
-        Assert.assertEquals(30, buffer.get());
-        Assert.assertEquals(1, buffer.position());
+        assertArrayEquals(new long[] { 30 }, newBytes);
 
         newBytes = PrefixIndexUtils.removeId(30, newBytes);
-        Assert.assertEquals(0, newBytes.length);
+        Assert.assertArrayEquals(new byte[0], newBytes);
     }
 
     @Test
@@ -191,5 +181,13 @@ public class PrefixIndexUtilsTest {
         Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru "), texts, tempList));
         Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru 2d"), texts, tempList));
         Assert.assertTrue(PrefixIndexUtils.contains(PrefixIndexUtils.splitSearchingTextIntoWords(" com ru yand"), texts, tempList));
+    }
+
+    private static void assertArrayEquals(long[] expected, byte[] actual) {
+        LongBuffer buffer = TypeConvert.wrapBuffer(actual).asLongBuffer();
+        Assert.assertEquals("Size", expected.length, buffer.limit());
+        for (long val : expected) {
+            Assert.assertEquals(val, buffer.get());
+        }
     }
 }

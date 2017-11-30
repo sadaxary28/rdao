@@ -50,8 +50,7 @@ public class FieldKey extends Key {
             throw new KeyCorruptedException(src);
         }
 
-        ByteBuffer buffer = TypeConvert.wrapBuffer(src);
-        long id = buffer.getLong();
+        long id = TypeConvert.unpackLong(src, 0);
         if (src.length == ID_BYTE_SIZE) {
             return new FieldKey(id);
         }

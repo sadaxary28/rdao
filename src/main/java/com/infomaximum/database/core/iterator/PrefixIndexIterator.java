@@ -23,6 +23,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     private List<String> searchingWords;
     private ByteBuffer loadingIds = null;
+    private long prevLoadedId = -1;
     private String[] values;
 
     private List<String> tempList;
@@ -68,8 +69,14 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
                 continue;
             }
 
-            nextElement = findObject(loadingIds.getLong());
+            final long id = loadingIds.getLong();
+            if (id <= prevLoadedId) {
+                continue;
+            }
+
+            nextElement = findObject(id);
             if (nextElement != null) {
+                prevLoadedId = id;
                 return;
             }
         }

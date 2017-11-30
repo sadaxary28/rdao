@@ -9,9 +9,8 @@ import java.util.Arrays;
 
 public class PrefixIndexKey {
 
-    public static final int FIRST_BLOCK_NUMBER = Integer.MAX_VALUE;
-    public static final int BLOCK_NUMBER_BYTE_SIZE = Integer.BYTES;
-    public static final byte LEXEME_TERMINATOR = 0;
+    private static final int BLOCK_NUMBER_BYTE_SIZE = Integer.BYTES;
+    private static final byte LEXEME_TERMINATOR = 0;
 
     private final String lexeme;
     private final int blockNumber;
@@ -22,7 +21,7 @@ public class PrefixIndexKey {
     }
 
     public PrefixIndexKey(String lexeme) {
-        this(lexeme, FIRST_BLOCK_NUMBER);
+        this(lexeme, 0);
     }
 
     public String getLexeme() {
@@ -33,13 +32,13 @@ public class PrefixIndexKey {
         return blockNumber;
     }
 
-    public static void decrementBlockNumber(byte[] key) {
+    public static void incrementBlockNumber(byte[] key) {
         ByteBuffer buffer = TypeConvert.wrapBuffer(key);
         int number = buffer.getInt(key.length - BLOCK_NUMBER_BYTE_SIZE);
-        if (number < 1) {
+        if (number == Integer.MAX_VALUE) {
             throw new RuntimeException("Unexpected block number " + number);
         }
-        buffer.putInt(key.length - BLOCK_NUMBER_BYTE_SIZE, number - 1);
+        buffer.putInt(key.length - BLOCK_NUMBER_BYTE_SIZE, number + 1);
     }
 
     public byte[] pack() {
@@ -67,7 +66,7 @@ public class PrefixIndexKey {
     public static KeyPattern buildKeyPatternForEdit(final String lexeme) {
         byte[] bytes = TypeConvert.pack(lexeme);
         bytes = Arrays.copyOf(bytes, bytes.length + 1);
-        //COMMENT last byte must contains zero value
+        bytes[bytes.length - 1] = LEXEME_TERMINATOR;
         return new KeyPattern(bytes);
     }
 }

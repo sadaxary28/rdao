@@ -6,11 +6,11 @@ import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.datasource.modifier.Modifier;
 import com.infomaximum.database.datasource.modifier.ModifierRemove;
 import com.infomaximum.database.datasource.modifier.ModifierSet;
+import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 
 public class PrefixIndexUtils {
@@ -21,7 +21,7 @@ public class PrefixIndexUtils {
         boolean apply(int beginIndex, int endIndex);
     }
 
-    public static final int MAX_ID_COUNT_PER_BLOCK = 1024;
+    public static final int PREFERRED_MAX_ID_COUNT_PER_BLOCK = 1024;
 
     private static final Comparator<String> searchingWordComparator = Comparator.comparingInt(String::length);
 
@@ -98,15 +98,18 @@ public class PrefixIndexUtils {
 
     public static void splitIndexingTextIntoLexemes(final String text, SortedSet<String> inOutLexemes) {
         splitIndexingTextIntoLexemes(text, (Collection<String>) inOutLexemes);
+        if (inOutLexemes.isEmpty()) {
+            return;
+        }
 
-        for (Iterator<String> i = inOutLexemes.iterator(); i.hasNext();) {
-            String target = i.next();
-            while (i.hasNext()) {
-                if (target.startsWith(i.next())) {
-                    i.remove();
-                    continue;
-                }
-                break;
+        Iterator<String> i = inOutLexemes.iterator();
+        String target = i.next();
+        while (i.hasNext()) {
+            String next = i.next();
+            if (target.startsWith(next)) {
+                i.remove();
+            } else {
+                target = next;
             }
         }
     }
@@ -142,9 +145,15 @@ public class PrefixIndexUtils {
     }
 
     public static byte[] appendId(long id, byte[] ids) {
+        int pos = binarySearch(id, ids);
+        if (pos >= 0) {
+            return ids;
+        }
+        pos = - pos - 1;
         return TypeConvert.allocateBuffer(ids.length + Key.ID_BYTE_SIZE)
-                .put(ids)
+                .put(ids, 0, pos)
                 .putLong(id)
+                .put(ids, pos, ids.length - pos)
                 .array();
     }
 
@@ -153,22 +162,15 @@ public class PrefixIndexUtils {
             return null;
         }
 
-        ByteBuffer buffer = TypeConvert.wrapBuffer(ids);
-        if (ids.length == Key.ID_BYTE_SIZE) {
-            return buffer.getLong() == id ? TypeConvert.EMPTY_BYTE_ARRAY : null;
+        int pos = binarySearch(id, ids);
+        if (pos < 0) {
+            return null;
         }
 
-        while (buffer.hasRemaining()) {
-            if (buffer.getLong() == id) {
-                byte[] newIds = new byte[buffer.limit() - Key.ID_BYTE_SIZE];
-                int leftPartLen = buffer.position() - Key.ID_BYTE_SIZE;
-                System.arraycopy(ids, 0, newIds, 0, leftPartLen);
-                System.arraycopy(ids, buffer.position(), newIds, leftPartLen, ids.length - buffer.position());
-                return newIds;
-            }
-        }
-
-        return null;
+        byte[] newIds = new byte[ids.length - Key.ID_BYTE_SIZE];
+        System.arraycopy(ids, 0, newIds, 0, pos);
+        System.arraycopy(ids, pos + Key.ID_BYTE_SIZE, newIds, pos, ids.length - pos - Key.ID_BYTE_SIZE);
+        return newIds;
     }
 
     public static int getIdCount(byte[] ids) {
@@ -246,14 +248,27 @@ public class PrefixIndexUtils {
                 byte[] key;
                 byte[] idsValue;
                 if (keyValue != null) {
-                    key = keyValue.getKey();
-
-                    if (getIdCount(keyValue.getValue()) < MAX_ID_COUNT_PER_BLOCK) {
-                        idsValue = appendId(id, keyValue.getValue());
-                    } else {
-                        PrefixIndexKey.decrementBlockNumber(key);
-                        idsValue = TypeConvert.pack(id);
-                    }
+                    KeyValue prevKeyValue;
+                    do {
+                        long lastId = TypeConvert.unpackLong(keyValue.getValue(), keyValue.getValue().length - FieldKey.ID_BYTE_SIZE);
+                        if (id < lastId) {
+                            key = keyValue.getKey();
+                            idsValue = appendId(id, keyValue.getValue());
+                            break;
+                        }
+                        prevKeyValue = keyValue;
+                        keyValue = dataSource.next(iteratorId);
+                        if (keyValue == null) {
+                            key = prevKeyValue.getKey();
+                            if (getIdCount(prevKeyValue.getValue()) < PREFERRED_MAX_ID_COUNT_PER_BLOCK) {
+                                idsValue = appendId(id, prevKeyValue.getValue());
+                            } else {
+                                PrefixIndexKey.incrementBlockNumber(key);
+                                idsValue = TypeConvert.pack(id);
+                            }
+                            break;
+                        }
+                    } while (true);
                 } else {
                     key = new PrefixIndexKey(lexeme).pack();
                     idsValue = TypeConvert.pack(id);
@@ -264,5 +279,27 @@ public class PrefixIndexUtils {
         } finally {
             dataSource.closeIterator(iteratorId);
         }
+    }
+
+    private static int binarySearch(long value, byte[] longs) {
+        if ((longs.length % Long.BYTES) != 0) {
+            throw new IllegalArgumentException("Size of longs must be multiple of " + Long.BYTES);
+        }
+
+        int low = 0;
+        int high = (longs.length / Long.BYTES) - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            long midVal = TypeConvert.unpackLong(longs, mid * Long.BYTES);
+
+            if (midVal < value)
+                low = mid + 1;
+            else if (midVal > value)
+                high = mid - 1;
+            else
+                return mid * Long.BYTES; // key found
+        }
+        return -(low * Long.BYTES + 1);  // key not found.
     }
 }

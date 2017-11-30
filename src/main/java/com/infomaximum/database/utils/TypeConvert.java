@@ -43,7 +43,11 @@ public class TypeConvert {
     }
 
     public static Long unpackLong(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? Longs.fromByteArray(value) : null;
+        return !ByteUtils.isNullOrEmpty(value) ? unpackLong(value, 0) : null;
+    }
+
+    public static long unpackLong(byte[] value, int offset){
+        return Longs.fromBytes(value[0 + offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
     }
 
     public static Boolean unpackBoolean(byte[] value){

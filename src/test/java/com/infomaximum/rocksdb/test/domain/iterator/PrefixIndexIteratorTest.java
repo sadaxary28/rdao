@@ -41,6 +41,10 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("Александр Александров");
             transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("Реализация услуг акт Бухгалтерия предприятия, редакция рукпыва р р");
+            transaction.save(obj);
         });
 
         final PrefixIndexFilter filter = new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME, "");
@@ -68,6 +72,15 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
         filter.setFieldValue("алекс алекс");
         testFind(filter, 6);
+
+        filter.setFieldValue("Р р");
+        testFind(filter, 7);
+
+        filter.setFieldValue("Р");
+        testFind(filter, 7);
+
+        filter.setFieldValue("Ре");
+        testFind(filter, 7);
     }
 
     @Test
@@ -102,6 +115,11 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             obj.setFileName("Александр");
             obj.setContentType("Александров");
             transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("Реализация услуг акт Бухгалтерия ");
+            obj.setContentType("предприятия, редакция рукпыва р р");
+            transaction.save(obj);
         });
 
         final PrefixIndexFilter filter = new PrefixIndexFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "");
@@ -129,11 +147,17 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
         filter.setFieldValue("алекс алекс");
         testFind(filter, 6);
+
+        filter.setFieldValue("Р");
+        testFind(filter, 7);
+
+        filter.setFieldValue("Ре");
+        testFind(filter, 7);
     }
 
     @Test
     public void findAmongBlocks() throws Exception {
-        final int idCount = 3 * PrefixIndexUtils.MAX_ID_COUNT_PER_BLOCK + 200;
+        final int idCount = 3 * PrefixIndexUtils.PREFERRED_MAX_ID_COUNT_PER_BLOCK + 200;
         final List<Long> expectedIds = new ArrayList<>(idCount);
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < idCount; ++i) {
