@@ -45,6 +45,14 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("Реализация услуг акт Бухгалтерия предприятия, редакция рукпыва р р");
             transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("Иван Васильев");
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("Василий Иванов");
+            transaction.save(obj);
         });
 
         final PrefixIndexFilter filter = new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME, "");
@@ -81,6 +89,9 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
         filter.setFieldValue("Ре");
         testFind(filter, 7);
+
+        filter.setFieldValue("вас");
+        testFind(filter, 8, 9);
     }
 
     @Test

@@ -98,6 +98,20 @@ public class PrefixIndexUtils {
 
     public static void splitIndexingTextIntoLexemes(final String text, SortedSet<String> inOutLexemes) {
         splitIndexingTextIntoLexemes(text, (Collection<String>) inOutLexemes);
+        if (inOutLexemes.isEmpty()) {
+            return;
+        }
+
+        Iterator<String> i = inOutLexemes.iterator();
+        String target = i.next();
+        while (i.hasNext()) {
+            String next = i.next();
+            if (target.startsWith(next)) {
+                i.remove();
+            } else {
+                target = next;
+            }
+        }
     }
 
     private static void splitIndexingTextIntoLexemes(final String text, Collection<String> inOutLexemes) {

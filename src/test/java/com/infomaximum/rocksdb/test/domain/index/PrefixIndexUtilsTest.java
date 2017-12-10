@@ -52,7 +52,7 @@ public class PrefixIndexUtilsTest {
         newValues.put(2, "test13 test");
         PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
         Assert.assertEquals(new HashSet<>(Arrays.asList("test03", "test12")), deletingLexemes);
-        Assert.assertEquals(Collections.singleton("test"), insertingLexemes);
+        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
 
         prevValues.put(1, "test01 test02 test03");
         prevValues.put(2, "test12 test12 test13");
@@ -78,7 +78,7 @@ public class PrefixIndexUtilsTest {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertArrayEquals(
-                new String[] {"привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "comparator", "comparat", "compa", "com", "2d"},
+                new String[] {"привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "comparator", "2d"},
                 lexemes.toArray()
         );
     }
@@ -90,7 +90,7 @@ public class PrefixIndexUtilsTest {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assert.assertArrayEquals(
-                new String[] {"привет", "медвед", "медв", "мед", "м", "test...2d", "sop@ru", "ru", "infom.com", "i", "com", "2d", "...test...2d"},
+                new String[] {"привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "com", "2d", "...test...2d"},
                 lexemes.toArray()
         );
     }
