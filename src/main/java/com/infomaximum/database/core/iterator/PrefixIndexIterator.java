@@ -1,5 +1,8 @@
 package com.infomaximum.database.core.iterator;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.EntityPrefixIndex;
 import com.infomaximum.database.core.schema.Schema;
@@ -23,7 +26,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     private List<String> searchingWords;
     private ByteBuffer loadingIds = null;
-    private long prevLoadedId = -1;
+    private RangeSet<Long> prevLoadedIds = TreeRangeSet.create();
     private String[] values;
 
     private List<String> tempList;
@@ -70,13 +73,13 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
             }
 
             final long id = loadingIds.getLong();
-            if (id <= prevLoadedId) {
+            if (prevLoadedIds.contains(id)) {
                 continue;
             }
 
             nextElement = findObject(id);
             if (nextElement != null) {
-                prevLoadedId = id;
+                prevLoadedIds.add(Range.closedOpen(id, id + 1));
                 return;
             }
         }
