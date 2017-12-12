@@ -20,6 +20,7 @@ public class SchemaService {
     private boolean isValidationMode = false;
     private String namespace;
     private Schema schema;
+    private Set<String> ignoringNamespaces = new HashSet<>();
 
     public SchemaService(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -37,6 +38,11 @@ public class SchemaService {
 
     public SchemaService setNamespace(String namespace) {
         this.namespace = namespace;
+        return this;
+    }
+
+    public SchemaService appendIgnoringNamespace(String namespace) {
+        ignoringNamespaces.add(namespace);
         return this;
     }
 
@@ -83,6 +89,12 @@ public class SchemaService {
 
             processedNames.add(domain.getColumnFamily());
         }
+
+        for (String value : ignoringNamespaces) {
+            if (!value.startsWith(namespacePrefix)) {
+                throw new InconsistentDatabaseException("Namespace " + namespace + " is not consistent with " + value);
+            }
+        }
     }
 
     private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
@@ -92,6 +104,11 @@ public class SchemaService {
                 .collect(Collectors.toSet());
         for (StructEntity domain : schema.getDomains()) {
             DomainService.removeDomainColumnFamiliesFrom(columnFamilies, domain);
+        }
+
+        for (String space : ignoringNamespaces) {
+            final String spacePrefix = space + StructEntity.NAMESPACE_SEPARATOR;
+            columnFamilies.removeIf(s -> s.startsWith(spacePrefix));
         }
 
         if (!columnFamilies.isEmpty()) {
