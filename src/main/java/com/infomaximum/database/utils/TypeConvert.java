@@ -7,6 +7,7 @@ import com.infomaximum.database.core.schema.TypeConverter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
@@ -16,7 +17,7 @@ public class TypeConvert {
 
     public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private static final Charset CHARSET = Charset.forName("UTF-8");
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static ByteBuffer allocateBuffer(int capacity) {
         return ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
