@@ -10,7 +10,7 @@ import org.junit.Test;
 /**
  * Created by kris on 22.04.17.
  */
-public class SetValueDomainObjectTest extends StoreFileDataTest {
+public class ValueStringEmptyDomainObjectTest extends StoreFileDataTest {
 
     @Test
     public void run() throws Exception {
