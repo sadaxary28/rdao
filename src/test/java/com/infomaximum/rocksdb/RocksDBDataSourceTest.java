@@ -5,6 +5,7 @@ import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.datasource.modifier.Modifier;
 import com.infomaximum.database.datasource.modifier.ModifierSet;
+import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.utils.TypeConvert;
 import org.junit.After;
 import org.junit.Assert;
@@ -17,12 +18,18 @@ import java.util.List;
 public class RocksDBDataSourceTest extends RocksDataTest {
 
     private RocksDataBase rocksDataBase;
+    private RocksDBDataSource dataSource;
+
+    private static final String columnFamily = "test_cf";
+    private static final long startValue = 0x8000000080000000L;
+    private static final int valueCount = 100;
 
     @Before
     public void init() throws Exception {
         super.init();
 
         rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build();
+        dataSource = new RocksDBDataSource(rocksDataBase);
     }
 
     @After
@@ -33,30 +40,32 @@ public class RocksDBDataSourceTest extends RocksDataTest {
     }
 
     @Test
-    public void step() throws Exception {
-        final String columnFamily = "test_cf";
-        final long startValue = 0x8000000080000000L;
-        final int valueCount = 100;
+    public void seekWithStrictMatching() throws Exception {
+        fillData();
 
-        RocksDBDataSource dataSource = new RocksDBDataSource(rocksDataBase);
-
-        dataSource.createColumnFamily(columnFamily);
-
-        long transactionId = dataSource.beginTransaction();
+        long iteratorId = dataSource.createIterator(columnFamily);
         try {
-            List<Modifier> modifiers = new ArrayList<>();
-            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0x6000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
-            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0x7000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
-            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0xA000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
+            KeyValue keyValue = dataSource.seek(iteratorId, new KeyPattern(TypeConvert.pack(0x6000000080000000L), true));
+            Assert.assertNull(keyValue);
 
-            for (int i = 0; i < valueCount; i++) {
-                modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(startValue + i), TypeConvert.EMPTY_BYTE_ARRAY));
-            }
+            byte[] pattern = TypeConvert.pack(0x6000000080000001L);
+            keyValue = dataSource.seek(iteratorId, new KeyPattern(pattern, true));
+            Assert.assertArrayEquals(pattern, keyValue.getKey());
 
-            dataSource.modify(modifiers, transactionId);
+            keyValue = dataSource.seek(iteratorId, new KeyPattern(TypeConvert.pack(0x7000000080000000L), false));
+            Assert.assertArrayEquals(TypeConvert.pack(0x7000000080000001L), keyValue.getKey());
+
+            pattern = TypeConvert.pack(0x6000000080000001L);
+            keyValue = dataSource.seek(iteratorId, new KeyPattern(pattern, false));
+            Assert.assertArrayEquals(pattern, keyValue.getKey());
         } finally {
-            dataSource.commitTransaction(transactionId);
+            dataSource.closeIterator(iteratorId);
         }
+    }
+
+    @Test
+    public void step() throws Exception {
+        fillData();
 
         // test iterate by previous
         long iteratorId = dataSource.createIterator(columnFamily);
@@ -84,11 +93,39 @@ public class RocksDBDataSourceTest extends RocksDataTest {
 
         iteratorId = dataSource.createIterator(columnFamily);
         try {
-            dataSource.seek(iteratorId, new KeyPattern(TypeConvert.pack(0x00000000)));
+            final KeyValue firstKeyValue = dataSource.seek(iteratorId, null);
+            Assert.assertArrayEquals(TypeConvert.pack(0x6000000080000001L), firstKeyValue.getKey());
+
             KeyValue keyValue = dataSource.step(iteratorId, DataSource.StepDirection.BACKWARD);
+            Assert.assertNull(keyValue);
+
+            final KeyValue lastKeyValue = dataSource.seek(iteratorId, new KeyPattern(TypeConvert.pack(0xA0000000)));
+            Assert.assertArrayEquals(TypeConvert.pack(0xA000000080000001L), lastKeyValue.getKey());
+
+            keyValue = dataSource.step(iteratorId, DataSource.StepDirection.FORWARD);
             Assert.assertNull(keyValue);
         } finally {
             dataSource.closeIterator(iteratorId);
+        }
+    }
+
+    private void fillData() throws Exception {
+        dataSource.createColumnFamily(columnFamily);
+
+        long transactionId = dataSource.beginTransaction();
+        try {
+            List<Modifier> modifiers = new ArrayList<>();
+            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0x6000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
+            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0x7000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
+            modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(0xA000000080000001L), TypeConvert.EMPTY_BYTE_ARRAY));
+
+            for (int i = 0; i < valueCount; i++) {
+                modifiers.add(new ModifierSet(columnFamily, TypeConvert.pack(startValue + i), TypeConvert.EMPTY_BYTE_ARRAY));
+            }
+
+            dataSource.modify(modifiers, transactionId);
+        } finally {
+            dataSource.commitTransaction(transactionId);
         }
     }
 }

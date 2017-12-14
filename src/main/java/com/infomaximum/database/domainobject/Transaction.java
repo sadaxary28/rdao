@@ -85,7 +85,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             byte[] key = new FieldKey(object.getId(), field.getName()).pack();
             if (value != null) {
-                byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getPacker());
+                byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getConverter());
                 modifiers.add(new ModifierSet(columnFamily, key, bValue));
             } else {
                 modifiers.add(new ModifierRemove(columnFamily, key, false));
@@ -129,7 +129,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         ensureTransaction();
 
         byte[] value = dataSource.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getName()).pack(), transactionId);
-        return (T) TypeConvert.unpack(field.getType(), value, field.getPacker());
+        return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 
     @Override
@@ -172,7 +172,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         final byte[] key = new FieldKey(id, field.getName()).pack();
         final byte[] value = dataSource.getValue(columnFamily, key, transactionId);
-        loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getPacker()));
+        loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getConverter()));
     }
 
     static void updateIndexedValue(EntityIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) {
@@ -186,7 +186,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (int i = 0; i < index.sortedFields.size(); ++i) {
             EntityField field = index.sortedFields.get(i);
             Object value = newValues.containsKey(field) ? newValues.get(field) : prevValues.get(field);
-            indexKey.getFieldValues()[i] = IndexUtils.buildHash(field.getType(), value);
+            indexKey.getFieldValues()[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
         }
         destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
     }

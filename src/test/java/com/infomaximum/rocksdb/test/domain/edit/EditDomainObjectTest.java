@@ -5,6 +5,7 @@ import com.infomaximum.database.exeption.ForeignDependencyException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
+import com.infomaximum.rocksdb.domain.type.FormatType;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -91,5 +92,39 @@ public class EditDomainObjectTest extends StoreFileDataTest {
         } catch (ForeignDependencyException ex) {
             Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void valueStringEmptyThenNull() throws Exception {
+        final long objectId = 1;
+        final String emptyFileName = "";
+        final String contentType = "info.json";
+
+        //Добавляем объект
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
+            storeFile.setContentType(contentType);
+            storeFile.setFileName(emptyFileName);
+            transaction.save(storeFile);
+        });
+
+        //Загружаем сохраненый объект
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, objectId);
+        Assert.assertNotNull(storeFileCheckSave);
+        Assert.assertEquals(emptyFileName, storeFileCheckSave.getFileName());
+        Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
+
+        //Редактируем сохраненый объект
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, objectId);
+            obj.setContentType(null);
+            transaction.save(obj);
+        });
+
+        //Загружаем сохраненый объект
+        StoreFileReadable storeFileCheckEdit = domainObjectSource.get(StoreFileReadable.class, objectId);
+        Assert.assertNotNull(storeFileCheckEdit);
+        Assert.assertEquals(emptyFileName, storeFileCheckEdit.getFileName());
+        Assert.assertNull(storeFileCheckEdit.getContentType());
     }
 }

@@ -42,10 +42,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         try {
             KeyValue keyValue = dataSource.seek(iteratorId, null);
             while (keyValue != null) {
-                PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
-                Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
-                Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
-                Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+                assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
                 keyValue = dataSource.next(iteratorId);
             }
@@ -58,7 +55,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
     @Test
     public void insertWithOverflowedBlock() throws Exception {
-        final int recordCountForFullBlock = PrefixIndexUtils.MAX_ID_COUNT_PER_BLOCK;
+        final int recordCountForFullBlock = PrefixIndexUtils.PREFERRED_MAX_ID_COUNT_PER_BLOCK;
         ByteBuffer bufferForFullBlock = createRecords(recordCountForFullBlock);
 
         final int recordCount = 10;
@@ -70,15 +67,62 @@ public class PrefixIndexTest extends StoreFileDataTest {
             KeyValue keyValue = dataSource.seek(iteratorId, null);
             while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
-                Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER - 1, key.getBlockNumber());
-                Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
-
-                keyValue = dataSource.next(iteratorId);
-                key = PrefixIndexKey.unpack(keyValue.getKey());
-                Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
+                Assert.assertEquals(0, key.getBlockNumber());
                 Assert.assertArrayEquals(bufferForFullBlock.array(), keyValue.getValue());
 
-                Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
+                keyValue = dataSource.next(iteratorId);
+                assertEquals(1, buffer.array(), currentLexemes, keyValue);
+
+                keyValue = dataSource.next(iteratorId);
+            }
+        } finally {
+            dataSource.closeIterator(iteratorId);
+        }
+
+        Assert.assertEquals(0, currentLexemes.size());
+    }
+
+    @Test
+    public void reinsertWithOverflowedBlock() throws Exception {
+        final int recordCountForFullBlock = PrefixIndexUtils.PREFERRED_MAX_ID_COUNT_PER_BLOCK;
+        ByteBuffer bufferForFullBlock = createRecords(recordCountForFullBlock);
+
+        final int recordCount = 10;
+        ByteBuffer buffer = createRecords(recordCount);
+
+        final long updatingId1 = 7;
+        final long updatingId2 = PrefixIndexUtils.PREFERRED_MAX_ID_COUNT_PER_BLOCK + 2;
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.get(StoreFileEditable.class, updatingId1);
+            obj.setFileName(null);
+            transaction.save(obj);
+
+            obj = transaction.get(StoreFileEditable.class, updatingId2);
+            obj.setFileName(null);
+            transaction.save(obj);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.get(StoreFileEditable.class, updatingId1);
+            obj.setFileName(fileName);
+            transaction.save(obj);
+
+            obj = transaction.get(StoreFileEditable.class, updatingId2);
+            obj.setFileName(fileName);
+            transaction.save(obj);
+        });
+
+        List<String> currentLexemes = new ArrayList<>(lexemes);
+        long iteratorId = dataSource.createIterator(indexColumnFamily);
+        try {
+            KeyValue keyValue = dataSource.seek(iteratorId, null);
+            while (keyValue != null) {
+                PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
+                Assert.assertEquals(0, key.getBlockNumber());
+                Assert.assertArrayEquals(bufferForFullBlock.array(), keyValue.getValue());
+
+                keyValue = dataSource.next(iteratorId);
+                assertEquals(1, buffer.array(), currentLexemes, keyValue);
 
                 keyValue = dataSource.next(iteratorId);
             }
@@ -92,30 +136,20 @@ public class PrefixIndexTest extends StoreFileDataTest {
     @Test
     public void remove() throws Exception {
         final int recordCount = 10;
-        createRecords(recordCount);
+        byte[] buffer = createRecords(recordCount).array();
 
         final long removingId = 7;
         domainObjectSource.executeTransactional(transaction -> {
             transaction.remove(transaction.get(StoreFileEditable.class, removingId));
         });
-
-        ByteBuffer buffer = TypeConvert.allocateBuffer((recordCount - 1) * Key.ID_BYTE_SIZE);
-        long id = 0;
-        for (int i = 0; i < recordCount; ++i) {
-            if (++id != removingId) {
-                buffer.putLong(id);
-            }
-        }
+        buffer = PrefixIndexUtils.removeId(removingId, buffer);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
         long iteratorId = dataSource.createIterator(indexColumnFamily);
         try {
             KeyValue keyValue = dataSource.seek(iteratorId, null);
             while (keyValue != null) {
-                PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
-                Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
-                Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
-                Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+                assertEquals(0, buffer, currentLexemes, keyValue);
 
                 keyValue = dataSource.next(iteratorId);
             }
@@ -143,10 +177,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         try {
             KeyValue keyValue = dataSource.seek(iteratorId, null);
             while (keyValue != null) {
-                PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
-                Assert.assertTrue(currentLexemes.remove(key.getLexeme()));
-                Assert.assertEquals(PrefixIndexKey.FIRST_BLOCK_NUMBER, key.getBlockNumber());
-                Assert.assertArrayEquals(buffer.array(), keyValue.getValue());
+                assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
                 keyValue = dataSource.next(iteratorId);
             }
@@ -155,6 +186,13 @@ public class PrefixIndexTest extends StoreFileDataTest {
         }
 
         Assert.assertEquals(0, currentLexemes.size());
+    }
+
+    private static void assertEquals(int expectedBlock, byte[] expectedValue, List<String> expectedLexemes, KeyValue actual) {
+        PrefixIndexKey key = PrefixIndexKey.unpack(actual.getKey());
+        Assert.assertTrue(expectedLexemes.remove(key.getLexeme()));
+        Assert.assertEquals(expectedBlock, key.getBlockNumber());
+        Assert.assertArrayEquals(expectedValue, actual.getValue());
     }
 
     private ByteBuffer createRecords(int recordCount) throws Exception {

@@ -9,13 +9,13 @@ public class EntityField {
 
     private final String name;
     private final Class type;
-    private final TypePacker packer;
+    private final TypeConverter converter;
     private final StructEntity foreignDependency;
 
     EntityField(Field field, StructEntity parent) {
         this.name = field.name();
         this.type = field.type();
-        this.packer = buildPacker(field.packerType());
+        this.converter = buildPacker(field.packerType());
         if (field.foreignDependency() != Class.class) {
             if (parent.getObjectClass() != field.foreignDependency()) {
                 this.foreignDependency = Schema.ensureEntity(field.foreignDependency());
@@ -39,8 +39,8 @@ public class EntityField {
         return type;
     }
 
-    public TypePacker getPacker() {
-        return packer;
+    public TypeConverter getConverter() {
+        return converter;
     }
 
     public boolean isForeign() {
@@ -57,13 +57,13 @@ public class EntityField {
         }
     }
 
-    private static TypePacker buildPacker(Class<?> packerClass) {
+    private static TypeConverter buildPacker(Class<?> packerClass) {
         if (packerClass == Class.class) {
             return null;
         }
 
         try {
-            return (TypePacker) packerClass.newInstance();
+            return (TypeConverter) packerClass.newInstance();
         } catch (ReflectiveOperationException e) {
             throw new IllegalTypeException(e);
         }

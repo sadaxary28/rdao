@@ -36,7 +36,7 @@ public class DomainObjectSource extends DataEnumerable {
     @Override
     public <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException {
         byte[] value = dataSource.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getName()).pack());
-        return (T) TypeConvert.unpack(field.getType(), value, field.getPacker());
+        return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 
     @Override

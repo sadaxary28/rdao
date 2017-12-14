@@ -96,6 +96,37 @@ public class SchemaServiceTest extends DomainDataTest {
     }
 
     @Test
+    public void validateWithIgnoringNamespaces() throws Exception {
+        final String ignoringNamespace = "com.infomaximum.store.ignore";
+
+        createDomain(StoreFileReadable.class);
+
+        rocksDataBase.createColumnFamily(ignoringNamespace + ".temp1");
+        rocksDataBase.createColumnFamily(ignoringNamespace + ".temp2");
+
+        new SchemaService(dataSource)
+                .setNamespace("com.infomaximum.store")
+                .setValidationMode(true)
+                .appendIgnoringNamespace(ignoringNamespace)
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .execute();
+        Assert.assertTrue(true);
+
+        rocksDataBase.createColumnFamily("com.infomaximum.store.notignore.temp2");
+        try {
+            new SchemaService(dataSource)
+                    .setNamespace("com.infomaximum.store")
+                    .setValidationMode(true)
+                    .appendIgnoringNamespace(ignoringNamespace)
+                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                    .execute();
+            Assert.fail();
+        } catch (InconsistentDatabaseException e) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
     public void validateInaccurateData() throws Exception {
         createDomain(StoreFileEditable.class);
         createDomain(ExchangeFolderEditable.class);

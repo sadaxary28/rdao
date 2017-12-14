@@ -2,11 +2,12 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.core.schema.TypePacker;
+import com.infomaximum.database.core.schema.TypeConverter;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
@@ -16,7 +17,7 @@ public class TypeConvert {
 
     public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private static final Charset CHARSET = Charset.forName("UTF-8");
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static ByteBuffer allocateBuffer(int capacity) {
         return ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
@@ -27,7 +28,7 @@ public class TypeConvert {
     }
 
     public static String unpackString(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? new String(value, TypeConvert.CHARSET) : null;
+        return value != null ? new String(value, TypeConvert.CHARSET) : null;
     }
 
     public static String unpackString(byte[] value, int offset, int length){
@@ -43,7 +44,11 @@ public class TypeConvert {
     }
 
     public static Long unpackLong(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? Longs.fromByteArray(value) : null;
+        return !ByteUtils.isNullOrEmpty(value) ? unpackLong(value, 0) : null;
+    }
+
+    public static long unpackLong(byte[] value, int offset){
+        return Longs.fromBytes(value[0 + offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
     }
 
     public static Boolean unpackBoolean(byte[] value){
@@ -86,7 +91,7 @@ public class TypeConvert {
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static <T> Object unpack(Class<T> type, byte[] value, TypePacker<T> packer){
+    public static <T> Object unpack(Class<T> type, byte[] value, TypeConverter<T> packer){
         if (packer != null) {
             return packer.unpack(value);
         } else if (type == String.class) {
@@ -105,9 +110,9 @@ public class TypeConvert {
         throw new RuntimeException("Unsupported type " + type);
     }
 
-    public static <T> byte[] pack(Class<T> type, Object value, TypePacker<T> packer){
-        if (packer != null) {
-            return packer.pack((T) value);
+    public static <T> byte[] pack(Class<T> type, Object value, TypeConverter<T> converter){
+        if (converter != null) {
+            return converter.pack((T) value);
         } else if (type == String.class) {
             return pack((String) value);
         } else if (type == Long.class) {

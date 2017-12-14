@@ -4,6 +4,7 @@ import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
+import com.infomaximum.rocksdb.domain.type.FormatType;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,6 +29,53 @@ public class IndexTest extends StoreFileDataTest {
                 Assert.assertEquals(size, i.next().getSize());
                 Assert.assertFalse(i.hasNext());
             }
+        }
+    }
+
+    @Test
+    public void findByEnumIndex() throws Exception {
+        final int recordCount = 100;
+
+        domainObjectSource.executeTransactional(transaction -> {
+            for (int size = 0; size < recordCount; size++) {
+                StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
+                storeFile.setFormat(FormatType.A);
+                transaction.save(storeFile);
+
+                storeFile = transaction.create(StoreFileEditable.class);
+                storeFile.setFormat(FormatType.B);
+                transaction.save(storeFile);
+
+                storeFile = transaction.create(StoreFileEditable.class);
+                storeFile.setFormat(null);
+                transaction.save(storeFile);
+            }
+        });
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FORMAT, FormatType.A))) {
+            long id = 1;
+            int count = 0;
+            while (i.hasNext()) {
+                StoreFileReadable obj = i.next();
+                Assert.assertEquals(id, obj.getId());
+                Assert.assertEquals(FormatType.A, obj.getFormat());
+                id += 3;
+                ++count;
+            }
+            Assert.assertEquals(recordCount, count);
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FORMAT, null))) {
+            long id = 3;
+            int count = 0;
+            while (i.hasNext()) {
+                StoreFileReadable obj = i.next();
+                Assert.assertEquals(id, obj.getId());
+                Assert.assertNull(obj.getFormat());
+                id += 3;
+                ++count;
+            }
+            Assert.assertEquals(recordCount, count);
         }
     }
 
