@@ -28,7 +28,7 @@ public class TypeConvert {
     }
 
     public static String unpackString(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? new String(value, TypeConvert.CHARSET) : null;
+        return value != null ? new String(value, TypeConvert.CHARSET) : null;
     }
 
     public static String unpackString(byte[] value, int offset, int length){
