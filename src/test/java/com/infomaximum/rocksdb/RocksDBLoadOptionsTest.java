@@ -6,8 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.rocksdb.*;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,7 +46,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
                 "info_log_level=WARN_LEVEL",
                 "[CFOptions \"default\"]"
         );
-        Files.write(optionsFilePath, content, Charset.forName("UTF-8"));
+        Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
         try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), false)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
@@ -68,7 +67,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
                 "info_log_level=WARN_LEVEL",
                 "[CFOptions \"default\"]"
         );
-        Files.write(optionsFilePath, content, Charset.forName("UTF-8"));
+        Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
         try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), false)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
@@ -93,7 +92,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
                 "info_log_level=WARN_LEVEL",
                 "[CFOptions \"default\"]"
         );
-        Files.write(optionsFilePath, content, Charset.forName("UTF-8"));
+        Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
         try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), true)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
