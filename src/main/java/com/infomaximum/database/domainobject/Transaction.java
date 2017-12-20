@@ -27,6 +27,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         super(dataSource);
     }
 
+    public boolean isForeignFieldEnabled() {
+        return foreignFieldEnabled;
+    }
+
     public void setForeignFieldEnabled(boolean value) {
         this.foreignFieldEnabled = value;
     }

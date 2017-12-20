@@ -41,10 +41,14 @@ public abstract class DataEnumerable {
         }
     }
 
-    final DataSource dataSource;
+    protected final DataSource dataSource;
 
     DataEnumerable(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException;
