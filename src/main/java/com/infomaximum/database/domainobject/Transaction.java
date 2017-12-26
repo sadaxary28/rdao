@@ -27,6 +27,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         super(dataSource);
     }
 
+    public boolean isForeignFieldEnabled() {
+        return foreignFieldEnabled;
+    }
+
     public void setForeignFieldEnabled(boolean value) {
         this.foreignFieldEnabled = value;
     }
@@ -92,7 +96,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             }
         }
 
-        dataSource.modify(modifiers, transactionId);
+        modify(modifiers);
 
         object._flushNewValues();
     }
@@ -121,7 +125,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // delete self-object
         modifiers.add(new ModifierRemove(columnFamily, FieldKey.buildKeyPrefix(obj.getId()), true));
 
-        dataSource.modify(modifiers, transactionId);
+        modify(modifiers);
     }
 
     @Override
@@ -137,6 +141,11 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         ensureTransaction();
 
         return dataSource.createIterator(columnFamily, transactionId);
+    }
+
+    public void modify(List<Modifier> modifiers) throws DataSourceDatabaseException {
+        ensureTransaction();
+        dataSource.modify(modifiers, transactionId);
     }
 
     public void commit() throws DataSourceDatabaseException {
