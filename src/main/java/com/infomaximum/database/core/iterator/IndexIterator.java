@@ -84,8 +84,8 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     void nextImpl() throws DataSourceDatabaseException {
         while (indexKeyValue != null) {
             nextElement = findObject(IndexKey.unpackId(indexKeyValue.getKey()));
+            indexKeyValue = dataEnumerable.next(indexIteratorId);
             if (nextElement != null) {
-                indexKeyValue = dataEnumerable.next(indexIteratorId);
                 return;
             }
         }

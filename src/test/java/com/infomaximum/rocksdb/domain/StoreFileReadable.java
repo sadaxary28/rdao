@@ -25,6 +25,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
         },
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
+                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
                 @Index(fields = {StoreFileReadable.FIELD_FORMAT})
         },
