@@ -6,6 +6,7 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.domain.type.FormatType;
@@ -160,6 +161,85 @@ public class IndexIteratorTest extends StoreFileDataTest {
             }
 
             transaction.commit();
+        }
+    }
+
+    @Test
+    public void findBySingleField() throws Exception {
+
+        final String nameExpected = "привет всем";
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет всем");
+            obj.setSize(20);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет");
+            obj.setSize(30);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("ПРИВЕТ ВСЕМ");
+            obj.setSize(40);
+            transaction.save(obj);
+        });
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 50L))) {
+            Assert.assertFalse(i.hasNext());
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 30L))) {
+            int count = 0;
+            while (i.hasNext()) {
+                i.next();
+                ++count;
+            }
+            Assert.assertEquals(1, count);
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, "unknown"))) {
+            Assert.assertFalse(i.hasNext());
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameExpected))) {
+            int count = 0;
+            while (i.hasNext()) {
+                i.next();
+                ++count;
+            }
+            Assert.assertEquals(2, count);
+        }
+    }
+
+    @Test
+    public void testCollision() throws Exception {
+        final int storedCount = 5;
+        final String nameCol1 = "http://ccwf/login.aspx?login=auto&crid=20560116";
+        final String nameCol2 = "http://ccwf/login.aspx?login=auto&crid=20517268";
+        Assert.assertEquals("Hash of names must be equals",
+                IndexUtils.buildHash(String.class, nameCol2, null), IndexUtils.buildHash(String.class, nameCol1, null));
+
+        domainObjectSource.executeTransactional(transaction -> {
+            for (int i = 0; i < storedCount; ++i) {
+                StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+                obj.setFileName(nameCol1);
+                transaction.save(obj);
+            }
+        });
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol2))) {
+            Assert.assertFalse(i.hasNext());
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol1))) {
+            int count = 0;
+            while (i.hasNext()) {
+                i.next();
+                ++count;
+            }
+            Assert.assertEquals(storedCount, count);
         }
     }
 
