@@ -91,21 +91,21 @@ public class TypeConvert {
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static <T> Object unpack(Class<T> type, byte[] value, TypeConverter<T> packer){
+    public static <T> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
             return packer.unpack(value);
         } else if (type == String.class) {
-            return unpackString(value);
+            return (T) unpackString(value);
         } else if (type == Long.class) {
-            return unpackLong(value);
+            return (T) unpackLong(value);
         } else if (type == Integer.class) {
-            return unpackInteger(value);
+            return (T) unpackInteger(value);
         } else if (type == Boolean.class) {
-            return unpackBoolean(value);
+            return (T) unpackBoolean(value);
         } else if (type == byte[].class) {
-            return value;
+            return (T) value;
         } else if (type == Date.class) {
-            return unpackDate(value);
+            return (T) unpackDate(value);
         }
         throw new RuntimeException("Unsupported type " + type);
     }
