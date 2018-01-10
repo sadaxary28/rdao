@@ -30,6 +30,7 @@ public class StructEntity {
     public final static java.lang.reflect.Field dataSourceField = getDataSourceField();
 
     private final Class<? extends DomainObject> clazz;
+    private final String name;
     private final String columnFamily;
     private final Set<EntityField> fields;
     private final Map<String, EntityField> nameFields;
@@ -41,6 +42,7 @@ public class StructEntity {
         final Entity annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
 
         this.clazz = clazz;
+        this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
 
         Set<EntityField> modifiableFields = new HashSet<>(annotationEntity.fields().length);
@@ -70,6 +72,10 @@ public class StructEntity {
 
     private void registerToForeignEntity(EntityField foreignField) {
         foreignField.getForeignDependency().referencingForeignFields.add(new Reference(clazz, buildForeignIndex(foreignField)));
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getColumnFamily() {
