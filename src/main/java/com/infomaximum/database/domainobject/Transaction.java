@@ -55,9 +55,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     public <T extends DomainObject & DomainObjectEditable> void save(final T object) throws DatabaseException {
-        ensureTransaction();
-
         Map<EntityField, Object> newValues = object.getNewValues();
+        if (newValues.isEmpty()) {
+            return;
+        }
+
+        ensureTransaction();
 
         final String columnFamily = object.getStructEntity().getColumnFamily();
         final List<Modifier> modifiers = new ArrayList<>();

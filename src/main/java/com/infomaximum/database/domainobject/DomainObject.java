@@ -6,10 +6,7 @@ import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.exeption.DataSourceDatabaseException;
 import com.infomaximum.database.utils.BaseEnum;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -20,10 +17,10 @@ public abstract class DomainObject {
 
     private final long id;
     private final StructEntity structEntity;
+    private ConcurrentMap<String, Optional<Object>> loadedFieldValues;
 
-    private DataEnumerable dataSource = null;
-    private ConcurrentMap<String, Optional<Object>> loadedFieldValues = null;
     private Map<String, Object> newFieldValues = null;
+    private DataEnumerable dataSource = null;
 
     public DomainObject(long id) {
         if (id < 1) {
@@ -80,6 +77,10 @@ public abstract class DomainObject {
      * Unsafe method. Do not use in external packages!
      */
     protected void _flushNewValues() {
+        if (newFieldValues == null) {
+            return;
+        }
+
         for (Map.Entry<String, Object> entry : newFieldValues.entrySet()){
             _setLoadedField(entry.getKey(), entry.getValue());
         }
@@ -127,6 +128,10 @@ public abstract class DomainObject {
     }
 
     protected Map<EntityField, Object> getNewValues(){
+        if (newFieldValues == null || newFieldValues.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         Map<EntityField, Object> values = new HashMap<>(newFieldValues.size());
         for (Map.Entry<String, Object> entry: newFieldValues.entrySet()){
             values.put(structEntity.getField(entry.getKey()), entry.getValue());

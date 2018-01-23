@@ -5,7 +5,6 @@ import com.infomaximum.database.exeption.ForeignDependencyException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
-import com.infomaximum.rocksdb.domain.type.FormatType;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,10 +45,10 @@ public class EditDomainObjectTest extends StoreFileDataTest {
 
         //Редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
-                obj.setFileName(fileName2);
-                obj.setSingle(true);
-                transaction.save(obj);
+            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
+            obj.setFileName(fileName2);
+            obj.setSingle(true);
+            transaction.save(obj);
         });
 
         //Загружаем отредактированный объект
@@ -63,10 +62,10 @@ public class EditDomainObjectTest extends StoreFileDataTest {
 
         //Повторно редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-                StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
-                obj.setFileName(fileName1);
-                obj.setSingle(false);
-                transaction.save(obj);
+            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
+            obj.setFileName(fileName1);
+            obj.setSingle(false);
+            transaction.save(obj);
         });
 
 
@@ -126,5 +125,27 @@ public class EditDomainObjectTest extends StoreFileDataTest {
         Assert.assertNotNull(storeFileCheckEdit);
         Assert.assertEquals(emptyFileName, storeFileCheckEdit.getFileName());
         Assert.assertNull(storeFileCheckEdit.getContentType());
+    }
+
+    @Test
+    public void emptySaveDomainObject() throws Exception {
+        final long objectId = 1;
+        final String emptyFileName = "";
+        final String contentType = "info.json";
+
+        //Добавляем объект
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
+            storeFile.setContentType(contentType);
+            storeFile.setFileName(emptyFileName);
+            transaction.save(storeFile);
+            transaction.save(storeFile);
+        });
+
+        //Загружаем сохраненый объект и сразу без редактирования полей вызываем сохранение
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.get(StoreFileEditable.class, objectId);
+            transaction.save(obj);
+        });
     }
 }
