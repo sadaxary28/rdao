@@ -139,6 +139,7 @@ public class EditDomainObjectTest extends StoreFileDataTest {
             storeFile.setContentType(contentType);
             storeFile.setFileName(emptyFileName);
             transaction.save(storeFile);
+            transaction.save(storeFile);
         });
 
         //Загружаем сохраненый объект и сразу без редактирования полей вызываем сохранение
