@@ -127,24 +127,4 @@ public class EditDomainObjectTest extends StoreFileDataTest {
         Assert.assertNull(storeFileCheckEdit.getContentType());
     }
 
-    @Test
-    public void emptySaveDomainObject() throws Exception {
-        final long objectId = 1;
-        final String emptyFileName = "";
-        final String contentType = "info.json";
-
-        //Добавляем объект
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
-            storeFile.setContentType(contentType);
-            storeFile.setFileName(emptyFileName);
-            transaction.save(storeFile);
-        });
-
-        //Загружаем сохраненый объект и сразу без редактирования полей вызываем сохранение
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = transaction.get(StoreFileEditable.class, objectId);
-            transaction.save(obj);
-        });
-    }
 }
