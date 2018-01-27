@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.remove;
 
-import com.infomaximum.database.exeption.ForeignDependencyException;
+import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;

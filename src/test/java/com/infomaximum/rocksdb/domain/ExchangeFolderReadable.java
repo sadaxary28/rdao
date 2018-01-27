@@ -4,7 +4,7 @@ import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.util.Date;
 

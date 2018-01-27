@@ -1,7 +1,7 @@
 package com.infomaximum.database.core.iterator;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 
 /**
  * Created by kris on 08.09.17.

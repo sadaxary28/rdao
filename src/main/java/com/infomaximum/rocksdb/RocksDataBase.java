@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb;
 
-import com.infomaximum.database.exeption.runtime.ColumnFamilyNotFoundException;
+import com.infomaximum.database.exception.runtime.ColumnFamilyNotFoundException;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.*;
 

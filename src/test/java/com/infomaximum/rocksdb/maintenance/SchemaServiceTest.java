@@ -1,9 +1,9 @@
 package com.infomaximum.rocksdb.maintenance;
 
 import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.ForeignDependencyException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.SchemaService;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;

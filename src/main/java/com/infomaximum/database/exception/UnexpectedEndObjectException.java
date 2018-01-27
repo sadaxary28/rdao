@@ -1,4 +1,4 @@
-package com.infomaximum.database.exeption;
+package com.infomaximum.database.exception;
 
 import com.infomaximum.database.domainobject.key.FieldKey;
 

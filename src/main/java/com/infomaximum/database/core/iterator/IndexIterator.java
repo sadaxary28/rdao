@@ -10,8 +10,8 @@ import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.IndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.runtime.NotFoundIndexException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.runtime.NotFoundIndexException;
 
 import java.util.*;
 

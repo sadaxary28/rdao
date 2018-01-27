@@ -4,7 +4,7 @@ import com.google.common.primitives.UnsignedInts;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.TypeConverter;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 
 import java.util.Date;
 import java.util.List;

@@ -9,7 +9,7 @@ import com.infomaximum.database.datasource.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.Key;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 
 import java.util.*;
 

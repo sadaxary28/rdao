@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.domain;
 
 import com.infomaximum.database.domainobject.DomainObjectEditable;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.util.Date;
 

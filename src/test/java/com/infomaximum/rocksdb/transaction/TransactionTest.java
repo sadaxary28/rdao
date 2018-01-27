@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.transaction;
 
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.exeption.TransactionNotFoundException;
+import com.infomaximum.database.exception.TransactionNotFoundException;
 import com.infomaximum.rocksdb.RocksDataBase;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;

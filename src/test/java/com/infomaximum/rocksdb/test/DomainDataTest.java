@@ -4,7 +4,7 @@ import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.rocksdb.RocksDataBase;

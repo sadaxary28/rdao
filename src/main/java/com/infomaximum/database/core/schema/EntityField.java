@@ -1,8 +1,8 @@
 package com.infomaximum.database.core.schema;
 
 import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.exeption.runtime.IllegalTypeException;
-import com.infomaximum.database.exeption.runtime.StructEntityException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.runtime.StructEntityException;
 import com.infomaximum.database.utils.EqualsUtils;
 
 public class EntityField {

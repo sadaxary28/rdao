@@ -10,10 +10,10 @@ import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.IndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.ForeignDependencyException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 

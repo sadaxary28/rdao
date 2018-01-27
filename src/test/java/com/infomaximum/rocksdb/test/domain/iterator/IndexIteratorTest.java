@@ -5,7 +5,6 @@ import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.exeption.DatabaseException;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
