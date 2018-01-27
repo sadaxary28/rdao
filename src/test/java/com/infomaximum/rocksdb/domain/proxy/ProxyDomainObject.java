@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.domain.proxy;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.utils.BaseEnum;
 
 import java.util.Date;

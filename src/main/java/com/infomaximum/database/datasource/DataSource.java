@@ -1,7 +1,7 @@
 package com.infomaximum.database.datasource;
 
 import com.infomaximum.database.datasource.modifier.Modifier;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 
 import java.util.List;
 

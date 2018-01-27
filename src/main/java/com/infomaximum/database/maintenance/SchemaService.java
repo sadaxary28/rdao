@@ -3,8 +3,8 @@ package com.infomaximum.database.maintenance;
 import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 
 import java.util.*;
 import java.util.stream.Collectors;

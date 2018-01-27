@@ -3,7 +3,7 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 public class DomainObjectSource extends DataEnumerable {

@@ -1,4 +1,4 @@
-package com.infomaximum.database.exeption.runtime;
+package com.infomaximum.database.exception.runtime;
 
 public class ColumnFamilyNotFoundException extends RuntimeException {
 

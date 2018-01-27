@@ -2,14 +2,12 @@ package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.infomaximum.database.core.iterator.IteratorEntity;
 import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.datasource.modifier.ModifierRemove;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.UnexpectedEndObjectException;
+import com.infomaximum.database.exception.UnexpectedEndObjectException;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;

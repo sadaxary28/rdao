@@ -1,4 +1,4 @@
-package com.infomaximum.database.exeption;
+package com.infomaximum.database.exception;
 
 public class TransactionNotFoundException extends DataSourceDatabaseException {
 

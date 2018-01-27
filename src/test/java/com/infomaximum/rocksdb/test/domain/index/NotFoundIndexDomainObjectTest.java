@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
 import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.exeption.runtime.NotFoundIndexException;
+import com.infomaximum.database.exception.runtime.NotFoundIndexException;
 import com.infomaximum.rocksdb.domain.ExchangeFolderReadable;
 import com.infomaximum.rocksdb.test.ExchangeFolderDataTest;
 import org.junit.Assert;

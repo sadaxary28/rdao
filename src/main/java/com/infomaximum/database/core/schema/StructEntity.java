@@ -4,8 +4,8 @@ import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.runtime.FieldNotFoundException;
-import com.infomaximum.database.exeption.runtime.StructEntityException;
+import com.infomaximum.database.exception.runtime.FieldNotFoundException;
+import com.infomaximum.database.exception.runtime.StructEntityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

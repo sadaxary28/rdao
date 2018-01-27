@@ -5,7 +5,7 @@ import com.infomaximum.database.datasource.KeyPattern;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 
 import java.util.*;
 

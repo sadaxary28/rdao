@@ -3,7 +3,7 @@ package com.infomaximum.rocksdb;
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 
 @Entity(
         namespace = "com.infomaximum.store",

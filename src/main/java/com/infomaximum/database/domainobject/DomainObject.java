@@ -3,7 +3,7 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.utils.BaseEnum;
 
 import java.util.*;

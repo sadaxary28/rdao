@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.maintenance;
 
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.database.maintenance.NamespaceValidator;
 import com.infomaximum.rocksdb.test.DomainDataTest;
 import org.junit.Assert;
@@ -18,10 +18,10 @@ public class NamespaceValidatorTest extends DomainDataTest {
     @Test
     public void validateValidSchema() throws DatabaseException {
 
-        dataSource.createColumnFamily("com.infomaximum.database.exeption");
+        dataSource.createColumnFamily("com.infomaximum.database.exception");
         dataSource.createColumnFamily("com.infomaximum.database.maintenance");
 
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.exeption");
+        dataSource.createColumnFamily("com.infomaximum.rocksdb.exception");
         dataSource.createColumnFamily("com.infomaximum.rocksdb.maintenance");
 
         new NamespaceValidator(dataSource)
@@ -34,10 +34,10 @@ public class NamespaceValidatorTest extends DomainDataTest {
     @Test
     public void validateInvalidSchema() throws DatabaseException {
 
-        dataSource.createColumnFamily("com.infomaximum.database.exeption");
+        dataSource.createColumnFamily("com.infomaximum.database.exception");
         dataSource.createColumnFamily("com.infomaximum.database.maintenance");
 
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.exeption");
+        dataSource.createColumnFamily("com.infomaximum.rocksdb.exception");
         dataSource.createColumnFamily("com.infomaximum.rocksdb.maintenance");
 
         dataSource.createColumnFamily("com.infomaximum.maintenance");

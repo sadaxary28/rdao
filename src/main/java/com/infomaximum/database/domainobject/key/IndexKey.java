@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.key;
 
 import com.infomaximum.database.datasource.KeyPattern;
-import com.infomaximum.database.exeption.runtime.KeyCorruptedException;
+import com.infomaximum.database.exception.runtime.KeyCorruptedException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;

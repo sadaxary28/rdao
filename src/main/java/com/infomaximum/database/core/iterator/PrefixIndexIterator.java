@@ -13,7 +13,7 @@ import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
 import com.infomaximum.database.domainobject.key.PrefixIndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 

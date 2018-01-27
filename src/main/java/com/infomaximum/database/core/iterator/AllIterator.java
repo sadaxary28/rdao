@@ -4,8 +4,8 @@ import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.DatabaseException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.util.NoSuchElementException;
 import java.util.Set;

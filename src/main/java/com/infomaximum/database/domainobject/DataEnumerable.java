@@ -15,10 +15,10 @@ import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
 import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.UnexpectedEndObjectException;
-import com.infomaximum.database.exeption.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.UnexpectedEndObjectException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
