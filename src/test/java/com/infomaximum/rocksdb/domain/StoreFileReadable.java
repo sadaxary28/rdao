@@ -72,7 +72,7 @@ public class StoreFileReadable extends DomainObject {
     }
 
     public FormatType getFormat() throws DatabaseException {
-        return getEnum(FormatType.class, FIELD_FORMAT);
+        return get(FormatType.class, FIELD_FORMAT);
     }
 
     public Long getFolderId() throws DataSourceDatabaseException {

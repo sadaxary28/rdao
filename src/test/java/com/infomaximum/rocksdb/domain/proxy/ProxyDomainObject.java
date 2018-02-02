@@ -74,13 +74,4 @@ public class ProxyDomainObject extends DomainObject {
             throw new RuntimeException(e);
         }
     }
-
-    @Override
-    protected <T extends Enum & BaseEnum> T getEnum(Class<T> enumClass, String fieldName) {
-        try {
-            return super.getEnum(enumClass, fieldName);
-        } catch (DataSourceDatabaseException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
