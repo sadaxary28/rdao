@@ -111,10 +111,6 @@ public abstract class DomainObject {
         return get(byte[].class, fieldName);
     }
 
-    protected <T extends Enum & BaseEnum> T getEnum(Class<T> enumClass, String fieldName) throws DataSourceDatabaseException {
-        return get(enumClass, fieldName);
-    }
-
     protected StructEntity getStructEntity() {
         return structEntity;
     }

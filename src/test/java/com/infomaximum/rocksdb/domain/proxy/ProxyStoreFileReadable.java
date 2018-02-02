@@ -55,7 +55,7 @@ public class ProxyStoreFileReadable extends ProxyDomainObject {
 
 
     public FormatType getFormat() {
-        return getEnum(FormatType.class, FIELD_FORMAT);
+        return get(FormatType.class, FIELD_FORMAT);
     }
 
 }
