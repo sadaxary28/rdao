@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.utils.PathUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.*;
 
@@ -17,22 +18,18 @@ public class RocksDataBaseBuilder {
 
     private Path path;
 
-    public RocksDataBaseBuilder withPath(String path) {
-        this.path = Paths.get(path);
-        return this;
-    }
-
     public RocksDataBaseBuilder withPath(Path path) {
-        this.path = path;
+        this.path = path.toAbsolutePath();
         return this;
     }
 
     public RocksDataBase build() throws RocksDBException {
+        PathUtils.checkPath(path);
         try (Options options = buildOptions()) {
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors(options);
 
             List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-            OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toAbsolutePath().toString(), columnFamilyDescriptors, columnFamilyHandles);
+            OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toString(), columnFamilyDescriptors, columnFamilyHandles);
 
             ConcurrentMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
             for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
@@ -63,7 +60,7 @@ public class RocksDataBaseBuilder {
     private List<ColumnFamilyDescriptor> getColumnFamilyDescriptors(Options options) throws RocksDBException {
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
 
-        for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
+        for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toString())) {
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
         }
         if (columnFamilyDescriptors.isEmpty()) {
