@@ -37,7 +37,8 @@ public class RocksDBDataSource implements DataSource {
     private final Cache<Object, Object> iterators;
     private final Cache<Object, Object> transactions;
 
-    class IteratorWrap {
+    private static class IteratorWrap {
+
         public final RocksIterator iterator;
         private KeyPattern pattern;
 
