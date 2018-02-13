@@ -3,6 +3,8 @@ package com.infomaximum.rocksdb.domain;
 import com.infomaximum.database.domainobject.DomainObjectEditable;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
+import java.util.Date;
+
 /**
  * Created by user on 19.04.2017.
  */
@@ -38,5 +40,9 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
 
     public void setDouble(Double value) {
         set(FIELD_DOUBLE, value);
+    }
+
+    public void setDate(Date value) {
+        set(FIELD_DATE, value);
     }
 }

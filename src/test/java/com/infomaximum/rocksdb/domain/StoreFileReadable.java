@@ -10,6 +10,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
+import java.util.Date;
+
 /**
  * Created by user on 19.04.2017.
  */
@@ -23,7 +25,8 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
                 @Field(name = StoreFileReadable.FIELD_SINGLE, type = Boolean.class),
                 @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
                 @Field(name = StoreFileReadable.FIELD_FOLDER_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
-                @Field(name = StoreFileReadable.FIELD_DOUBLE, type = Double.class)
+                @Field(name = StoreFileReadable.FIELD_DOUBLE, type = Double.class),
+                @Field(name = StoreFileReadable.FIELD_DATE, type = Date.class)
         },
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
@@ -38,6 +41,7 @@ import com.infomaximum.rocksdb.domain.type.FormatType;
         intervalIndexes = {
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DOUBLE),
+                @IntervalIndex(indexedField = StoreFileReadable.FIELD_DATE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME})
         }
 )
@@ -50,6 +54,7 @@ public class StoreFileReadable extends DomainObject {
     public final static String FIELD_FORMAT="format";
     public final static String FIELD_FOLDER_ID = "folder_id";
     public final static String FIELD_DOUBLE = "double";
+    public final static String FIELD_DATE = "date";
 
     public static class FormatConverter extends EnumConverter<FormatType> {
 
@@ -89,5 +94,9 @@ public class StoreFileReadable extends DomainObject {
 
     public Long getDouble() throws DataSourceDatabaseException {
         return getLong(FIELD_DOUBLE);
+    }
+
+    public Long getDate() throws DataSourceDatabaseException {
+        return getLong(FIELD_DATE);
     }
 }

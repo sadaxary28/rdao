@@ -50,6 +50,28 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
     }
 
     @Test
+    public void dateOrderTest() throws Exception {
+        final long currentTime = System.currentTimeMillis();
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setDate(new Date(currentTime));
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setDate(new Date(currentTime + 1000));
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setDate(new Date(currentTime + 5 * 1000));
+            transaction.save(obj);
+        });
+
+        assertEquals(Arrays.asList(new Date(currentTime), new Date(currentTime + 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime), new Date(currentTime + 1000));
+        assertEquals(Arrays.asList(new Date(currentTime + 1000), new Date(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime + 500), new Date(currentTime + 6 * 1000));
+    }
+
+    @Test
     public void doubleOrderTest() throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
@@ -174,7 +196,11 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         assertEquals(expectedIds, new IntervalIndexFilter(fieldName, begin, end));
     }
 
-    private <T extends Number> void assertEquals(List<T> expectedIds, IntervalIndexFilter filter) throws DatabaseException {
+    protected void assertEquals(List<Date> expectedIds, String fieldName, Date begin, Date end) throws DatabaseException {
+        assertEquals(expectedIds, new IntervalIndexFilter(fieldName, begin, end));
+    }
+
+    private <T> void assertEquals(List<T> expectedIds, IntervalIndexFilter filter) throws DatabaseException {
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
             List<T> sizes = new ArrayList<>();
             while (iterator.hasNext()) {
