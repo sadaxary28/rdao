@@ -8,7 +8,7 @@ import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ComboIndexWithNullTest extends StoreFileDataTest {
+public class MultiIndexWithNullTest extends StoreFileDataTest {
 
     @Test
     public void findByComboIndex() throws Exception {

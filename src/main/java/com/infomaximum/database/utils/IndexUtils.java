@@ -5,6 +5,7 @@ import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.TypeConverter;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.util.Date;
 import java.util.List;
@@ -43,15 +44,14 @@ public class IndexUtils {
             return (Long) value;
         } else if (type == String.class) {
             return hash(TypeConvert.pack(((String) value).toLowerCase()));
-        } else if (type == Integer.class) {
-            return UnsignedInts.toLong((Integer) value);
         } else if (type == Boolean.class) {
             return ((Boolean) value) ? 1 : 0;
         } else if (type == Date.class) {
             return ((Date) value).getTime();
-        } else {
-            throw new IllegalArgumentException("Unsupported type " + type + " for hashing.");
+        } else if (type == Integer.class) {
+            return UnsignedInts.toLong((Integer) value);
         }
+        throw new IllegalTypeException("Unsupported type " + type + " for hashing.");
     }
 
     public static boolean equals(Class<?> clazz, Object left, Object right) {

@@ -1,33 +1,32 @@
 package com.infomaximum.database.core.iterator;
 
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.schema.Schema;
+import com.infomaximum.database.core.schema.*;
+import com.infomaximum.database.datasource.DataSource;
 import com.infomaximum.database.datasource.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.utils.IndexUtils;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.core.schema.EntityIndex;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.key.IndexKey;
+import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
+import com.infomaximum.database.domainobject.key.IntervalIndexKey;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.exception.runtime.NotFoundIndexException;
+import com.infomaximum.database.utils.IndexUtils;
 
 import java.util.*;
 
-public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> {
+public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIterator<E> {
 
     private final List<EntityField> checkedFilterFields;
     private final List<Object> filterValues;
+    private final long endValue;
 
     private KeyValue indexKeyValue;
 
-    public IndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IndexFilter filter) throws DataSourceDatabaseException {
+    public IntervalIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IntervalIndexFilter filter) throws DataSourceDatabaseException {
         super(dataEnumerable, clazz, loadingFields);
 
         StructEntity structEntity = Schema.getEntity(clazz);
-        Map<String, Object> filters = filter.getValues();
-        final EntityIndex entityIndex = structEntity.getIndex(filters.keySet());
+        Map<String, Object> filters = filter.getHashedValues();
+        EntityIntervalIndex entityIndex = structEntity.getIntervalIndex(filters.keySet(), filter.getIndexedFieldName());
         if (entityIndex == null) {
             throw new NotFoundIndexException(clazz, filters.keySet());
         }
@@ -35,9 +34,10 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
         List<EntityField> filterFields = null;
         List<Object> filterValues = null;
 
-        long[] values = new long[entityIndex.sortedFields.size()];
-        for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
-            EntityField field = entityIndex.sortedFields.get(i);
+        final List<EntityField> hashedFields = entityIndex.getHashedFields();
+        long[] values = new long[hashedFields.size()];
+        for (int i = 0; i < hashedFields.size(); ++i) {
+            EntityField field = hashedFields.get(i);
             Object value = filters.get(field.getName());
             if (value != null) {
                 field.throwIfNotMatch(value.getClass());
@@ -57,8 +57,13 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
             filterValues.add(value);
         }
 
+        EntityField field = entityIndex.getIndexedField();
+        field.throwIfNotMatch(filter.getBeginValue().getClass());
+        field.throwIfNotMatch(filter.getEndValue().getClass());
+
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
+        this.endValue = IntervalIndexKey.castToLong(filter.getEndValue());
 
         this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
         if (this.dataKeyPattern != null) {
@@ -66,7 +71,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
         }
 
         this.indexIteratorId = dataEnumerable.createIterator(entityIndex.columnFamily);
-        this.indexKeyValue = dataEnumerable.seek(indexIteratorId, IndexKey.buildKeyPattern(values));
+        this.indexKeyValue = dataEnumerable.seek(indexIteratorId, IntervalIndexKey.buildKeyPattern(values, filter.getBeginValue()));
 
         nextImpl();
     }
@@ -74,8 +79,12 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     @Override
     void nextImpl() throws DataSourceDatabaseException {
         while (indexKeyValue != null) {
-            nextElement = findObject(IndexKey.unpackId(indexKeyValue.getKey()));
-            indexKeyValue = dataEnumerable.next(indexIteratorId);
+            if (IntervalIndexKey.compare(indexKeyValue.getKey(), endValue) > 0) {
+                nextElement = null;
+            } else {
+                nextElement = findObject(IntervalIndexKey.unpackId(indexKeyValue.getKey()));
+            }
+            indexKeyValue = dataEnumerable.step(indexIteratorId, DataSource.StepDirection.FORWARD);
             if (nextElement != null) {
                 return;
             }

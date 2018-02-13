@@ -13,7 +13,7 @@ public class EntityIndex extends BaseIndex {
     }
 
     @Override
-    String getTypeMarker() {
+    protected String getIndexName() {
         return "index";
     }
 }

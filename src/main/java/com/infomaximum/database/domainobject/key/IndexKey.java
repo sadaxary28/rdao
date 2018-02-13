@@ -46,8 +46,7 @@ public class IndexKey extends Key {
     }
 
     public static long unpackId(final byte[] src) {
-        final int longCount = readLongCount(src);
-        return TypeConvert.unpackLong(src, (longCount - 1) * ID_BYTE_SIZE);
+        return TypeConvert.unpackLong(src, src.length - ID_BYTE_SIZE);
     }
 
     public static KeyPattern buildKeyPattern(final long[] fieldValues) {

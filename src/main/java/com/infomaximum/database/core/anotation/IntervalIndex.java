@@ -5,12 +5,14 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/**
- * Created by kris on 18.05.17.
- */
 @Target({})
 @Retention(RUNTIME)
-public @interface Index {
+public @interface IntervalIndex {
 
-    String[] fields();
+    /**
+     * Supported Integer, Double, Date types only.
+     */
+    String indexedField();
+
+    String[] hashedFields() default {};
 }

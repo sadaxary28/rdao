@@ -3,6 +3,7 @@ package com.infomaximum.database.core.schema;
 import com.infomaximum.database.core.anotation.Entity;
 import com.infomaximum.database.core.anotation.Field;
 import com.infomaximum.database.core.anotation.Index;
+import com.infomaximum.database.core.anotation.IntervalIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.runtime.FieldNotFoundException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
@@ -36,6 +37,7 @@ public class StructEntity {
     private final Map<String, EntityField> nameFields;
     private final List<EntityIndex> indexes;
     private final List<EntityPrefixIndex> prefixIndexes;
+    private final List<EntityIntervalIndex> intervalIndexes;
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     StructEntity(Class<? extends DomainObject> clazz) {
@@ -68,6 +70,7 @@ public class StructEntity {
         this.fields = Collections.unmodifiableSet(modifiableFields);
         this.indexes = buildIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
+        this.intervalIndexes = buildIntervalIndexes(annotationEntity);
     }
 
     private void registerToForeignEntity(EntityField foreignField) {
@@ -104,7 +107,7 @@ public class StructEntity {
                 continue;
             }
 
-            if (index.sortedFields.stream().map(EntityField::getName).allMatch(indexedFields::contains)) {
+            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getName()))) {
                 return index;
             }
         }
@@ -117,7 +120,24 @@ public class StructEntity {
                 continue;
             }
 
-            if (index.sortedFields.stream().map(EntityField::getName).allMatch(indexedFields::contains)) {
+            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getName()))) {
+                return index;
+            }
+        }
+        return null;
+    }
+
+    public EntityIntervalIndex getIntervalIndex(Collection<String> hashedFields, String indexedField) {
+        for (EntityIntervalIndex index : intervalIndexes) {
+            if (index.sortedFields.size() != (hashedFields.size() + 1)) {
+                continue;
+            }
+
+            if (!index.getIndexedField().getName().equals(indexedField)) {
+                continue;
+            }
+
+            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getName()))) {
                 return index;
             }
         }
@@ -130,6 +150,10 @@ public class StructEntity {
 
     public List<EntityPrefixIndex> getPrefixIndexes() {
         return prefixIndexes;
+    }
+
+    public List<EntityIntervalIndex> getIntervalIndexes() {
+        return intervalIndexes;
     }
 
     public List<Reference> getReferencingForeignFields() {
@@ -149,15 +173,13 @@ public class StructEntity {
     }
 
     static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
-        while (true) {
-            if (clazz.isAnnotationPresent(Entity.class)) {
-                return clazz;
-            }
+        while (!clazz.isAnnotationPresent(Entity.class)) {
             if (!DomainObject.class.isAssignableFrom(clazz.getSuperclass())) {
                 throw new StructEntityException("Not found " + Entity.class + " annotation in " + clazz + ".");
             }
             clazz = (Class<? extends DomainObject>) clazz.getSuperclass();
         }
+        return clazz;
     }
 
     private static String buildColumnFamily(Entity entity) {
@@ -196,6 +218,15 @@ public class StructEntity {
         List<EntityPrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
         for (Index index: entity.prefixIndexes()) {
             result.add(new EntityPrefixIndex(index, this));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    private List<EntityIntervalIndex> buildIntervalIndexes(Entity entity) {
+        List<EntityIntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
+        for (IntervalIndex index: entity.intervalIndexes()) {
+            result.add(new EntityIntervalIndex(index, this));
         }
 
         return Collections.unmodifiableList(result);

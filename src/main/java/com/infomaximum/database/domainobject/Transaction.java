@@ -9,6 +9,7 @@ import com.infomaximum.database.datasource.modifier.ModifierRemove;
 import com.infomaximum.database.datasource.modifier.ModifierSet;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.IndexKey;
+import com.infomaximum.database.domainobject.key.IntervalIndexKey;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
@@ -64,9 +65,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         final String columnFamily = object.getStructEntity().getColumnFamily();
         final List<Modifier> modifiers = new ArrayList<>();
+        final Map<EntityField, Object> loadedValues = object.getLoadedValues();
 
         // update indexed values
-        Map<EntityField, Object> loadedValues = object.getLoadedValues();
         for (EntityIndex index : object.getStructEntity().getIndexes()){
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
@@ -76,6 +77,14 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // update prefix-indexed values
         for (EntityPrefixIndex index: object.getStructEntity().getPrefixIndexes()) {
+            if (anyChanged(index.sortedFields, newValues)) {
+                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
+            }
+        }
+
+        // update interval-indexed values
+        for (EntityIntervalIndex index: object.getStructEntity().getIntervalIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
                 updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
@@ -111,9 +120,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         final String columnFamily = obj.getStructEntity().getColumnFamily();
         final List<Modifier> modifiers = new ArrayList<>();
+        final Map<EntityField, Object> loadedValues = new HashMap<>();
 
         // delete indexed values
-        Map<EntityField, Object> loadedValues = new HashMap<>();
         for (EntityIndex index : obj.getStructEntity().getIndexes()) {
             tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
@@ -121,6 +130,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // delete prefix-indexed values
         for (EntityPrefixIndex index: obj.getStructEntity().getPrefixIndexes()) {
+            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
+        }
+
+        // delete interval-indexed values
+        for (EntityIntervalIndex index: obj.getStructEntity().getIntervalIndexes()) {
             tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
         }
@@ -226,6 +241,36 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         PrefixIndexUtils.removeIndexedLexemes(index, id, lexemes, destination, dataSource, transactionId);
+    }
+
+    static void updateIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) {
+        final List<EntityField> hashedFields = index.getHashedFields();
+        final EntityField indexedField = index.getIndexedField();
+        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
+
+        // Remove old value-index
+        IndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
+        indexKey.setIndexedValue(prevValues.get(indexedField));
+        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
+
+        // Add new value-index
+        for (int i = 0; i < hashedFields.size(); ++i) {
+            EntityField field = hashedFields.get(i);
+            Object value = newValues.containsKey(field) ? newValues.get(field) : prevValues.get(field);
+            indexKey.getHashedValues()[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
+        }
+        indexKey.setIndexedValue(newValues.containsKey(indexedField) ? newValues.get(indexedField) : prevValues.get(indexedField));
+        destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
+    }
+
+    static void removeIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) {
+        final List<EntityField> hashedFields = index.getHashedFields();
+        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
+
+        IndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
+        indexKey.setIndexedValue(values.get(index.getIndexedField()));
+
+        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
     }
 
     private static boolean anyChanged(List<EntityField> fields, Map<EntityField, Object> newValues) {
