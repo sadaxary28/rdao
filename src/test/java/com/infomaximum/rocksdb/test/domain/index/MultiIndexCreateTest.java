@@ -11,7 +11,7 @@ import org.junit.Test;
 /**
  * Created by kris on 22.04.17.
  */
-public class ComboIndexDomainObjectTest extends ExchangeFolderDataTest {
+public class MultiIndexCreateTest extends ExchangeFolderDataTest {
 
     @Test
     public void run() throws Exception {
