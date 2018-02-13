@@ -166,11 +166,11 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name2));
     }
 
-    private void assertEquals(List<Double> expectedIds, String fieldName, Double begin, Double end) throws DatabaseException {
+    protected void assertEquals(List<Double> expectedIds, String fieldName, Double begin, Double end) throws DatabaseException {
         assertEquals(expectedIds, new IntervalIndexFilter(fieldName, begin, end));
     }
 
-    private void assertEquals(List<Long> expectedIds, String fieldName, Long begin, Long end) throws DatabaseException {
+    protected void assertEquals(List<Long> expectedIds, String fieldName, Long begin, Long end) throws DatabaseException {
         assertEquals(expectedIds, new IntervalIndexFilter(fieldName, begin, end));
     }
 

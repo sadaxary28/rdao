@@ -264,9 +264,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     static void removeIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) {
-        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[index.sortedFields.size()]);
+        final List<EntityField> hashedFields = index.getHashedFields();
+        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
 
-        IndexUtils.setHashValues(index.getHashedFields(), values, indexKey.getHashedValues());
+        IndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
         indexKey.setIndexedValue(values.get(index.getIndexedField()));
 
         destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
