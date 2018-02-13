@@ -35,4 +35,8 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
     public void setFolderId(long folderId) {
         set(FIELD_FOLDER_ID, folderId);
     }
+
+    public void setDouble(Double value) {
+        set(FIELD_DOUBLE, value);
+    }
 }

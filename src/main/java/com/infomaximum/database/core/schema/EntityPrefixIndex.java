@@ -9,7 +9,7 @@ public class EntityPrefixIndex extends BaseIndex {
     }
 
     @Override
-    String getTypeMarker() {
+    protected String getIndexName() {
         return "prefixindex";
     }
 }

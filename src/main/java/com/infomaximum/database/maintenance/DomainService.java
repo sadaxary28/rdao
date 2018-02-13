@@ -10,6 +10,7 @@ import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.domainobject.key.IndexKey;
+import com.infomaximum.database.domainobject.key.IntervalIndexKey;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
@@ -83,6 +84,10 @@ public class DomainService {
             ensureIndex(index, () -> doPrefixIndex(index));
         }
 
+        for (EntityIntervalIndex index : domain.getIntervalIndexes()) {
+            ensureIndex(index, () -> doIntervalIndex(index));
+        }
+
         if (changeMode == ChangeMode.REMOVAL) {
             remove();
         }
@@ -98,6 +103,10 @@ public class DomainService {
         }
 
         for (EntityPrefixIndex index : domain.getPrefixIndexes()) {
+            columnFamilies.remove(index.columnFamily);
+        }
+
+        for (EntityIntervalIndex index : domain.getIntervalIndexes()) {
             columnFamilies.remove(index.columnFamily);
         }
     }
@@ -156,6 +165,21 @@ public class DomainService {
                 PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, field.getName()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, destination, dataSource, transactionId);
+        });
+    }
+
+    private void doIntervalIndex(EntityIntervalIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+        final List<EntityField> hashedFields = index.getHashedFields();
+        final EntityField indexedField = index.getIndexedField();
+        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.size()]);
+
+        indexData(indexingFields, (obj, transactionId, destination) -> {
+            indexKey.setId(obj.getId());
+            IndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            indexKey.setIndexedValue(obj.get(indexedField.getClass(), indexedField.getName()));
+
+            destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
         });
     }
 
