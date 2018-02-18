@@ -7,13 +7,14 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 
 
 public abstract class BaseIndexIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     final DataEnumerable dataEnumerable;
-    final Class<E> clazz;
+    final Constructor<E> constructor;
     final Set<String> loadingFields;
 
     long indexIteratorId = -1;
@@ -23,7 +24,7 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     BaseIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DataSourceDatabaseException {
         this.dataEnumerable = dataEnumerable;
-        this.clazz = clazz;
+        this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
     }
 
@@ -70,12 +71,12 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     E findObject(long id) throws DataSourceDatabaseException {
         if (dataKeyPattern == null) {
-            return dataEnumerable.buildDomainObject(clazz, id, loadingFields);
+            return dataEnumerable.buildDomainObject(constructor, id, loadingFields);
         }
 
         dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(id));
 
-        E obj = dataEnumerable.seekObject(clazz, loadingFields, dataIteratorId, dataKeyPattern, null);
+        E obj = dataEnumerable.seekObject(constructor, loadingFields, dataIteratorId, dataKeyPattern, null);
         return checkFilter(obj) ? obj : null;
     }
 

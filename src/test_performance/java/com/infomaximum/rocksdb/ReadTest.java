@@ -9,9 +9,18 @@ import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class ReadTest extends DomainDataTest {
+
+    private static final Set<String> preloaded = new HashSet<>(Arrays.asList(
+            RecordIndexEditable.FIELD_STRING_1,
+            RecordIndexEditable.FIELD_LONG_1,
+            RecordIndexEditable.FIELD_BOOLEAN_1,
+            RecordIndexEditable.FIELD_INT_1));
 
     @Test
     public void iterateRecords() throws Exception {
@@ -28,7 +37,7 @@ public class ReadTest extends DomainDataTest {
         transaction.commit();
 
         PerfomanceTest.test(200, step -> {
-            try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE)) {
+            try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE, preloaded)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
                 }
@@ -55,9 +64,10 @@ public class ReadTest extends DomainDataTest {
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
 
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
-            while (i.hasNext()) {
-                RecordIndexEditable rec = i.next();
+            try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
+                while (i.hasNext()) {
+                    RecordIndexEditable rec = i.next();
+                }
             }
         });
     }
@@ -73,17 +83,18 @@ public class ReadTest extends DomainDataTest {
         Transaction transaction = domainObjectSource.buildTransaction();
         for (int i = 0; i < recordCount; ++i) {
             RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            rec.setLong1((i % 100) == 0 ? fixedLong : RandomUtil.random.nextLong());
+            rec.setLong1((i % 10) == 0 ? fixedLong : RandomUtil.random.nextLong());
             transaction.save(rec);
         }
         transaction.commit();
 
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
 
-        PerfomanceTest.test(50, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
-            while (i.hasNext()) {
-                RecordIndexEditable rec = i.next();
+        PerfomanceTest.test(1000, step -> {
+            try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
+                while (i.hasNext()) {
+                    RecordIndexEditable rec = i.next();
+                }
             }
         });
     }

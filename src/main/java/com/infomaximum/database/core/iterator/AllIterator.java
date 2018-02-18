@@ -7,13 +7,14 @@ import com.infomaximum.database.domainobject.key.FieldKey;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
 import com.infomaximum.database.exception.DatabaseException;
 
+import java.lang.reflect.Constructor;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
-    private final Class<E> clazz;
+    private final Constructor<E> constructor;
     private final Set<String> loadingFields;
     private final long dataIteratorId;
 
@@ -22,12 +23,12 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
-        this.clazz = clazz;
+        this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
         String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         this.dataIteratorId = dataEnumerable.createIterator(columnFamily);
 
-        nextElement = dataEnumerable.seekObject(clazz, loadingFields, dataIteratorId, FieldKey.buildKeyPattern(loadingFields), state);
+        nextElement = dataEnumerable.seekObject(constructor, loadingFields, dataIteratorId, FieldKey.buildKeyPattern(loadingFields), state);
         if (nextElement == null) {
             close();
         }
@@ -55,7 +56,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     }
 
     private void nextImpl() throws DataSourceDatabaseException {
-        nextElement = dataEnumerable.nextObject(clazz, loadingFields, dataIteratorId, state);
+        nextElement = dataEnumerable.nextObject(constructor, loadingFields, dataIteratorId, state);
         if (nextElement == null) {
             close();
         }

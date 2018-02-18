@@ -4,8 +4,9 @@ import com.infomaximum.database.core.schema.EntityField;
 import com.infomaximum.database.core.schema.Schema;
 import com.infomaximum.database.core.schema.StructEntity;
 import com.infomaximum.database.exception.DataSourceDatabaseException;
-import com.infomaximum.database.utils.BaseEnum;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -71,6 +72,14 @@ public abstract class DomainObject {
      */
     protected void _setLoadedField(String name, Object value) {
         loadedFieldValues.put(name, Optional.ofNullable(value));
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
+     * @param dataSource
+     */
+    protected void _setDataSource(DataEnumerable dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -157,5 +166,13 @@ public abstract class DomainObject {
                 .append(getClass().getSuperclass().getName()).append('(')
                 .append("id: ").append(id)
                 .append(')').toString();
+    }
+
+    public static <T extends DomainObject> Constructor<T> getConstructor(Class<T> clazz) {
+        try {
+            return clazz.getConstructor(long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalTypeException(e);
+        }
     }
 }

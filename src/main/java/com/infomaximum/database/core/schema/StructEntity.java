@@ -7,14 +7,10 @@ import com.infomaximum.database.core.anotation.IntervalIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.runtime.FieldNotFoundException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class StructEntity {
-
-    private final static Logger log = LoggerFactory.getLogger(StructEntity.class);
 
     public static class Reference {
 
@@ -28,7 +24,6 @@ public class StructEntity {
     }
 
     public final static String NAMESPACE_SEPARATOR = ".";
-    public final static java.lang.reflect.Field dataSourceField = getDataSourceField();
 
     private final Class<? extends DomainObject> clazz;
     private final String name;
@@ -158,18 +153,6 @@ public class StructEntity {
 
     public List<Reference> getReferencingForeignFields() {
         return referencingForeignFields;
-    }
-
-    private static java.lang.reflect.Field getDataSourceField() {
-        java.lang.reflect.Field field = null;
-        try {
-            field = DomainObject.class.getDeclaredField("dataSource");
-            field.setAccessible(true);
-        } catch (Exception e) {
-            log.error("Exception StructEntity.getDataSourceField", e);
-        }
-
-        return field;
     }
 
     static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {

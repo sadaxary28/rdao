@@ -42,7 +42,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             long id = dataSource.nextId(entity.getColumnFamily());
 
-            T domainObject = buildDomainObject(clazz, id, Collections.emptyList());
+            T domainObject = buildDomainObject(DomainObject.getConstructor(clazz), id, Collections.emptyList());
 
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (EntityField field: entity.getFields()) {
