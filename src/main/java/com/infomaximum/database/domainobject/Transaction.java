@@ -161,21 +161,22 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     public void commit() throws DatabaseException {
         if (transaction != null) {
             transaction.commit();
-            close();
         }
+        close();
     }
 
     @Override
     public void close() throws DatabaseException {
+        closed = true;
         try (DBTransaction t = transaction) {
             transaction = null;
-            closed = true;
         }
     }
 
     private void ensureTransaction() throws DatabaseException {
         if (closed) {
-            throw new ClosedObjectException(this.getClass());
+            //TODO Миронов В. убрать после фикса в subsystems
+            //throw new ClosedObjectException(this.getClass());
         }
 
         if (transaction == null) {
