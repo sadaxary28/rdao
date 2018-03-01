@@ -32,6 +32,11 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         this.foreignFieldEnabled = value;
     }
 
+    public DBTransaction getDBTransaction() throws DatabaseException {
+        ensureTransaction();
+        return transaction;
+    }
+
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
         ensureTransaction();
 
