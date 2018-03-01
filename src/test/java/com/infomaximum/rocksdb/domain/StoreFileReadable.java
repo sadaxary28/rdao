@@ -1,11 +1,11 @@
 package com.infomaximum.rocksdb.domain;
 
-import com.infomaximum.database.core.anotation.Entity;
-import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.anotation.Index;
-import com.infomaximum.database.core.anotation.IntervalIndex;
+import com.infomaximum.database.anotation.Entity;
+import com.infomaximum.database.anotation.Field;
+import com.infomaximum.database.anotation.Index;
+import com.infomaximum.database.anotation.IntervalIndex;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
+
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.rocksdb.domain.type.FormatType;
@@ -88,15 +88,15 @@ public class StoreFileReadable extends DomainObject {
         return get(FormatType.class, FIELD_FORMAT);
     }
 
-    public Long getFolderId() throws DataSourceDatabaseException {
+    public Long getFolderId() throws DatabaseException {
         return getLong(FIELD_FOLDER_ID);
     }
 
-    public Long getDouble() throws DataSourceDatabaseException {
+    public Long getDouble() throws DatabaseException {
         return getLong(FIELD_DOUBLE);
     }
 
-    public Long getDate() throws DataSourceDatabaseException {
+    public Long getDate() throws DatabaseException {
         return getLong(FIELD_DATE);
     }
 }

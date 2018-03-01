@@ -1,7 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.domainobject.key.Key;
+import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import org.junit.Assert;

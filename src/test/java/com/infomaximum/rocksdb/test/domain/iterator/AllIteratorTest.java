@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
-import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.datasource.modifier.ModifierRemove;
+import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.Transaction;
@@ -27,11 +27,9 @@ public class AllIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        long transactionId = dataSource.beginTransaction();
-        try {
-            dataSource.modify(Arrays.asList(new ModifierRemove(Schema.getEntity(StoreFileReadable.class).getColumnFamily(), TypeConvert.pack(2L), false)), transactionId);
-        } finally {
-            dataSource.commitTransaction(transactionId);
+        try (DBTransaction transaction = rocksDBProvider.beginTransaction()) {
+            transaction.delete(Schema.getEntity(StoreFileReadable.class).getColumnFamily(), TypeConvert.pack(2L));
+            transaction.commit();
         }
 
         try (IteratorEntity iterator = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, Collections.singleton(StoreFileReadable.FIELD_SIZE))) {

@@ -11,20 +11,20 @@ public class NamespaceValidatorTest extends DomainDataTest {
 
     @Test
     public void validateEmptySchema() throws DatabaseException {
-        new NamespaceValidator(dataSource).execute();
+        new NamespaceValidator(rocksDBProvider).execute();
         Assert.assertTrue(true);
     }
 
     @Test
     public void validateValidSchema() throws DatabaseException {
 
-        dataSource.createColumnFamily("com.infomaximum.database.exception");
-        dataSource.createColumnFamily("com.infomaximum.database.maintenance");
+        rocksDBProvider.createColumnFamily("com.infomaximum.database.exception");
+        rocksDBProvider.createColumnFamily("com.infomaximum.database.maintenance");
 
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.exception");
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.maintenance");
+        rocksDBProvider.createColumnFamily("com.infomaximum.rocksdb.exception");
+        rocksDBProvider.createColumnFamily("com.infomaximum.rocksdb.maintenance");
 
-        new NamespaceValidator(dataSource)
+        new NamespaceValidator(rocksDBProvider)
                 .withNamespace("com.infomaximum.database")
                 .withNamespace("com.infomaximum.rocksdb")
                 .execute();
@@ -34,16 +34,16 @@ public class NamespaceValidatorTest extends DomainDataTest {
     @Test
     public void validateInvalidSchema() throws DatabaseException {
 
-        dataSource.createColumnFamily("com.infomaximum.database.exception");
-        dataSource.createColumnFamily("com.infomaximum.database.maintenance");
+        rocksDBProvider.createColumnFamily("com.infomaximum.database.exception");
+        rocksDBProvider.createColumnFamily("com.infomaximum.database.maintenance");
 
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.exception");
-        dataSource.createColumnFamily("com.infomaximum.rocksdb.maintenance");
+        rocksDBProvider.createColumnFamily("com.infomaximum.rocksdb.exception");
+        rocksDBProvider.createColumnFamily("com.infomaximum.rocksdb.maintenance");
 
-        dataSource.createColumnFamily("com.infomaximum.maintenance");
+        rocksDBProvider.createColumnFamily("com.infomaximum.maintenance");
 
         try {
-            new NamespaceValidator(dataSource)
+            new NamespaceValidator(rocksDBProvider)
                     .withNamespace("com.infomaximum.database")
                     .withNamespace("com.infomaximum.rocksdb")
                     .execute();

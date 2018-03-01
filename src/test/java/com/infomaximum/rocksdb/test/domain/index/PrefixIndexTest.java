@@ -1,9 +1,10 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.domainobject.key.Key;
-import com.infomaximum.database.domainobject.key.PrefixIndexKey;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.utils.key.Key;
+import com.infomaximum.database.utils.key.PrefixIndexKey;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
@@ -38,16 +39,13 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily);
-        try {
-            KeyValue keyValue = dataSource.seek(iteratorId, null);
+        try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
+            KeyValue keyValue = iterator.seek(null);
             while (keyValue != null) {
                 assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
 
         Assert.assertEquals(0, currentLexemes.size());
@@ -62,21 +60,18 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily);
-        try {
-            KeyValue keyValue = dataSource.seek(iteratorId, null);
+        try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
+            KeyValue keyValue = iterator.seek(null);
             while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertEquals(0, key.getBlockNumber());
                 Assert.assertArrayEquals(bufferForFullBlock.array(), keyValue.getValue());
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
                 assertEquals(1, buffer.array(), currentLexemes, keyValue);
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
 
         Assert.assertEquals(0, currentLexemes.size());
@@ -113,21 +108,18 @@ public class PrefixIndexTest extends StoreFileDataTest {
         });
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily);
-        try {
-            KeyValue keyValue = dataSource.seek(iteratorId, null);
+        try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
+            KeyValue keyValue = iterator.seek(null);
             while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertEquals(0, key.getBlockNumber());
                 Assert.assertArrayEquals(bufferForFullBlock.array(), keyValue.getValue());
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
                 assertEquals(1, buffer.array(), currentLexemes, keyValue);
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
 
         Assert.assertEquals(0, currentLexemes.size());
@@ -145,16 +137,13 @@ public class PrefixIndexTest extends StoreFileDataTest {
         buffer = PrefixIndexUtils.removeId(removingId, buffer);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
-        long iteratorId = dataSource.createIterator(indexColumnFamily);
-        try {
-            KeyValue keyValue = dataSource.seek(iteratorId, null);
+        try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
+            KeyValue keyValue = iterator.seek(null);
             while (keyValue != null) {
                 assertEquals(0, buffer, currentLexemes, keyValue);
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
 
         Assert.assertEquals(0, currentLexemes.size());
@@ -173,16 +162,13 @@ public class PrefixIndexTest extends StoreFileDataTest {
         });
 
         List<String> currentLexemes = new ArrayList<>(Arrays.asList("test", "string", "inform@mail.", "mail."));
-        long iteratorId = dataSource.createIterator(indexColumnFamily);
-        try {
-            KeyValue keyValue = dataSource.seek(iteratorId, null);
+        try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
+            KeyValue keyValue = iterator.seek(null);
             while (keyValue != null) {
                 assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
-                keyValue = dataSource.next(iteratorId);
+                keyValue = iterator.next();
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
 
         Assert.assertEquals(0, currentLexemes.size());

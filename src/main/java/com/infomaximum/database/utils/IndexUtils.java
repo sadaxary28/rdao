@@ -1,10 +1,10 @@
 package com.infomaximum.database.utils;
 
 import com.google.common.primitives.UnsignedInts;
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.schema.TypeConverter;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.TypeConverter;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.util.Date;
@@ -24,13 +24,14 @@ public class IndexUtils {
         }
     }
 
-    public static void setHashValues(final List<EntityField> sortedFields, final DomainObject object, long[] destination) throws DataSourceDatabaseException {
+    public static void setHashValues(final List<EntityField> sortedFields, final DomainObject object, long[] destination) throws DatabaseException {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
             destination[i] = buildHash(field.getType(), object.get(field.getClass(), field.getName()), field.getConverter());
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> long buildHash(Class<T> type, Object value, TypeConverter<T> converter) {
         if (converter != null) {
             return converter.buildHash((T)value);

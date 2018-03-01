@@ -1,18 +1,13 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.schema.*;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyPattern;
-import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.datasource.modifier.Modifier;
-import com.infomaximum.database.datasource.modifier.ModifierRemove;
-import com.infomaximum.database.datasource.modifier.ModifierSet;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.domainobject.key.IndexKey;
-import com.infomaximum.database.domainobject.key.IntervalIndexKey;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.provider.*;
+import com.infomaximum.database.utils.key.FieldKey;
+import com.infomaximum.database.utils.key.IndexKey;
+import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.database.exception.runtime.ClosedObjectException;
+import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
@@ -21,11 +16,12 @@ import java.util.*;
 
 public class Transaction extends DataEnumerable implements AutoCloseable {
 
-    private long transactionId = -1;
+    private DBTransaction transaction = null;
+    private boolean closed = false;
     private boolean foreignFieldEnabled = true;
 
-    protected Transaction(DataSource dataSource) {
-        super(dataSource);
+    protected Transaction(DBProvider dbProvider) {
+        super(dbProvider);
     }
 
     public boolean isForeignFieldEnabled() {
@@ -37,10 +33,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
+        ensureTransaction();
+
         try {
             StructEntity entity = Schema.getEntity(clazz);
 
-            long id = dataSource.nextId(entity.getColumnFamily());
+            long id = transaction.nextId(entity.getColumnFamily());
 
             T domainObject = buildDomainObject(DomainObject.getConstructor(clazz), id, Collections.emptyList());
 
@@ -64,14 +62,13 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         ensureTransaction();
 
         final String columnFamily = object.getStructEntity().getColumnFamily();
-        final List<Modifier> modifiers = new ArrayList<>();
         final Map<EntityField, Object> loadedValues = object.getLoadedValues();
 
         // update indexed values
         for (EntityIndex index : object.getStructEntity().getIndexes()){
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
+                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
             }
         }
 
@@ -79,7 +76,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (EntityPrefixIndex index: object.getStructEntity().getPrefixIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
+                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
             }
         }
 
@@ -87,12 +84,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (EntityIntervalIndex index: object.getStructEntity().getIntervalIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, modifiers);
+                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
             }
         }
 
         // update self-object
-        modifiers.add(new ModifierSet(columnFamily, new FieldKey(object.getId()).pack()));
+        transaction.put(columnFamily, new FieldKey(object.getId()).pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         for (Map.Entry<EntityField, Object> newValue: newValues.entrySet()) {
             EntityField field = newValue.getKey();
             Object value = newValue.getValue();
@@ -102,13 +99,11 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             byte[] key = new FieldKey(object.getId(), field.getName()).pack();
             if (value != null) {
                 byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getConverter());
-                modifiers.add(new ModifierSet(columnFamily, key, bValue));
+                transaction.put(columnFamily, key, bValue);
             } else {
-                modifiers.add(new ModifierRemove(columnFamily, key, false));
+                transaction.delete(columnFamily, key);
             }
         }
-
-        modify(modifiers);
 
         object._flushNewValues();
     }
@@ -119,95 +114,92 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         validateRemovingObject(obj);
 
         final String columnFamily = obj.getStructEntity().getColumnFamily();
-        final List<Modifier> modifiers = new ArrayList<>();
         final Map<EntityField, Object> loadedValues = new HashMap<>();
 
         // delete indexed values
         for (EntityIndex index : obj.getStructEntity().getIndexes()) {
             tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
+            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete prefix-indexed values
         for (EntityPrefixIndex index: obj.getStructEntity().getPrefixIndexes()) {
             tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
+            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete interval-indexed values
         for (EntityIntervalIndex index: obj.getStructEntity().getIntervalIndexes()) {
             tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, modifiers);
+            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete self-object
-        modifiers.add(new ModifierRemove(columnFamily, FieldKey.buildKeyPrefix(obj.getId()), true));
-
-        modify(modifiers);
+        transaction.deleteRange(columnFamily, FieldKey.buildKeyPrefix(obj.getId()));
     }
 
     @Override
-    public <T, U extends DomainObject> T getValue(final EntityField field, U obj) throws DataSourceDatabaseException {
+    public <T, U extends DomainObject> T getValue(final EntityField field, U obj) throws DatabaseException {
         ensureTransaction();
 
-        byte[] value = dataSource.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getName()).pack(), transactionId);
+        byte[] value = transaction.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getName()).pack());
         return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 
     @Override
-    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
+    public DBIterator createIterator(String columnFamily) throws DatabaseException {
         ensureTransaction();
 
-        return dataSource.createIterator(columnFamily, transactionId);
+        return transaction.createIterator(columnFamily);
     }
 
-    public void modify(List<Modifier> modifiers) throws DataSourceDatabaseException {
-        ensureTransaction();
-        dataSource.modify(modifiers, transactionId);
-    }
-
-    public void commit() throws DataSourceDatabaseException {
-        if (transactionId != -1) {
-            dataSource.commitTransaction(transactionId);
-            transactionId = -1;
+    public void commit() throws DatabaseException {
+        if (transaction != null) {
+            transaction.commit();
+            close();
         }
     }
 
     @Override
-    public void close() throws DataSourceDatabaseException {
-        if (transactionId != -1) {
-            dataSource.rollbackTransaction(transactionId);
+    public void close() throws DatabaseException {
+        try (DBTransaction t = transaction) {
+            transaction = null;
+            closed = true;
         }
     }
 
-    private void ensureTransaction() throws DataSourceDatabaseException {
-        if (transactionId == -1) {
-            transactionId = dataSource.beginTransaction();
+    private void ensureTransaction() throws DatabaseException {
+        if (closed) {
+            throw new ClosedObjectException(this.getClass());
+        }
+
+        if (transaction == null) {
+            transaction = dbProvider.beginTransaction();
         }
     }
 
-    private void tryLoadFields(String columnFamily, long id, final List<EntityField> fields, Map<EntityField, Object> loadedValues) throws DataSourceDatabaseException {
+    private void tryLoadFields(String columnFamily, long id, final List<EntityField> fields, Map<EntityField, Object> loadedValues) throws DatabaseException {
         for (EntityField field: fields) {
             tryLoadField(columnFamily, id, field, loadedValues);
         }
     }
 
-    private void tryLoadField(String columnFamily, long id, EntityField field, Map<EntityField, Object> loadedValues) throws DataSourceDatabaseException {
+    private void tryLoadField(String columnFamily, long id, EntityField field, Map<EntityField, Object> loadedValues) throws DatabaseException {
         if (loadedValues.containsKey(field)) {
             return;
         }
 
         final byte[] key = new FieldKey(id, field.getName()).pack();
-        final byte[] value = dataSource.getValue(columnFamily, key, transactionId);
+        final byte[] value = transaction.getValue(columnFamily, key);
         loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getConverter()));
     }
 
-    static void updateIndexedValue(EntityIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) {
+    static void updateIndexedValue(EntityIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, DBTransaction transaction) throws DatabaseException {
         final IndexKey indexKey = new IndexKey(id, new long[index.sortedFields.size()]);
 
         // Remove old value-index
         IndexUtils.setHashValues(index.sortedFields, prevValues, indexKey.getFieldValues());
-        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
+        transaction.delete(index.columnFamily, indexKey.pack());
 
         // Add new value-index
         for (int i = 0; i < index.sortedFields.size(); ++i) {
@@ -215,35 +207,35 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             Object value = newValues.containsKey(field) ? newValues.get(field) : prevValues.get(field);
             indexKey.getFieldValues()[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
         }
-        destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
+        transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
-    static void removeIndexedValue(EntityIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) {
+    static void removeIndexedValue(EntityIndex index, long id, Map<EntityField, Object> values, DBTransaction transaction) throws DatabaseException {
         final IndexKey indexKey = new IndexKey(id, new long[index.sortedFields.size()]);
 
         IndexUtils.setHashValues(index.sortedFields, values, indexKey.getFieldValues());
-        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
+        transaction.delete(index.columnFamily, indexKey.pack());
     }
 
-    private void updateIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) throws DataSourceDatabaseException {
+    private void updateIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, DBTransaction transaction) throws DatabaseException {
         List<String> deletingLexemes = new ArrayList<>();
         List<String> insertingLexemes = new ArrayList<>();
         PrefixIndexUtils.diffIndexedLexemes(index.sortedFields, prevValues, newValues, deletingLexemes, insertingLexemes);
 
-        PrefixIndexUtils.removeIndexedLexemes(index, id, deletingLexemes, destination, dataSource, transactionId);
-        PrefixIndexUtils.insertIndexedLexemes(index, id, insertingLexemes, destination, dataSource, transactionId);
+        PrefixIndexUtils.removeIndexedLexemes(index, id, deletingLexemes, transaction);
+        PrefixIndexUtils.insertIndexedLexemes(index, id, insertingLexemes, transaction);
     }
 
-    private void removeIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) throws DataSourceDatabaseException {
+    private void removeIndexedValue(EntityPrefixIndex index, long id, Map<EntityField, Object> values, DBTransaction transaction) throws DatabaseException {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         for (EntityField field : index.sortedFields) {
             PrefixIndexUtils.splitIndexingTextIntoLexemes((String) values.get(field), lexemes);
         }
 
-        PrefixIndexUtils.removeIndexedLexemes(index, id, lexemes, destination, dataSource, transactionId);
+        PrefixIndexUtils.removeIndexedLexemes(index, id, lexemes, transaction);
     }
 
-    static void updateIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, List<Modifier> destination) {
+    static void updateIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> prevValues, Map<EntityField, Object> newValues, DBTransaction transaction) throws DatabaseException {
         final List<EntityField> hashedFields = index.getHashedFields();
         final EntityField indexedField = index.getIndexedField();
         final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
@@ -251,7 +243,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // Remove old value-index
         IndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
         indexKey.setIndexedValue(prevValues.get(indexedField));
-        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
+        transaction.delete(index.columnFamily, indexKey.pack());
 
         // Add new value-index
         for (int i = 0; i < hashedFields.size(); ++i) {
@@ -260,17 +252,17 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             indexKey.getHashedValues()[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
         }
         indexKey.setIndexedValue(newValues.containsKey(indexedField) ? newValues.get(indexedField) : prevValues.get(indexedField));
-        destination.add(new ModifierSet(index.columnFamily, indexKey.pack()));
+        transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
-    static void removeIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> values, List<Modifier> destination) {
+    static void removeIndexedValue(EntityIntervalIndex index, long id, Map<EntityField, Object> values, DBTransaction transaction) throws DatabaseException {
         final List<EntityField> hashedFields = index.getHashedFields();
         final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
 
         IndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
         indexKey.setIndexedValue(values.get(index.getIndexedField()));
 
-        destination.add(new ModifierRemove(index.columnFamily, indexKey.pack(), false));
+        transaction.delete(index.columnFamily, indexKey.pack());
     }
 
     private static boolean anyChanged(List<EntityField> fields, Map<EntityField, Object> newValues) {
@@ -292,7 +284,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         long fkeyIdValue = (Long) value;
-        if (dataSource.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack(), transactionId) == null) {
+        if (transaction.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack()) == null) {
             throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), field, fkeyIdValue);
         }
     }
@@ -309,15 +301,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         KeyPattern keyPattern = IndexKey.buildKeyPattern(obj.getId());
         for (StructEntity.Reference ref : references) {
-            long iteratorId = dataSource.createIterator(ref.fieldIndex.columnFamily, transactionId);
-            try {
-                KeyValue keyValue = dataSource.seek(iteratorId, keyPattern);
+            try (DBIterator iterator = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+                KeyValue keyValue = iterator.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = IndexKey.unpackId(keyValue.getKey());
                     throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
                 }
-            } finally {
-                dataSource.closeIterator(iteratorId);
             }
         }
     }

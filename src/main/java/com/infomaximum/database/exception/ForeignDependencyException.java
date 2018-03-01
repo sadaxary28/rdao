@@ -1,6 +1,6 @@
 package com.infomaximum.database.exception;
 
-import com.infomaximum.database.core.schema.EntityField;
+import com.infomaximum.database.schema.EntityField;
 
 public class ForeignDependencyException extends DatabaseException {
 

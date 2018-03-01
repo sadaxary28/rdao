@@ -37,6 +37,26 @@ public class OptimisticTransactionTest extends RocksDataTest {
     }
 
     @Test
+    public void leaveTransaction() throws RocksDBException {
+        try(final Options options = new Options().setCreateIfMissing(true);
+            final OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString());
+            final WriteOptions writeOptions = new WriteOptions();
+            final ReadOptions readOptions = new ReadOptions()) {
+
+            txnDb.getBaseDB().put(writeOptions, key1, value1_old);
+
+            try(final Transaction txn = txnDb.beginTransaction(writeOptions)) {
+                txn.put(key1, value1_new);
+                txn.put(key2, value2_new);
+                Assert.assertArrayEquals(value1_new, txn.get(readOptions, key1));
+            }
+
+            Assert.assertArrayEquals(value1_old, txnDb.getBaseDB().get(readOptions, key1));
+            Assert.assertNull(txnDb.getBaseDB().get(readOptions, key2));
+        }
+    }
+
+    @Test
     public void rollback() throws RocksDBException {
         try(final Options options = new Options().setCreateIfMissing(true);
             final OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString());
