@@ -1,45 +1,41 @@
 package com.infomaximum.rocksdb.test;
 
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
-import com.infomaximum.rocksdb.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.RocksDBDataSource;
 import org.junit.After;
 import org.junit.Before;
 
 public abstract class DomainDataTest extends RocksDataTest {
 
-    protected RocksDataBase rocksDataBase;
+    protected RocksDBProvider rocksDBProvider;
 
-    protected DataSource dataSource;
     protected DomainObjectSource domainObjectSource;
 
     @Before
     public void init() throws Exception {
         super.init();
 
-        rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build();
-        dataSource = new RocksDBDataSource(rocksDataBase);
-        domainObjectSource = new DomainObjectSource(dataSource);
+        rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
+        domainObjectSource = new DomainObjectSource(rocksDBProvider);
     }
 
     @After
     public void destroy() throws Exception {
-        rocksDataBase.close();
+        rocksDBProvider.close();
 
         super.destroy();
     }
 
     protected void createDomain(Class<? extends DomainObject> clazz) throws DatabaseException {
         new Schema.Builder().withDomain(clazz).build();
-        new DomainService(dataSource)
+        new DomainService(rocksDBProvider)
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(clazz))

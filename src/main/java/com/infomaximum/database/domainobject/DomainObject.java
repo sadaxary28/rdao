@@ -1,11 +1,13 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
-import com.infomaximum.database.utils.BaseEnum;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
+
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,7 +37,7 @@ public abstract class DomainObject {
         return id;
     }
 
-    public <T> T get(Class<T> type, String fieldName) throws DataSourceDatabaseException {
+    public <T> T get(Class<T> type, String fieldName) throws DatabaseException {
         if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
             return (T) newFieldValues.get(fieldName);
         } else if (loadedFieldValues.containsKey(fieldName)) {
@@ -75,6 +77,14 @@ public abstract class DomainObject {
 
     /**
      * Unsafe method. Do not use in external packages!
+     * @param dataSource
+     */
+    protected void _setDataSource(DataEnumerable dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
      */
     protected void _flushNewValues() {
         if (newFieldValues == null) {
@@ -87,27 +97,27 @@ public abstract class DomainObject {
         newFieldValues.clear();
     }
 
-    protected String getString(String fieldName) throws DataSourceDatabaseException {
+    protected String getString(String fieldName) throws DatabaseException {
         return get(String.class, fieldName);
     }
 
-    protected Integer getInteger(String fieldName) throws DataSourceDatabaseException {
+    protected Integer getInteger(String fieldName) throws DatabaseException {
         return get(Integer.class, fieldName);
     }
 
-    protected Long getLong(String fieldName) throws DataSourceDatabaseException {
+    protected Long getLong(String fieldName) throws DatabaseException {
         return get(Long.class, fieldName);
     }
 
-    protected Date getDate(String fieldName) throws DataSourceDatabaseException {
+    protected Date getDate(String fieldName) throws DatabaseException {
         return get(Date.class, fieldName);
     }
 
-    protected Boolean getBoolean(String fieldName) throws DataSourceDatabaseException {
+    protected Boolean getBoolean(String fieldName) throws DatabaseException {
         return get(Boolean.class, fieldName);
     }
 
-    protected byte[] getBytes(String fieldName) throws DataSourceDatabaseException {
+    protected byte[] getBytes(String fieldName) throws DatabaseException {
         return get(byte[].class, fieldName);
     }
 
@@ -157,5 +167,13 @@ public abstract class DomainObject {
                 .append(getClass().getSuperclass().getName()).append('(')
                 .append("id: ").append(id)
                 .append(')').toString();
+    }
+
+    public static <T extends DomainObject> Constructor<T> getConstructor(Class<T> clazz) {
+        try {
+            return clazz.getConstructor(long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalTypeException(e);
+        }
     }
 }

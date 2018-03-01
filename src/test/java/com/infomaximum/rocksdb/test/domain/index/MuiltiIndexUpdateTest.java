@@ -1,14 +1,12 @@
 package com.infomaximum.rocksdb.test.domain.index;
 
-import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.domain.StoreFileReadable;
 import com.infomaximum.rocksdb.test.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.HashMap;
 
 /**
  * Created by kris on 22.04.17.

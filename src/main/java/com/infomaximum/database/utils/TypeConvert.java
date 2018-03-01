@@ -2,7 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.core.schema.TypeConverter;
+import com.infomaximum.database.schema.TypeConverter;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.nio.ByteBuffer;
@@ -105,6 +105,7 @@ public class TypeConvert {
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
             return packer.unpack(value);
@@ -126,6 +127,7 @@ public class TypeConvert {
         throw new IllegalTypeException("Unsupported type " + type);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> byte[] pack(Class<T> type, Object value, TypeConverter<T> converter){
         if (converter != null) {
             return converter.pack((T) value);

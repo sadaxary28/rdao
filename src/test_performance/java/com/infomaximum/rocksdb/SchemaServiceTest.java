@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb;
 
-import com.infomaximum.database.core.schema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.SchemaService;
 import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
@@ -29,7 +29,7 @@ public class SchemaServiceTest extends DomainDataTest {
             }
         });
 
-        SchemaService schemaService = new SchemaService(dataSource)
+        SchemaService schemaService = new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.NONE)
                 .setSchema(new Schema.Builder()

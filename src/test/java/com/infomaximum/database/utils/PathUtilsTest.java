@@ -1,8 +1,8 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.exception.DatabaseException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.rocksdb.RocksDBException;
 
 import java.nio.file.Paths;
 
@@ -15,13 +15,13 @@ public class PathUtilsTest {
         try {
             PathUtils.checkPath(Paths.get("test"));
             Assert.fail();
-        } catch (RocksDBException ignored) {
+        } catch (DatabaseException ignored) {
         }
 
         try {
             PathUtils.checkPath(Paths.get("c:/привет"));
             Assert.fail();
-        } catch (RocksDBException ignored) {
+        } catch (DatabaseException ignored) {
         }
     }
 }

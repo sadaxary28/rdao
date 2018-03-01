@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.domain.proxy;
 
-import com.infomaximum.database.core.anotation.Entity;
-import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.anotation.Index;
+import com.infomaximum.database.anotation.Entity;
+import com.infomaximum.database.anotation.Field;
+import com.infomaximum.database.anotation.Index;
 import com.infomaximum.rocksdb.domain.type.FormatType;
 
 /**

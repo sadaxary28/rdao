@@ -1,15 +1,15 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.iterator.*;
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyPattern;
-import com.infomaximum.database.datasource.KeyValue;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.domainobject.iterator.*;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.domainobject.filter.*;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.utils.key.FieldKey;
+
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
@@ -35,47 +35,28 @@ public abstract class DataEnumerable {
         }
     }
 
-    protected final DataSource dataSource;
+    protected final DBProvider dbProvider;
 
-    DataEnumerable(DataSource dataSource) {
-        this.dataSource = dataSource;
+    DataEnumerable(DBProvider dbProvider) {
+        this.dbProvider = dbProvider;
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    public DBProvider getDbProvider() {
+        return dbProvider;
     }
 
-    public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException;
-    public abstract long createIterator(String columnFamily) throws DataSourceDatabaseException;
+    public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DatabaseException;
+    public abstract DBIterator createIterator(String columnFamily) throws DatabaseException;
 
-    public KeyValue seek(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException {
-        return dataSource.seek(iteratorId, pattern);
-    }
-
-    public KeyValue next(long iteratorId) throws DataSourceDatabaseException {
-        return dataSource.next(iteratorId);
-    }
-
-    public KeyValue step(long iteratorId, DataSource.StepDirection direction) throws DataSourceDatabaseException {
-        return dataSource.step(iteratorId, direction);
-    }
-
-    public void closeIterator(long iteratorId) {
-        dataSource.closeIterator(iteratorId);
-    }
-
-    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DataSourceDatabaseException {
+    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DatabaseException {
         final String columnFamily = Schema.getEntity(clazz).getColumnFamily();
 
-        long iteratorId = createIterator(columnFamily);
-        try {
-            return seekObject(clazz, loadingFields, iteratorId, FieldKey.buildKeyPattern(id, loadingFields),null);
-        } finally {
-            dataSource.closeIterator(iteratorId);
+        try (DBIterator iterator = createIterator(columnFamily)) {
+            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, loadingFields),null);
         }
     }
 
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DatabaseException {
         return get(clazz, id, Collections.emptySet());
     }
 
@@ -96,44 +77,39 @@ public abstract class DataEnumerable {
         return find(clazz, filter, Collections.emptySet());
     }
 
-    public <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, Collection<String> preInitializedFields) {
-        T obj = buildDomainObject(clazz, id);
+    public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<String> preInitializedFields) {
+        T obj = buildDomainObject(constructor, id);
         for (String field : preInitializedFields) {
             obj._setLoadedField(field, null);
         }
         return obj;
     }
 
-    private <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id) {
+    private <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id) {
         try {
-            Constructor<T> constructor = clazz.getConstructor(long.class);
-
             T domainObject = constructor.newInstance(id);
-
-            //Устанавливаем dataSource
-            StructEntity.dataSourceField.set(domainObject, this);
-
+            domainObject._setDataSource(this);
             return domainObject;
         } catch (ReflectiveOperationException e) {
             throw new IllegalTypeException(e);
         }
     }
 
-    public <T extends DomainObject> T nextObject(final Class<T> clazz, Collection<String> preInitializedFields,
-                                                 long iteratorId, NextState state) throws DataSourceDatabaseException {
+    public <T extends DomainObject> T nextObject(final Constructor<T> constructor, Collection<String> preInitializedFields,
+                                                 DBIterator iterator, NextState state) throws DatabaseException {
         if (state.isEmpty()) {
             return null;
         }
 
-        T obj = buildDomainObject(clazz, state.nextId, preInitializedFields);
+        T obj = buildDomainObject(constructor, state.nextId, preInitializedFields);
         state.clear();
-        readObject(obj, iteratorId, state);
+        readObject(obj, iterator, state);
         return obj;
     }
 
-    public <T extends DomainObject> T seekObject(final Class<T> clazz, Collection<String> preInitializedFields,
-                                                 long iteratorId, KeyPattern pattern, NextState state) throws DataSourceDatabaseException {
-        KeyValue keyValue = seek(iteratorId, pattern);
+    public <T extends DomainObject> T seekObject(final Constructor<T> constructor, Collection<String> preInitializedFields,
+                                                 DBIterator iterator, KeyPattern pattern, NextState state) throws DatabaseException {
+        KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return null;
         }
@@ -143,15 +119,15 @@ public abstract class DataEnumerable {
             return null;
         }
 
-        T obj = buildDomainObject(clazz, key.getId(), preInitializedFields);
-        readObject(obj, iteratorId, state);
+        T obj = buildDomainObject(constructor, key.getId(), preInitializedFields);
+        readObject(obj, iterator, state);
         return obj;
     }
 
-    private <T extends DomainObject> void readObject(T obj, long iteratorId, NextState state) throws DataSourceDatabaseException {
+    private <T extends DomainObject> void readObject(T obj, DBIterator iterator, NextState state) throws DatabaseException {
         KeyValue keyValue;
         FieldKey key;
-        while ((keyValue = next(iteratorId)) != null) {
+        while ((keyValue = iterator.next()) != null) {
             key = FieldKey.unpack(keyValue.getKey());
             if (key.getId() != obj.getId()) {
                 if (!key.isBeginningObject()) {

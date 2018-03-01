@@ -1,8 +1,8 @@
 package com.infomaximum.database.maintenance;
 
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
 
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  */
 public class SchemaService {
 
-    private final DataSource dataSource;
+    private final DBProvider dbProvider;
 
     private ChangeMode changeModeMode = ChangeMode.NONE;
     private boolean isValidationMode = false;
@@ -22,8 +22,8 @@ public class SchemaService {
     private Schema schema;
     private Set<String> ignoringNamespaces = new HashSet<>();
 
-    public SchemaService(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public SchemaService(DBProvider dbProvider) {
+        this.dbProvider = dbProvider;
     }
 
     public SchemaService setChangeMode(ChangeMode value) {
@@ -59,7 +59,7 @@ public class SchemaService {
         validateConsistentNames();
 
         for (StructEntity domain : schema.getDomains()) {
-            new DomainService(dataSource)
+            new DomainService(dbProvider)
                     .setChangeMode(changeModeMode)
                     .setValidationMode(isValidationMode)
                     .setDomain(domain)
@@ -97,9 +97,9 @@ public class SchemaService {
         }
     }
 
-    private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
+    private void validateUnknownColumnFamilies() throws DatabaseException {
         final String namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
-        Set<String> columnFamilies = Arrays.stream(dataSource.getColumnFamilies())
+        Set<String> columnFamilies = Arrays.stream(dbProvider.getColumnFamilies())
                 .filter(s -> s.startsWith(namespacePrefix))
                 .collect(Collectors.toSet());
         for (StructEntity domain : schema.getDomains()) {

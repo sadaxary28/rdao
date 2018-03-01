@@ -1,9 +1,11 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.utils.key.FieldKey;
+
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.TypeConvert;
 
 public class DomainObjectSource extends DataEnumerable {
@@ -18,8 +20,8 @@ public class DomainObjectSource extends DataEnumerable {
         public void action(final Transaction transaction) throws Exception;
     }
 
-    public DomainObjectSource(DataSource dataSource) {
-        super(dataSource);
+    public DomainObjectSource(DBProvider dbProvider) {
+        super(dbProvider);
     }
 
     public void executeTransactional(final Monad operation) throws Exception {
@@ -30,17 +32,17 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     public Transaction buildTransaction() {
-        return new Transaction(dataSource);
+        return new Transaction(dbProvider);
     }
 
     @Override
-    public <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException {
-        byte[] value = dataSource.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getName()).pack());
+    public <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DatabaseException {
+        byte[] value = dbProvider.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getName()).pack());
         return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 
     @Override
-    public long createIterator(String columnFamily) throws DataSourceDatabaseException {
-        return dataSource.createIterator(columnFamily);
+    public DBIterator createIterator(String columnFamily) throws DatabaseException {
+        return dbProvider.createIterator(columnFamily);
     }
 }
