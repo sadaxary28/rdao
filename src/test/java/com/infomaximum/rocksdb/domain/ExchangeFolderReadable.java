@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.domain;
 
-import com.infomaximum.database.core.anotation.Entity;
-import com.infomaximum.database.core.anotation.Field;
-import com.infomaximum.database.core.anotation.Index;
+import com.infomaximum.database.anotation.Entity;
+import com.infomaximum.database.anotation.Field;
+import com.infomaximum.database.anotation.Index;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 

@@ -1,12 +1,10 @@
 package com.infomaximum.rocksdb.test.sequence;
 
-import com.infomaximum.database.core.sequence.Sequence;
-import com.infomaximum.database.core.sequence.SequenceDBException;
-import com.infomaximum.database.core.sequence.SequenceManager;
-import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.exception.SequenceAlreadyExistsException;
+import com.infomaximum.rocksdb.SequenceManager;
 import com.infomaximum.rocksdb.RocksDataTest;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
-import com.infomaximum.rocksdb.RocksDataBase;
+import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,12 +18,11 @@ public class SequenceTest extends RocksDataTest {
     public void createNew() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            SequenceManager sequenceManager = new SequenceManager(rocksDBProvider);
             sequenceManager.createSequence(sequenceName);
 
-            byte[] value = rocksDataBase.getRocksDB().get(rocksDataBase.getDefaultColumnFamily(), TypeConvert.pack(SequenceManager.SEQUENCE_PREFIX + sequenceName));
-            Assert.assertTrue(TypeConvert.unpackLong(value) > 0);
+            Assert.assertEquals(1L, sequenceManager.getSequence(sequenceName).next());
         }
     }
 
@@ -33,32 +30,32 @@ public class SequenceTest extends RocksDataTest {
     public void createExisting() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            SequenceManager sequenceManager = new SequenceManager(rocksDBProvider);
             sequenceManager.createSequence(sequenceName);
 
             try {
                 sequenceManager.createSequence(sequenceName);
-            } catch (SequenceDBException e) {
+                Assert.fail();
+            } catch (SequenceAlreadyExistsException e) {
                 Assert.assertTrue(true);
-                return;
             }
         }
-
-        Assert.fail();
     }
 
     @Test
     public void drop() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            SequenceManager sequenceManager = new SequenceManager(rocksDBProvider);
             sequenceManager.createSequence(sequenceName);
+            sequenceManager.getSequence(sequenceName).next();
 
             sequenceManager.dropSequence(sequenceName);
-            byte[] value = rocksDataBase.getRocksDB().get(rocksDataBase.getDefaultColumnFamily(), TypeConvert.pack(SequenceManager.SEQUENCE_PREFIX + sequenceName));
-            Assert.assertNull(value);
+
+            sequenceManager.createSequence(sequenceName);
+            Assert.assertEquals(1L, sequenceManager.getSequence(sequenceName).next());
         }
     }
 
@@ -66,11 +63,11 @@ public class SequenceTest extends RocksDataTest {
     public void order() throws Exception {
         String sequenceName = "sdfuisii";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            SequenceManager sequenceManager = new SequenceManager(rocksDBProvider);
             sequenceManager.createSequence(sequenceName);
 
-            Sequence sequence = sequenceManager.getSequence(sequenceName);
+            SequenceManager.Sequence sequence = sequenceManager.getSequence(sequenceName);
             for (int i = 1; i < 1000000; i++) {
                 long id = sequence.next();
                 Assert.assertEquals(i, id);
@@ -83,8 +80,8 @@ public class SequenceTest extends RocksDataTest {
         String sequenceName = "sdfuisii";
         Set<Long> ids = new HashSet<>();
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            new SequenceManager(rocksDataBase).createSequence(sequenceName);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            new SequenceManager(rocksDBProvider).createSequence(sequenceName);
         }
 
         startDbAndIncrementSequence(sequenceName, ids, 1);
@@ -103,10 +100,10 @@ public class SequenceTest extends RocksDataTest {
     }
 
     private void startDbAndIncrementSequence(String sequenceName, Set<Long> ids, int count) throws Exception {
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            SequenceManager sequenceManager = new SequenceManager(rocksDataBase);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            SequenceManager sequenceManager = new SequenceManager(rocksDBProvider);
 
-            Sequence sequence = sequenceManager.getSequence(sequenceName);
+            SequenceManager.Sequence sequence = sequenceManager.getSequence(sequenceName);
             for (int i = 0; i < count; i++) {
                 checkAndAddId(ids, sequence.next());
             }

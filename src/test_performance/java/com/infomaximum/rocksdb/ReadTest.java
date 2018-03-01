@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb;
 
-import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
@@ -28,13 +28,14 @@ public class ReadTest extends DomainDataTest {
 
         createDomain(RecordReadable.class);
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordEditable rec = transaction.create(RecordEditable.class);
-            rec.setString1("some value");
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordEditable rec = transaction.create(RecordEditable.class);
+                rec.setString1("some value");
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         PerfomanceTest.test(200, step -> {
             try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE, preloaded)) {
@@ -53,13 +54,14 @@ public class ReadTest extends DomainDataTest {
 
         final String fixedString = "some value";
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            rec.setString1((i % 100) == 0 ? fixedString : UUID.randomUUID().toString());
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
+                rec.setString1((i % 100) == 0 ? fixedString : UUID.randomUUID().toString());
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
 
@@ -80,13 +82,14 @@ public class ReadTest extends DomainDataTest {
 
         final long fixedLong = 500;
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            rec.setLong1((i % 10) == 0 ? fixedLong : RandomUtil.random.nextLong());
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
+                rec.setLong1((i % 10) == 0 ? fixedLong : RandomUtil.random.nextLong());
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
 

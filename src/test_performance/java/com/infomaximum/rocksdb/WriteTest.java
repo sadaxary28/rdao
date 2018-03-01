@@ -12,11 +12,12 @@ public class WriteTest extends DomainDataTest {
         createDomain(RecordReadable.class);
 
         PerfomanceTest.test(1000000, step-> {
-            Transaction transaction = domainObjectSource.buildTransaction();
-            RecordEditable rec = transaction.create(RecordEditable.class);
-            rec.setString1("some value");
-            transaction.save(rec);
-            transaction.commit();
+            try (Transaction transaction = domainObjectSource.buildTransaction()) {
+                RecordEditable rec = transaction.create(RecordEditable.class);
+                rec.setString1("some value");
+                transaction.save(rec);
+                transaction.commit();
+            }
         });
     }
 
@@ -24,13 +25,14 @@ public class WriteTest extends DomainDataTest {
     public void createNonIndexedRecords2() throws Exception {
         createDomain(RecordReadable.class);
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        PerfomanceTest.test(1000000, step-> {
-            RecordEditable rec = transaction.create(RecordEditable.class);
-            rec.setString1("some value");
-            transaction.save(rec);
-        });
-        transaction.commit();
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            PerfomanceTest.test(1000000, step -> {
+                RecordEditable rec = transaction.create(RecordEditable.class);
+                rec.setString1("some value");
+                transaction.save(rec);
+            });
+            transaction.commit();
+        }
     }
 
     @Test
@@ -39,14 +41,15 @@ public class WriteTest extends DomainDataTest {
 
         long counter[] = new long[] {0};
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        PerfomanceTest.test(500000, step-> {
-            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            long val = ++counter[0];
-            rec.setString1(Long.toString(val));
-            rec.setLong1(val);
-            transaction.save(rec);
-        });
-        transaction.commit();
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            PerfomanceTest.test(500000, step -> {
+                RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
+                long val = ++counter[0];
+                rec.setString1(Long.toString(val));
+                rec.setLong1(val);
+                transaction.save(rec);
+            });
+            transaction.commit();
+        }
     }
 }

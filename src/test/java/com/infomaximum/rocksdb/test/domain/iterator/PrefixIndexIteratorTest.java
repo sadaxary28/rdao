@@ -1,7 +1,7 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;

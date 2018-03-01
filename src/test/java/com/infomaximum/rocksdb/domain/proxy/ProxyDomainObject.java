@@ -1,8 +1,8 @@
 package com.infomaximum.rocksdb.domain.proxy;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.DataSourceDatabaseException;
-import com.infomaximum.database.utils.BaseEnum;
+
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.util.Date;
 
@@ -16,7 +16,7 @@ public class ProxyDomainObject extends DomainObject {
     public <T> T get(Class<T> type, String fieldName) {
         try {
             return super.get(type, fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -25,7 +25,7 @@ public class ProxyDomainObject extends DomainObject {
     protected String getString(String fieldName) {
         try {
             return super.getString(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -34,7 +34,7 @@ public class ProxyDomainObject extends DomainObject {
     protected Integer getInteger(String fieldName) {
         try {
             return super.getInteger(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -43,7 +43,7 @@ public class ProxyDomainObject extends DomainObject {
     protected Long getLong(String fieldName) {
         try {
             return super.getLong(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -52,7 +52,7 @@ public class ProxyDomainObject extends DomainObject {
     protected Date getDate(String fieldName) {
         try {
             return super.getDate(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -61,7 +61,7 @@ public class ProxyDomainObject extends DomainObject {
     protected Boolean getBoolean(String fieldName) {
         try {
             return super.getBoolean(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -70,7 +70,7 @@ public class ProxyDomainObject extends DomainObject {
     protected byte[] getBytes(String fieldName) {
         try {
             return super.getBytes(fieldName);
-        } catch (DataSourceDatabaseException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }

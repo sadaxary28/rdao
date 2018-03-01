@@ -1,6 +1,6 @@
 package com.infomaximum.rocksdb.test.domain.iterator;
 
-import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.rocksdb.domain.StoreFileEditable;

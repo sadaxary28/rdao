@@ -1,19 +1,19 @@
 package com.infomaximum.database.utils;
 
 import com.google.common.base.CharMatcher;
-import org.rocksdb.RocksDBException;
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.nio.file.Path;
 
 public class PathUtils {
 
-    public static void checkPath(Path path) throws RocksDBException {
+    public static void checkPath(Path path) throws DatabaseException {
         if (!path.isAbsolute()) {
-            throw new RocksDBException("RocksDB-paths is not absolute.");
+            throw new DatabaseException("RocksDB-paths is not absolute.");
         }
 
         if (!CharMatcher.ascii().matchesAllOf(path.toString())) {
-            throw new RocksDBException("RocksDB-paths is not ascii-string.");
+            throw new DatabaseException("RocksDB-paths is not ascii-string.");
         }
     }
 }
