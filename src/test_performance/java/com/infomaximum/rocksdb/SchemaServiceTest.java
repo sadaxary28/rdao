@@ -1,11 +1,11 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.domainobject.DomainDataTest;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.SchemaService;
-import com.infomaximum.rocksdb.domain.ExchangeFolderEditable;
-import com.infomaximum.rocksdb.domain.StoreFileEditable;
-import com.infomaximum.rocksdb.test.DomainDataTest;
+import com.infomaximum.domain.ExchangeFolderEditable;
+import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import org.junit.Test;
 

@@ -1,10 +1,10 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.domainobject.DomainDataTest;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.rocksdb.test.DomainDataTest;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;

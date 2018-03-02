@@ -12,9 +12,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * Created by kris on 06.09.17.
- */
 public abstract class DomainObject {
 
     private final long id;
@@ -40,16 +37,38 @@ public abstract class DomainObject {
     public <T> T get(Class<T> type, String fieldName) throws DatabaseException {
         if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
             return (T) newFieldValues.get(fieldName);
-        } else if (loadedFieldValues.containsKey(fieldName)) {
-            return (T) loadedFieldValues.get(fieldName).orElse(null);
-        } else {
+        }
+
+        Optional<Object> value = loadedFieldValues.get(fieldName);
+        if (value == null) {
             EntityField field = structEntity.getField(fieldName);
             field.throwIfNotMatch(type);
 
-            T value = dataSource.getValue(field, this);
-            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(fieldName, Optional.ofNullable(value));
-            return prevValue != null ? (T) prevValue.orElse(null) : value;
+            value = Optional.ofNullable(dataSource.getValue(field, this));
+            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(fieldName, value);
+            if (prevValue != null) {
+                value = prevValue;
+            }
         }
+
+        return (T) value.orElse(null);
+    }
+
+    public Object get(EntityField field) throws DatabaseException {
+        if (newFieldValues != null && newFieldValues.containsKey(field.getName())) {
+            return newFieldValues.get(field.getName());
+        }
+
+        Optional<Object> value = loadedFieldValues.get(field.getName());
+        if (value == null) {
+            value = Optional.ofNullable(dataSource.getValue(field, this));
+            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(field.getName(), value);
+            if (prevValue != null) {
+                value = prevValue;
+            }
+        }
+
+        return value.orElse(null);
     }
 
     protected void set(String fieldName, Object value) {
@@ -68,25 +87,22 @@ public abstract class DomainObject {
 
     /**
      * Unsafe method. Do not use in external packages!
-     * @param name
-     * @param value
      */
-    protected void _setLoadedField(String name, Object value) {
+    void _setLoadedField(String name, Object value) {
         loadedFieldValues.put(name, Optional.ofNullable(value));
     }
 
     /**
      * Unsafe method. Do not use in external packages!
-     * @param dataSource
      */
-    protected void _setDataSource(DataEnumerable dataSource) {
+    void _setDataSource(DataEnumerable dataSource) {
         this.dataSource = dataSource;
     }
 
     /**
      * Unsafe method. Do not use in external packages!
      */
-    protected void _flushNewValues() {
+    void _flushNewValues() {
         if (newFieldValues == null) {
             return;
         }
@@ -121,7 +137,7 @@ public abstract class DomainObject {
         return get(byte[].class, fieldName);
     }
 
-    protected StructEntity getStructEntity() {
+    public StructEntity getStructEntity() {
         return structEntity;
     }
 
@@ -148,7 +164,7 @@ public abstract class DomainObject {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null) return false;
+        if (o == null || !(o instanceof DomainObject)) return false;
 
         DomainObject that = (DomainObject) o;
 
