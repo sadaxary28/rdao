@@ -7,7 +7,7 @@ import com.infomaximum.database.exception.runtime.StructEntityException;
 public class EntityField {
 
     private final String name;
-    private final Class type;
+    private final Class<?> type;
     private final TypeConverter converter;
     private final StructEntity foreignDependency;
 
@@ -34,7 +34,7 @@ public class EntityField {
         return name;
     }
 
-    public Class getType() {
+    public Class<?> getType() {
         return type;
     }
 
