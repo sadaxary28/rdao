@@ -21,11 +21,20 @@ public class RocksDBIterator implements DBIterator {
     public KeyValue seek(KeyPattern pattern) throws DatabaseException {
         this.pattern = pattern;
 
-        if (pattern == null || pattern.getPrefix() == null) {
+        if (pattern == null) {
             iterator.seekToFirst();
-        }
-        else {
-            iterator.seek(pattern.getPrefix());
+        } else if (pattern.getPrefix() == null) {
+            if (pattern.isForBackward()) {
+                iterator.seekToLast();
+            } else {
+                iterator.seekToFirst();
+            }
+        } else {
+            if (pattern.isForBackward()) {
+                iterator.seekForPrev(pattern.getPrefix());
+            } else {
+                iterator.seek(pattern.getPrefix());
+            }
         }
 
         return findMatched();

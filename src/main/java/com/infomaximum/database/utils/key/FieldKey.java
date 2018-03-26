@@ -67,6 +67,9 @@ public class FieldKey extends Key {
     }
 
     public static KeyPattern buildKeyPattern(long id, final Set<String> fields) {
+        if (fields == null) {
+            return new KeyPattern(buildKeyPrefix(id));
+        }
         return new KeyPattern(buildKeyPrefix(id), buildInnerPatterns(fields));
     }
 

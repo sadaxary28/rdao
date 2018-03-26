@@ -1,6 +1,8 @@
 package com.infomaximum.database.domainobject.iterator;
 
+import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -20,12 +22,14 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
 
     private final List<EntityField> checkedFilterFields;
     private final List<Object> filterValues;
-    private final long endValue;
+    private final long beginValue, endValue;
+    private final DBIterator.StepDirection direction;
 
     private KeyValue indexKeyValue;
 
     public IntervalIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IntervalIndexFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
+        this.direction = filter.getSortDirection().equals(SortDirection.ASC) ? DBIterator.StepDirection.FORWARD : DBIterator.StepDirection.BACKWARD;
 
         StructEntity structEntity = Schema.getEntity(clazz);
         Map<String, Object> filters = filter.getHashedValues();
@@ -66,15 +70,28 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
 
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
-        this.endValue = IntervalIndexKey.castToLong(filter.getEndValue());
 
         this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
         if (this.dataKeyPattern != null) {
             this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
         }
 
+        this.beginValue = IntervalIndexKey.castToLong(filter.getBeginValue());
+        this.endValue = IntervalIndexKey.castToLong(filter.getEndValue());
         this.indexIterator = dataEnumerable.createIterator(entityIndex.columnFamily);
-        this.indexKeyValue = indexIterator.seek(IntervalIndexKey.buildKeyPattern(values, filter.getBeginValue()));
+
+        KeyPattern indexPattern;
+        switch (direction) {
+            case FORWARD:
+                indexPattern = IntervalIndexKey.buildLeftBorder(values, beginValue);
+                break;
+            case BACKWARD:
+                indexPattern = IntervalIndexKey.buildRightBorder(values, endValue);
+                break;
+            default:
+                throw new IllegalArgumentException("direction = " + direction);
+        }
+        this.indexKeyValue = indexIterator.seek(indexPattern);
 
         nextImpl();
     }
@@ -82,12 +99,13 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
     @Override
     void nextImpl() throws DatabaseException {
         while (indexKeyValue != null) {
-            if (IntervalIndexKey.compare(indexKeyValue.getKey(), endValue) > 0) {
-                nextElement = null;
-            } else {
-                nextElement = findObject(IntervalIndexKey.unpackId(indexKeyValue.getKey()));
+            long value = IntervalIndexKey.unpackIndexedValue(indexKeyValue.getKey());
+            if (value < beginValue || value > endValue) {
+                break;
             }
-            indexKeyValue = indexIterator.step(DBIterator.StepDirection.FORWARD);
+
+            nextElement = findObject(IntervalIndexKey.unpackId(indexKeyValue.getKey()));
+            indexKeyValue = indexIterator.step(direction);
             if (nextElement != null) {
                 return;
             }

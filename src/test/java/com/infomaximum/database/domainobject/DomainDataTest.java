@@ -1,5 +1,7 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
+import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
@@ -8,7 +10,10 @@ import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+
+import java.util.Set;
 
 public abstract class DomainDataTest extends RocksDataTest {
 
@@ -38,5 +43,23 @@ public abstract class DomainDataTest extends RocksDataTest {
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(clazz))
                 .execute();
+    }
+
+    protected static void checkLoadedState(DomainObject target, Set<String> loadingFields) throws DatabaseException {
+        for (String field : loadingFields) {
+            target.get(Object.class, field);
+        }
+
+        for (EntityField field : target.getStructEntity().getFields()) {
+            if (loadingFields.contains(field.getName())) {
+                continue;
+            }
+            try {
+                target.get(field);
+                Assert.fail();
+            } catch (FieldValueNotFoundException e) {
+                Assert.assertTrue(true);
+            }
+        }
     }
 }

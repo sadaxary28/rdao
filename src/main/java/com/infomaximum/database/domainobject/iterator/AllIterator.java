@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DataEnumerable;
@@ -28,7 +29,8 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
         String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         this.dataIterator = dataEnumerable.createIterator(columnFamily);
 
-        nextElement = dataEnumerable.seekObject(constructor, loadingFields, dataIterator, FieldKey.buildKeyPattern(loadingFields), state);
+        KeyPattern dataKeyPattern = loadingFields != null ? FieldKey.buildKeyPattern(loadingFields) : null;
+        nextElement = dataEnumerable.seekObject(constructor, loadingFields, dataIterator, dataKeyPattern, state);
         if (nextElement == null) {
             close();
         }

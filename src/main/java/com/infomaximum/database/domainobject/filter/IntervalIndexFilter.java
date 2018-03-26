@@ -11,20 +11,21 @@ public class IntervalIndexFilter implements Filter {
     private final String indexedFieldName;
     private final Object beginValue;
     private final Object endValue;
+    private SortDirection sortDirection = SortDirection.ASC;
 
     public IntervalIndexFilter(String indexedFieldName, Double beginValue, Double endValue) {
-        this(indexedFieldName, (Object) beginValue, endValue);
+        this.indexedFieldName = indexedFieldName;
+        this.beginValue = beginValue;
+        this.endValue = endValue;
     }
 
     public IntervalIndexFilter(String indexedFieldName, Long beginValue, Long endValue) {
-        this(indexedFieldName, (Object) beginValue, endValue);
+        this.indexedFieldName = indexedFieldName;
+        this.beginValue = beginValue;
+        this.endValue = endValue;
     }
 
     public IntervalIndexFilter(String indexedFieldName, Date beginValue, Date endValue) {
-        this(indexedFieldName, (Object) beginValue, endValue);
-    }
-
-    private IntervalIndexFilter(String indexedFieldName, Object beginValue, Object endValue) {
         this.indexedFieldName = indexedFieldName;
         this.beginValue = beginValue;
         this.endValue = endValue;
@@ -49,5 +50,18 @@ public class IntervalIndexFilter implements Filter {
 
     public Object getEndValue() {
         return endValue;
+    }
+
+    public SortDirection getSortDirection() {
+        return sortDirection;
+    }
+
+    public IntervalIndexFilter setSortDirection(SortDirection sortDirection) {
+        if (sortDirection == null) {
+            throw new IllegalArgumentException();
+        }
+
+        this.sortDirection = sortDirection;
+        return this;
     }
 }

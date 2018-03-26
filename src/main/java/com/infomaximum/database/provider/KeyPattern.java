@@ -30,6 +30,7 @@ public class KeyPattern implements Serializable {
     private byte[] prefix;
     private final boolean strictMatching;
     private final Postfix[] orPatterns;
+    private boolean forBackward = false;
 
     public KeyPattern(byte[] prefix, Postfix[] orPatterns) {
         this.prefix = prefix;
@@ -57,6 +58,14 @@ public class KeyPattern implements Serializable {
 
     public byte[] getPrefix() {
         return prefix;
+    }
+
+    public boolean isForBackward() {
+        return forBackward;
+    }
+
+    public void setForBackward(boolean forBackward) {
+        this.forBackward = forBackward;
     }
 
     public int match(final byte[] key) {

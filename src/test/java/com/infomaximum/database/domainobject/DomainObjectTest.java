@@ -18,7 +18,7 @@ public class DomainObjectTest extends StoreFileDataTest {
     public void getStructEntity() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 10);
 
-        StoreFileReadable storeFile = domainObjectSource.get(StoreFileReadable.class, 1, Collections.singleton(StoreFileReadable.FIELD_FILE_NAME));
+        StoreFileReadable storeFile = domainObjectSource.get(StoreFileReadable.class, 1);
 
         StructEntity structEntity = storeFile.getStructEntity();
         Map<String, Object> fields = new HashMap<>(structEntity.getFields().size());

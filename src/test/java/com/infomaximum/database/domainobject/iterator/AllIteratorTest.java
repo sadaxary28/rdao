@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
@@ -15,9 +14,7 @@ import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 
 public class AllIteratorTest extends StoreFileDataTest {
 
@@ -79,19 +76,14 @@ public class AllIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
-        fieldValuesField.setAccessible(true);
-
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, loadingFields)) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, loadingFields)) {
             int iteratedRecordCount = 0;
-            while (iStoreFileReadable.hasNext()) {
-                StoreFileReadable storeFile = iStoreFileReadable.next();
+            while (i.hasNext()) {
+                StoreFileReadable storeFile = i.next();
 
-                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>) fieldValuesField.get(storeFile);
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_FILE_NAME));
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_SIZE));
-                Assert.assertEquals(loadingFields.size(), fieldValues.size());
+                checkLoadedState(storeFile, loadingFields);
+
                 ++iteratedRecordCount;
             }
             Assert.assertEquals(insertedRecordCount, iteratedRecordCount);
@@ -103,16 +95,14 @@ public class AllIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
-        fieldValuesField.setAccessible(true);
-
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
+        Set<String> loadingFields = Collections.emptySet();
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE, loadingFields)) {
             int iteratedRecordCount = 0;
-            while (iStoreFileReadable.hasNext()) {
-                StoreFileReadable storeFile = iStoreFileReadable.next();
+            while (i.hasNext()) {
+                StoreFileReadable storeFile = i.next();
 
-                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
-                Assert.assertEquals(0, fieldValues.size());
+                checkLoadedState(storeFile, loadingFields);
+
                 ++iteratedRecordCount;
             }
 
