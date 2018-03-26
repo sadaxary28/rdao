@@ -175,8 +175,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private void ensureTransaction() throws DatabaseException {
         if (closed) {
-            //TODO Миронов В. убрать после фикса в subsystems
-            //throw new ClosedObjectException(this.getClass());
+            throw new ClosedObjectException(this.getClass());
         }
 
         if (transaction == null) {
