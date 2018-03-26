@@ -14,7 +14,6 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 
 public class IndexIteratorTest extends StoreFileDataTest {
 
@@ -69,9 +68,6 @@ public class IndexIteratorTest extends StoreFileDataTest {
     public void loadTwoFields() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 100);
 
-        Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
-        fieldValuesField.setAccessible(true);
-
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
         IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, 9L);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
@@ -79,10 +75,8 @@ public class IndexIteratorTest extends StoreFileDataTest {
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
 
-                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_FILE_NAME));
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_SIZE));
-                Assert.assertEquals(loadingFields.size(), fieldValues.size());
+                checkLoadedState(storeFile, loadingFields);
+
                 ++iteratedRecordCount;
             }
             Assert.assertEquals(10, iteratedRecordCount);
@@ -106,11 +100,10 @@ public class IndexIteratorTest extends StoreFileDataTest {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
+                Assert.assertNull(storeFile.get(Long.class, StoreFileReadable.FIELD_SIZE));
 
-                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_FILE_NAME));
-                Assert.assertTrue(fieldValues.containsKey(StoreFileReadable.FIELD_SIZE));
-                Assert.assertEquals(loadingFields.size(), fieldValues.size());
+                checkLoadedState(storeFile, loadingFields);
+
                 ++iteratedRecordCount;
             }
             Assert.assertEquals(10, iteratedRecordCount);
@@ -121,17 +114,15 @@ public class IndexIteratorTest extends StoreFileDataTest {
     public void loadZeroFields() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 100);
 
-        Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
-        fieldValuesField.setAccessible(true);
-
+        Set<String> loadingFields = Collections.emptySet();
         IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, 9L);
-        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
+        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
 
-                ConcurrentMap<String, Optional<Object>> fieldValues = (ConcurrentMap<String, Optional<Object>>)fieldValuesField.get(storeFile);
-                Assert.assertEquals(0, fieldValues.size());
+                checkLoadedState(storeFile, loadingFields);
+
                 ++iteratedRecordCount;
             }
 

@@ -57,7 +57,7 @@ public abstract class DataEnumerable {
     }
 
     public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DatabaseException {
-        return get(clazz, id, Collections.emptySet());
+        return get(clazz, id, null);
     }
 
     public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<String> loadingFields) throws DatabaseException {
@@ -74,22 +74,26 @@ public abstract class DataEnumerable {
     }
 
     public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter) throws DatabaseException {
-        return find(clazz, filter, Collections.emptySet());
+        return find(clazz, filter, null);
     }
 
     public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<String> preInitializedFields) {
         T obj = buildDomainObject(constructor, id);
-        for (String field : preInitializedFields) {
-            obj._setLoadedField(field, null);
+        if (preInitializedFields == null) {
+            for (EntityField field : obj.getStructEntity().getFields()) {
+                obj._setLoadedField(field.getName(), null);
+            }
+        } else {
+            for (String field : preInitializedFields) {
+                obj._setLoadedField(field, null);
+            }
         }
         return obj;
     }
 
     private <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id) {
         try {
-            T domainObject = constructor.newInstance(id);
-            domainObject._setDataSource(this);
-            return domainObject;
+            return constructor.newInstance(id);
         } catch (ReflectiveOperationException e) {
             throw new IllegalTypeException(e);
         }

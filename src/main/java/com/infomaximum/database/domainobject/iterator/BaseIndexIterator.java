@@ -11,7 +11,6 @@ import com.infomaximum.database.exception.DatabaseException;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-
 public abstract class BaseIndexIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
@@ -55,18 +54,18 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     abstract void nextImpl() throws DatabaseException;
 
-    static KeyPattern buildDataKeyPattern(List<EntityField> fields1, Set<String> fields2) {
-        if (fields2 == null) {
-            fields2 = Collections.emptySet();
+    static KeyPattern buildDataKeyPattern(List<EntityField> fields1, Set<String> loadingFields) {
+        if (loadingFields == null) {
+            return FieldKey.buildKeyPattern(0, null);
         }
 
         if (fields1 == null || fields1.isEmpty()) {
-            return fields2.isEmpty() ? null : FieldKey.buildKeyPattern(fields2);
+            return loadingFields.isEmpty() ? null : FieldKey.buildKeyPattern(loadingFields);
         }
 
-        Set<String> fields = new HashSet<>(fields1.size() + fields2.size());
+        Set<String> fields = new HashSet<>(fields1.size() + loadingFields.size());
         fields1.forEach(field -> fields.add(field.getName()));
-        fields.addAll(fields2);
+        fields.addAll(loadingFields);
         return FieldKey.buildKeyPattern(fields);
     }
 

@@ -1,5 +1,6 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
 import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
@@ -9,25 +10,21 @@ import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public abstract class DomainObject {
 
     private final long id;
     private final StructEntity structEntity;
-    private ConcurrentMap<String, Optional<Object>> loadedFieldValues;
-
+    private Map<String, Optional<Object>> loadedFieldValues;
     private Map<String, Object> newFieldValues = null;
-    private DataEnumerable dataSource = null;
 
     public DomainObject(long id) {
         if (id < 1) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("id = " + Long.toString(id));
         }
         this.id = id;
         this.structEntity = Schema.getEntity(this.getClass());
-        this.loadedFieldValues = new ConcurrentHashMap<>();
+        this.loadedFieldValues = new HashMap<>();
     }
 
     public long getId() {
@@ -41,34 +38,14 @@ public abstract class DomainObject {
 
         Optional<Object> value = loadedFieldValues.get(fieldName);
         if (value == null) {
-            EntityField field = structEntity.getField(fieldName);
-            field.throwIfNotMatch(type);
-
-            value = Optional.ofNullable(dataSource.getValue(field, this));
-            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(fieldName, value);
-            if (prevValue != null) {
-                value = prevValue;
-            }
+            throw new FieldValueNotFoundException(fieldName);
         }
 
         return (T) value.orElse(null);
     }
 
     public Object get(EntityField field) throws DatabaseException {
-        if (newFieldValues != null && newFieldValues.containsKey(field.getName())) {
-            return newFieldValues.get(field.getName());
-        }
-
-        Optional<Object> value = loadedFieldValues.get(field.getName());
-        if (value == null) {
-            value = Optional.ofNullable(dataSource.getValue(field, this));
-            Optional<Object> prevValue = loadedFieldValues.putIfAbsent(field.getName(), value);
-            if (prevValue != null) {
-                value = prevValue;
-            }
-        }
-
-        return value.orElse(null);
+        return get(Object.class, field.getName());
     }
 
     protected void set(String fieldName, Object value) {
@@ -90,13 +67,6 @@ public abstract class DomainObject {
      */
     void _setLoadedField(String name, Object value) {
         loadedFieldValues.put(name, Optional.ofNullable(value));
-    }
-
-    /**
-     * Unsafe method. Do not use in external packages!
-     */
-    void _setDataSource(DataEnumerable dataSource) {
-        this.dataSource = dataSource;
     }
 
     /**

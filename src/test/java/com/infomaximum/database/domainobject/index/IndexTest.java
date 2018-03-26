@@ -16,7 +16,7 @@ public class IndexTest extends StoreFileDataTest {
         final int recordCount = 100;
 
         domainObjectSource.executeTransactional(transaction -> {
-            for (int size = 0; size < recordCount; size++) {
+            for (long size = 0; size < recordCount; size++) {
                 StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                 storeFile.setSize(size);
                 transaction.save(storeFile);
@@ -37,7 +37,7 @@ public class IndexTest extends StoreFileDataTest {
         final int recordCount = 100;
 
         domainObjectSource.executeTransactional(transaction -> {
-            for (int size = 0; size < recordCount; size++) {
+            for (long size = 0; size < recordCount; size++) {
                 StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
                 storeFile.setFormat(FormatType.A);
                 transaction.save(storeFile);
