@@ -55,24 +55,39 @@ public class IntervalIndexKey  extends Key {
         return TypeConvert.unpackLong(src, src.length - ID_BYTE_SIZE);
     }
 
-    public static int compare(byte[] key, long indexedValue) {
-        long val = TypeConvert.unpackLong(key, key.length - 2 * ID_BYTE_SIZE);
-        return Long.compare(val, indexedValue);
+    public static long unpackIndexedValue(final byte[] src) {
+        return TypeConvert.unpackLong(src, src.length - 2 * ID_BYTE_SIZE);
     }
 
-    public static KeyPattern buildKeyPattern(final long[] hashedValues, Object beginValue) {
+    public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
-        for (int i = 0; i < hashedValues.length; ++i) {
-            buffer.putLong(hashedValues[i]);
-        }
-        final long value = castToLong(beginValue);
-        buffer.put(getSignByte(value));
-        buffer.putLong(value);
+        fillPattern(hashedValues, indexedValue, buffer);
         return new KeyPattern(buffer.array(), false);
+    }
+
+    public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
+        fillPattern(hashedValues, indexedValue, buffer);
+        buffer.putLong(0xffffffffffffffffL);
+        KeyPattern pattern = new KeyPattern(buffer.array(), false);
+        pattern.setForBackward(true);
+        return pattern;
+    }
+
+    private static void fillPattern(long[] hashedValues, long indexedValue, ByteBuffer destination) {
+        for (int i = 0; i < hashedValues.length; ++i) {
+            destination.putLong(hashedValues[i]);
+        }
+        destination.put(getSignByte(indexedValue));
+        destination.putLong(indexedValue);
     }
 
     private static Byte getSignByte(long value) {
         return value < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE;
+    }
+
+    public static long castToLong(long value) {
+        return value;
     }
 
     public static long castToLong(double value) {
