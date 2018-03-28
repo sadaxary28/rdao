@@ -42,7 +42,8 @@ import java.util.Date;
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DOUBLE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DATE),
-                @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME})
+                @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME}),
+                @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
         }
 )
 public class StoreFileReadable extends DomainObject {

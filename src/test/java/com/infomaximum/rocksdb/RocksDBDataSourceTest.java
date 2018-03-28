@@ -37,18 +37,18 @@ public class RocksDBDataSourceTest extends RocksDataTest {
         fillData();
 
         try (DBIterator iterator = rocksDBProvider.createIterator(columnFamily)) {
-            KeyValue keyValue = iterator.seek(new KeyPattern(TypeConvert.pack(0x6000000080000000L), true));
+            KeyValue keyValue = iterator.seek(new KeyPattern(TypeConvert.pack(0x6000000080000000L)));
             Assert.assertNull(keyValue);
 
             byte[] pattern = TypeConvert.pack(0x6000000080000001L);
-            keyValue = iterator.seek(new KeyPattern(pattern, true));
+            keyValue = iterator.seek(new KeyPattern(pattern));
             Assert.assertArrayEquals(pattern, keyValue.getKey());
 
-            keyValue = iterator.seek(new KeyPattern(TypeConvert.pack(0x7000000080000000L), false));
+            keyValue = iterator.seek(new KeyPattern(TypeConvert.pack(0x7000000080000000L), -1));
             Assert.assertArrayEquals(TypeConvert.pack(0x7000000080000001L), keyValue.getKey());
 
             pattern = TypeConvert.pack(0x6000000080000001L);
-            keyValue = iterator.seek(new KeyPattern(pattern, false));
+            keyValue = iterator.seek(new KeyPattern(pattern, -1));
             Assert.assertArrayEquals(pattern, keyValue.getKey());
         }
     }

@@ -146,7 +146,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
     }
 
     @Test
-    public void groupedOrderTest() throws Exception {
+    public void stringGroupedOrderTest() throws Exception {
         final String name1 = "name1";
         final String name2 = "name2";
 
@@ -186,6 +186,39 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name1));
         assertValueEquals(Arrays.asList(-2L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name2));
+        assertValueEquals(Arrays.asList(), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
+                .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, "name3"));
+    }
+
+    @Test
+    public void longGroupedOrderTest() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.setForeignFieldEnabled(false);
+
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(5);
+            obj.setFolderId(1);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(3);
+            obj.setFolderId(1);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(3);
+            obj.setFolderId(2);
+            transaction.save(obj);
+        });
+
+        assertIdEquals(Arrays.asList(2L, 1L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+                .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
+        assertIdEquals(Arrays.asList(1L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 5L, 5L)
+                .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
+        assertIdEquals(Arrays.asList(3L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+                .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 2L));
+        assertIdEquals(Arrays.asList(), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+                .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 3L));
     }
 
     @Test

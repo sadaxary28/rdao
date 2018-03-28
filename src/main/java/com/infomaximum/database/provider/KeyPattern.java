@@ -28,24 +28,24 @@ public class KeyPattern implements Serializable {
     }
 
     private byte[] prefix;
-    private final boolean strictMatching;
+    private int strictMatchingLen;
     private final Postfix[] orPatterns;
     private boolean forBackward = false;
 
     public KeyPattern(byte[] prefix, Postfix[] orPatterns) {
         this.prefix = prefix;
-        this.strictMatching = true;
+        this.strictMatchingLen = prefix != null ? prefix.length : 0;
         this.orPatterns = orPatterns;
     }
 
-    public KeyPattern(byte[] prefix, boolean strictMatching) {
+    public KeyPattern(byte[] prefix, int strictMatchingLen) {
         this.prefix = prefix;
-        this.strictMatching = strictMatching;
+        this.strictMatchingLen = strictMatchingLen;
         this.orPatterns = null;
     }
 
     public KeyPattern(byte[] prefix) {
-        this(prefix, true);
+        this(prefix, null);
     }
 
     public KeyPattern(Postfix[] orPatterns) {
@@ -54,6 +54,9 @@ public class KeyPattern implements Serializable {
 
     public void setPrefix(byte[] prefix) {
         this.prefix = prefix;
+        if (strictMatchingLen != -1) {
+            strictMatchingLen = prefix != null ? prefix.length : 0;
+        }
     }
 
     public byte[] getPrefix() {
@@ -70,7 +73,7 @@ public class KeyPattern implements Serializable {
 
     public int match(final byte[] key) {
         if (prefix != null) {
-            if (strictMatching && !ByteUtils.startsWith(prefix, key)) {
+            if (strictMatchingLen != -1 && !ByteUtils.startsWith(prefix, 0, strictMatchingLen, key)) {
                 return MATCH_RESULT_UNSUCCESS;
             }
         }
