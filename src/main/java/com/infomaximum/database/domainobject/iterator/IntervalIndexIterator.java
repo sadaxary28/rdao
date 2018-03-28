@@ -24,6 +24,7 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
     private final List<Object> filterValues;
     private final long beginValue, endValue;
     private final DBIterator.StepDirection direction;
+    private final KeyPattern indexPattern;
 
     private KeyValue indexKeyValue;
 
@@ -80,13 +81,12 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
         this.endValue = IntervalIndexKey.castToLong(filter.getEndValue());
         this.indexIterator = dataEnumerable.createIterator(entityIndex.columnFamily);
 
-        KeyPattern indexPattern;
         switch (direction) {
             case FORWARD:
-                indexPattern = IntervalIndexKey.buildLeftBorder(values, beginValue);
+                this.indexPattern = IntervalIndexKey.buildLeftBorder(values, beginValue);
                 break;
             case BACKWARD:
-                indexPattern = IntervalIndexKey.buildRightBorder(values, endValue);
+                this.indexPattern = IntervalIndexKey.buildRightBorder(values, endValue);
                 break;
             default:
                 throw new IllegalArgumentException("direction = " + direction);
@@ -106,6 +106,9 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIndexIter
 
             nextElement = findObject(IntervalIndexKey.unpackId(indexKeyValue.getKey()));
             indexKeyValue = indexIterator.step(direction);
+            if (indexKeyValue != null && indexPattern.match(indexKeyValue.getKey()) != KeyPattern.MATCH_RESULT_SUCCESS) {
+                indexKeyValue = null;
+            }
             if (nextElement != null) {
                 return;
             }

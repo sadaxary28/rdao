@@ -62,14 +62,14 @@ public class IntervalIndexKey  extends Key {
     public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
         fillPattern(hashedValues, indexedValue, buffer);
-        return new KeyPattern(buffer.array(), false);
+        return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
     }
 
     public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
         fillPattern(hashedValues, indexedValue, buffer);
         buffer.putLong(0xffffffffffffffffL);
-        KeyPattern pattern = new KeyPattern(buffer.array(), false);
+        KeyPattern pattern = new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
         pattern.setForBackward(true);
         return pattern;
     }
