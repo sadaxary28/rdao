@@ -5,7 +5,6 @@ import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
 
-import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.lang.reflect.Constructor;
@@ -31,7 +30,7 @@ public abstract class DomainObject {
         return id;
     }
 
-    public <T> T get(Class<T> type, String fieldName) throws DatabaseException {
+    public <T> T get(Class<T> type, String fieldName) {
         if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
             return (T) newFieldValues.get(fieldName);
         }
@@ -44,7 +43,7 @@ public abstract class DomainObject {
         return (T) value.orElse(null);
     }
 
-    public Object get(EntityField field) throws DatabaseException {
+    public Object get(EntityField field) {
         return get(Object.class, field.getName());
     }
 
@@ -83,27 +82,27 @@ public abstract class DomainObject {
         newFieldValues.clear();
     }
 
-    protected String getString(String fieldName) throws DatabaseException {
+    protected String getString(String fieldName) {
         return get(String.class, fieldName);
     }
 
-    protected Integer getInteger(String fieldName) throws DatabaseException {
+    protected Integer getInteger(String fieldName) {
         return get(Integer.class, fieldName);
     }
 
-    protected Long getLong(String fieldName) throws DatabaseException {
+    protected Long getLong(String fieldName) {
         return get(Long.class, fieldName);
     }
 
-    protected Date getDate(String fieldName) throws DatabaseException {
+    protected Date getDate(String fieldName) {
         return get(Date.class, fieldName);
     }
 
-    protected Boolean getBoolean(String fieldName) throws DatabaseException {
+    protected Boolean getBoolean(String fieldName) {
         return get(Boolean.class, fieldName);
     }
 
-    protected byte[] getBytes(String fieldName) throws DatabaseException {
+    protected byte[] getBytes(String fieldName) {
         return get(byte[].class, fieldName);
     }
 
