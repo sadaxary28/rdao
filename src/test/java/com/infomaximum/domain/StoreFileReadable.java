@@ -5,7 +5,6 @@ import com.infomaximum.database.anotation.Field;
 import com.infomaximum.database.anotation.Index;
 import com.infomaximum.database.anotation.IntervalIndex;
 import com.infomaximum.database.domainobject.DomainObject;
-
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.domain.type.FormatType;
@@ -86,7 +85,7 @@ public class StoreFileReadable extends DomainObject {
     }
 
     public FormatType getFormat() throws DatabaseException {
-        return get(FormatType.class, FIELD_FORMAT);
+        return get(FIELD_FORMAT);
     }
 
     public Long getFolderId() throws DatabaseException {

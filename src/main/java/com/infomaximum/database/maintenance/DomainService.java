@@ -1,24 +1,27 @@
 package com.infomaximum.database.maintenance;
 
-import com.infomaximum.database.provider.DBIterator;
-import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
-import com.infomaximum.database.utils.key.FieldKey;
-import com.infomaximum.database.utils.key.IndexKey;
-import com.infomaximum.database.utils.key.IntervalIndexKey;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.FieldKey;
+import com.infomaximum.database.utils.key.IndexKey;
+import com.infomaximum.database.utils.key.IntervalIndexKey;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 public class DomainService {
@@ -160,7 +163,7 @@ public class DomainService {
         indexData(indexingFields, (obj, transaction) -> {
             lexemes.clear();
             for (EntityField field : index.sortedFields) {
-                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(String.class, field.getName()), lexemes);
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getName()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
         });
@@ -175,7 +178,7 @@ public class DomainService {
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());
             IndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
-            indexKey.setIndexedValue(obj.get(indexedField.getClass(), indexedField.getName()));
+            indexKey.setIndexedValue(obj.get(indexedField.getName()));
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
@@ -256,7 +259,7 @@ public class DomainService {
                 DomainObject obj = iter.next();
 
                 for (EntityField field : foreignFields) {
-                    Long value = obj.get(Long.class, field.getName());
+                    Long value = obj.get(field.getName());
                     if (value == null) {
                         continue;
                     }

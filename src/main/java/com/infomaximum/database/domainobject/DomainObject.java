@@ -1,28 +1,28 @@
 package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
 
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
-
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-public abstract class DomainObject {
+public abstract class DomainObject implements Serializable {
 
     private final long id;
-    private final StructEntity structEntity;
     private Map<String, Optional<Object>> loadedFieldValues;
     private Map<String, Object> newFieldValues = null;
+
+    private transient StructEntity lazyStructEntity;
 
     public DomainObject(long id) {
         if (id < 1) {
             throw new IllegalArgumentException("id = " + Long.toString(id));
         }
         this.id = id;
-        this.structEntity = Schema.getEntity(this.getClass());
         this.loadedFieldValues = new HashMap<>();
     }
 
@@ -30,7 +30,7 @@ public abstract class DomainObject {
         return id;
     }
 
-    public <T> T get(Class<T> type, String fieldName) {
+    public <T> T get(String fieldName) {
         if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
             return (T) newFieldValues.get(fieldName);
         }
@@ -43,16 +43,12 @@ public abstract class DomainObject {
         return (T) value.orElse(null);
     }
 
-    public Object get(EntityField field) {
-        return get(Object.class, field.getName());
-    }
-
     protected void set(String fieldName, Object value) {
         if (newFieldValues == null) {
             newFieldValues = new HashMap<>();
         }
 
-        EntityField field = structEntity.getField(fieldName);
+        EntityField field = getStructEntity().getField(fieldName);
 
         if (value != null) {
             field.throwIfNotMatch(value.getClass());
@@ -83,37 +79,40 @@ public abstract class DomainObject {
     }
 
     protected String getString(String fieldName) {
-        return get(String.class, fieldName);
+        return get(fieldName);
     }
 
     protected Integer getInteger(String fieldName) {
-        return get(Integer.class, fieldName);
+        return get(fieldName);
     }
 
     protected Long getLong(String fieldName) {
-        return get(Long.class, fieldName);
+        return get(fieldName);
     }
 
     protected Date getDate(String fieldName) {
-        return get(Date.class, fieldName);
+        return get(fieldName);
     }
 
     protected Boolean getBoolean(String fieldName) {
-        return get(Boolean.class, fieldName);
+        return get(fieldName);
     }
 
     protected byte[] getBytes(String fieldName) {
-        return get(byte[].class, fieldName);
+        return get(fieldName);
     }
 
-    public StructEntity getStructEntity() {
-        return structEntity;
+    StructEntity getStructEntity() {
+        if (lazyStructEntity == null) {
+            lazyStructEntity = Schema.getEntity(this.getClass());
+        }
+        return lazyStructEntity;
     }
 
     protected Map<EntityField, Object> getLoadedValues(){
         Map<EntityField, Object> values = new HashMap<>(loadedFieldValues.size());
         for (Map.Entry<String, Optional<Object>> entry: loadedFieldValues.entrySet()){
-            values.put(structEntity.getField(entry.getKey()), entry.getValue().orElse(null));
+            values.put(getStructEntity().getField(entry.getKey()), entry.getValue().orElse(null));
         }
         return values;
     }
@@ -125,7 +124,7 @@ public abstract class DomainObject {
 
         Map<EntityField, Object> values = new HashMap<>(newFieldValues.size());
         for (Map.Entry<String, Object> entry: newFieldValues.entrySet()){
-            values.put(structEntity.getField(entry.getKey()), entry.getValue());
+            values.put(getStructEntity().getField(entry.getKey()), entry.getValue());
         }
         return values;
     }
@@ -137,7 +136,7 @@ public abstract class DomainObject {
 
         DomainObject that = (DomainObject) o;
 
-        return structEntity == that.structEntity &&
+        return getStructEntity() == that.getStructEntity() &&
                id == that.id;
     }
 

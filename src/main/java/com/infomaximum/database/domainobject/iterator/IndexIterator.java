@@ -1,17 +1,17 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.infomaximum.database.schema.EntityField;
-import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.domainobject.DataEnumerable;
+import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.utils.IndexUtils;
-import com.infomaximum.database.schema.StructEntity;
-import com.infomaximum.database.schema.EntityIndex;
-import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.utils.key.IndexKey;
 import com.infomaximum.database.exception.runtime.NotFoundIndexException;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.EntityIndex;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
+import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.utils.key.IndexKey;
 
 import java.util.*;
 
@@ -89,7 +89,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
             EntityField field = checkedFilterFields.get(i);
-            if (!IndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getType(), field.getName()))) {
+            if (!IndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getName()))) {
                 return false;
             }
         }
