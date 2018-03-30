@@ -2,9 +2,10 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.schema.TypeConverter;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.schema.TypeConverter;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -106,7 +107,7 @@ public class TypeConvert {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
+    public static <T extends Serializable> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
             return packer.unpack(value);
         } else if (type == String.class) {

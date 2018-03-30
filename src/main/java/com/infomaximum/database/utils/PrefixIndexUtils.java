@@ -1,14 +1,15 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.schema.EntityPrefixIndex;
 import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.EntityPrefixIndex;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
-import com.infomaximum.database.exception.DatabaseException;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class PrefixIndexUtils {
@@ -27,7 +28,7 @@ public class PrefixIndexUtils {
         return new TreeSet<>(Comparator.reverseOrder());
     }
 
-    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Object> prevValues, Map<T, Object> newValues,
+    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Serializable> prevValues, Map<T, Serializable> newValues,
                                               Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();

@@ -13,8 +13,8 @@ import java.util.*;
 public abstract class DomainObject implements Serializable {
 
     private final long id;
-    private Map<String, Optional<Object>> loadedFieldValues;
-    private Map<String, Object> newFieldValues = null;
+    private HashMap<String, Optional<Serializable>> loadedFieldValues;
+    private HashMap<String, Serializable> newFieldValues = null;
 
     private transient StructEntity lazyStructEntity;
 
@@ -30,12 +30,12 @@ public abstract class DomainObject implements Serializable {
         return id;
     }
 
-    public <T> T get(String fieldName) {
+    public <T extends Serializable> T get(String fieldName) {
         if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
             return (T) newFieldValues.get(fieldName);
         }
 
-        Optional<Object> value = loadedFieldValues.get(fieldName);
+        Optional<Serializable> value = loadedFieldValues.get(fieldName);
         if (value == null) {
             throw new FieldValueNotFoundException(fieldName);
         }
@@ -43,7 +43,7 @@ public abstract class DomainObject implements Serializable {
         return (T) value.orElse(null);
     }
 
-    protected void set(String fieldName, Object value) {
+    protected void set(String fieldName, Serializable value) {
         if (newFieldValues == null) {
             newFieldValues = new HashMap<>();
         }
@@ -60,7 +60,7 @@ public abstract class DomainObject implements Serializable {
     /**
      * Unsafe method. Do not use in external packages!
      */
-    void _setLoadedField(String name, Object value) {
+    void _setLoadedField(String name, Serializable value) {
         loadedFieldValues.put(name, Optional.ofNullable(value));
     }
 
@@ -72,7 +72,7 @@ public abstract class DomainObject implements Serializable {
             return;
         }
 
-        for (Map.Entry<String, Object> entry : newFieldValues.entrySet()){
+        for (Map.Entry<String, Serializable> entry : newFieldValues.entrySet()) {
             _setLoadedField(entry.getKey(), entry.getValue());
         }
         newFieldValues.clear();
@@ -109,21 +109,21 @@ public abstract class DomainObject implements Serializable {
         return lazyStructEntity;
     }
 
-    protected Map<EntityField, Object> getLoadedValues(){
-        Map<EntityField, Object> values = new HashMap<>(loadedFieldValues.size());
-        for (Map.Entry<String, Optional<Object>> entry: loadedFieldValues.entrySet()){
+    protected Map<EntityField, Serializable> getLoadedValues() {
+        Map<EntityField, Serializable> values = new HashMap<>(loadedFieldValues.size());
+        for (Map.Entry<String, Optional<Serializable>> entry : loadedFieldValues.entrySet()) {
             values.put(getStructEntity().getField(entry.getKey()), entry.getValue().orElse(null));
         }
         return values;
     }
 
-    protected Map<EntityField, Object> getNewValues(){
+    protected Map<EntityField, Serializable> getNewValues() {
         if (newFieldValues == null || newFieldValues.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<EntityField, Object> values = new HashMap<>(newFieldValues.size());
-        for (Map.Entry<String, Object> entry: newFieldValues.entrySet()){
+        Map<EntityField, Serializable> values = new HashMap<>(newFieldValues.size());
+        for (Map.Entry<String, Serializable> entry : newFieldValues.entrySet()) {
             values.put(getStructEntity().getField(entry.getKey()), entry.getValue());
         }
         return values;
