@@ -1,5 +1,7 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.utils.PathUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.*;
 
@@ -10,29 +12,22 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * Created by kris on 07.10.16.
- */
 public class RocksDataBaseBuilder {
 
     private Path path;
 
-    public RocksDataBaseBuilder withPath(String path) {
-        this.path = Paths.get(path);
-        return this;
-    }
-
     public RocksDataBaseBuilder withPath(Path path) {
-        this.path = path;
+        this.path = path.toAbsolutePath();
         return this;
     }
 
-    public RocksDataBase build() throws RocksDBException {
+    public RocksDBProvider build() throws DatabaseException {
+        PathUtils.checkPath(path);
         try (Options options = buildOptions()) {
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors(options);
 
             List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-            OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toAbsolutePath().toString(), columnFamilyDescriptors, columnFamilyHandles);
+            OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toString(), columnFamilyDescriptors, columnFamilyHandles);
 
             ConcurrentMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
             for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
@@ -41,7 +36,9 @@ public class RocksDataBaseBuilder {
                 columnFamilies.put(columnFamilyName, columnFamilyHandle);
             }
 
-            return new RocksDataBase(rocksDB, columnFamilies);
+            return new RocksDBProvider(rocksDB, columnFamilies);
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
         }
     }
 
@@ -63,11 +60,11 @@ public class RocksDataBaseBuilder {
     private List<ColumnFamilyDescriptor> getColumnFamilyDescriptors(Options options) throws RocksDBException {
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
 
-        for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toAbsolutePath().toString())) {
+        for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toString())) {
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
         }
         if (columnFamilyDescriptors.isEmpty()) {
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDataBase.DEFAULT_COLUMN_FAMILY)));
+            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDBProvider.DEFAULT_COLUMN_FAMILY)));
         }
 
         return columnFamilyDescriptors;

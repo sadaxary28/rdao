@@ -1,20 +1,20 @@
 package com.infomaximum.database.maintenance;
 
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.schema.StructEntity;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 
 import java.util.*;
 
 public class NamespaceValidator {
 
-    private final DataSource dataSource;
+    private final DBProvider dbProvider;
 
     private final Set<String> namespacePrefixes = new HashSet<>();
 
-    public NamespaceValidator(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public NamespaceValidator(DBProvider dbProvider) {
+        this.dbProvider = dbProvider;
     }
 
     public NamespaceValidator withNamespace(String namespace) {
@@ -28,8 +28,8 @@ public class NamespaceValidator {
         validateUnknownColumnFamilies();
     }
 
-    private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
-        for (String columnFamily : dataSource.getColumnFamilies()) {
+    private void validateUnknownColumnFamilies() throws DatabaseException {
+        for (String columnFamily : dbProvider.getColumnFamilies()) {
             if (!contains(columnFamily)) {
                 throw new InconsistentDatabaseException("Unknown column family " + columnFamily + " .");
             }

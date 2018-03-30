@@ -1,16 +1,15 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.core.schema.EntityPrefixIndex;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.datasource.modifier.Modifier;
-import com.infomaximum.database.datasource.modifier.ModifierRemove;
-import com.infomaximum.database.datasource.modifier.ModifierSet;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.domainobject.key.Key;
-import com.infomaximum.database.domainobject.key.PrefixIndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.EntityPrefixIndex;
+import com.infomaximum.database.utils.key.FieldKey;
+import com.infomaximum.database.utils.key.Key;
+import com.infomaximum.database.utils.key.PrefixIndexKey;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class PrefixIndexUtils {
@@ -29,7 +28,7 @@ public class PrefixIndexUtils {
         return new TreeSet<>(Comparator.reverseOrder());
     }
 
-    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Object> prevValues, Map<T, Object> newValues,
+    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Serializable> prevValues, Map<T, Serializable> newValues,
                                               Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
@@ -207,44 +206,38 @@ public class PrefixIndexUtils {
         return matchCount == sortedSearchingWords.size();
     }
 
-    public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+    public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
-        try {
+        try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme));
                 while (keyValue != null) {
                     byte[] newIds = removeId(id, keyValue.getValue());
                     if (newIds != null) {
                         if (newIds.length != 0) {
-                            destination.add(new ModifierSet(index.columnFamily, keyValue.getKey(), newIds));
+                            transaction.put(index.columnFamily, keyValue.getKey(), newIds);
                         } else {
-                            destination.add(new ModifierRemove(index.columnFamily, keyValue.getKey(), false));
+                            transaction.delete(index.columnFamily, keyValue.getKey());
                         }
                     }
 
-                    keyValue = dataSource.next(iteratorId);
+                    keyValue = iterator.next();
                 }
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
     }
 
-    public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+    public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
-        try {
+        try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme));
                 byte[] key;
                 byte[] idsValue;
                 if (keyValue != null) {
@@ -257,7 +250,7 @@ public class PrefixIndexUtils {
                             break;
                         }
                         prevKeyValue = keyValue;
-                        keyValue = dataSource.next(iteratorId);
+                        keyValue = iterator.next();
                         if (keyValue == null) {
                             key = prevKeyValue.getKey();
                             if (getIdCount(prevKeyValue.getValue()) < PREFERRED_MAX_ID_COUNT_PER_BLOCK) {
@@ -274,10 +267,8 @@ public class PrefixIndexUtils {
                     idsValue = TypeConvert.pack(id);
                 }
 
-                destination.add(new ModifierSet(index.columnFamily, key, idsValue));
+                transaction.put(index.columnFamily, key, idsValue);
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
     }
 

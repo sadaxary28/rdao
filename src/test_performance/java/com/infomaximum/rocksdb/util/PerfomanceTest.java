@@ -12,10 +12,7 @@ public class PerfomanceTest {
     }
 
     public static void test(int executionCount, Action action) throws Exception {
-        JOptionPane optionPane = new JOptionPane("Test on starting.");
-        JDialog dialog = optionPane.createDialog("Perfomance test");
-        dialog.setAlwaysOnTop(true);
-        dialog.setVisible(true);
+        showMessage("Test on starting.");
 
         long beginTime = System.currentTimeMillis();
         for (int i = 0; i < executionCount; ++i) {
@@ -42,5 +39,14 @@ public class PerfomanceTest {
                 (double)(durationMillis) / (double)executionCount
         );
         System.out.println(msg);
+
+        showMessage("Test on finished.");
+    }
+
+    private static void showMessage(String message) {
+        JOptionPane optionPane = new JOptionPane(message);
+        JDialog dialog = optionPane.createDialog("Perfomance test");
+        dialog.setAlwaysOnTop(true);
+        dialog.setVisible(true);
     }
 }

@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.utils.TypeConvert;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -15,18 +16,17 @@ public class RocksDBDropColumnTest extends RocksDataTest {
     public void dropColumnFamily() throws Exception {
         String cfName = "com.infomaximum.store.StoreFile.index.size:java.lang.Long";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            rocksDataBase.createColumnFamily(cfName);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            rocksDBProvider.createColumnFamily(cfName);
 
-            ColumnFamilyHandle cf = rocksDataBase.getColumnFamilyHandle(cfName);
-            try (Transaction transaction = rocksDataBase.beginTransaction()) {
-                transaction.put(cf, "key".getBytes(), "value".getBytes());
+            try (DBTransaction transaction = rocksDBProvider.beginTransaction()) {
+                transaction.put(cfName, "key".getBytes(), "value".getBytes());
                 transaction.commit();
             }
         }
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            rocksDataBase.dropColumnFamily(cfName);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            rocksDBProvider.dropColumnFamily(cfName);
         }
 
         FileUtils.deleteDirectory(pathDataBase.toAbsolutePath().toFile());
@@ -60,7 +60,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
                 desc.add(new ColumnFamilyDescriptor(columnFamilyName));
             }
             if (desc.isEmpty()) {
-                desc.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDataBase.DEFAULT_COLUMN_FAMILY)));
+                desc.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDBProvider.DEFAULT_COLUMN_FAMILY)));
             }
             for (int i = 0; i < desc.size(); ++i) {
                 if(Arrays.equals(desc.get(i).columnFamilyName(), cfName)) {

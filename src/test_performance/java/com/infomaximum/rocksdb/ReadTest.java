@@ -1,17 +1,26 @@
 package com.infomaximum.rocksdb;
 
-import com.infomaximum.database.core.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.DomainDataTest;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.rocksdb.test.DomainDataTest;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class ReadTest extends DomainDataTest {
+
+    private static final Set<String> preloaded = new HashSet<>(Arrays.asList(
+            RecordIndexEditable.FIELD_STRING_1,
+            RecordIndexEditable.FIELD_LONG_1,
+            RecordIndexEditable.FIELD_BOOLEAN_1,
+            RecordIndexEditable.FIELD_INT_1));
 
     @Test
     public void iterateRecords() throws Exception {
@@ -19,16 +28,17 @@ public class ReadTest extends DomainDataTest {
 
         createDomain(RecordReadable.class);
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordEditable rec = transaction.create(RecordEditable.class);
-            rec.setString1("some value");
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordEditable rec = transaction.create(RecordEditable.class);
+                rec.setString1("some value");
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         PerfomanceTest.test(200, step -> {
-            try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE)) {
+            try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE, preloaded)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
                 }
@@ -44,20 +54,22 @@ public class ReadTest extends DomainDataTest {
 
         final String fixedString = "some value";
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            rec.setString1((i % 100) == 0 ? fixedString : UUID.randomUUID().toString());
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
+                rec.setString1((i % 100) == 0 ? fixedString : UUID.randomUUID().toString());
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
 
         PerfomanceTest.test(1, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
-            while (i.hasNext()) {
-                RecordIndexEditable rec = i.next();
+            try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
+                while (i.hasNext()) {
+                    RecordIndexEditable rec = i.next();
+                }
             }
         });
     }
@@ -70,20 +82,22 @@ public class ReadTest extends DomainDataTest {
 
         final long fixedLong = 500;
 
-        Transaction transaction = domainObjectSource.buildTransaction();
-        for (int i = 0; i < recordCount; ++i) {
-            RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
-            rec.setLong1((i % 100) == 0 ? fixedLong : RandomUtil.random.nextLong());
-            transaction.save(rec);
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            for (int i = 0; i < recordCount; ++i) {
+                RecordIndexEditable rec = transaction.create(RecordIndexEditable.class);
+                rec.setLong1((i % 10) == 0 ? fixedLong : RandomUtil.random.nextLong());
+                transaction.save(rec);
+            }
+            transaction.commit();
         }
-        transaction.commit();
 
         final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
 
-        PerfomanceTest.test(50, step -> {
-            IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter);
-            while (i.hasNext()) {
-                RecordIndexEditable rec = i.next();
+        PerfomanceTest.test(1000, step -> {
+            try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
+                while (i.hasNext()) {
+                    RecordIndexEditable rec = i.next();
+                }
             }
         });
     }

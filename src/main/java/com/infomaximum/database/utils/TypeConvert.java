@@ -2,17 +2,16 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.core.schema.TypeConverter;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.schema.TypeConverter;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-/**
- * Created by kris on 23.03.17.
- */
 public class TypeConvert {
 
     public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -35,7 +34,7 @@ public class TypeConvert {
         return !ByteUtils.isNullOrEmpty(value) ? new String(value, offset, length, TypeConvert.CHARSET) : null;
     }
 
-    public static Integer unpackInteger(byte[] value){
+    public static Integer unpackInteger(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? unpackInt(value) : null;
     }
 
@@ -51,8 +50,16 @@ public class TypeConvert {
         return Longs.fromBytes(value[0 + offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
     }
 
+    public static Double unpackDouble(byte[] value){
+        return !ByteUtils.isNullOrEmpty(value) ? unpackDoublePrim(value) : null;
+    }
+
+    public static double unpackDoublePrim(byte[] value) {
+        return Double.longBitsToDouble(unpackLong(value, 0));
+    }
+
     public static Boolean unpackBoolean(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? Boolean.valueOf(value[0] == (byte)1) : null;
+        return !ByteUtils.isNullOrEmpty(value) ? value[0] == (byte) 1 : null;
     }
 
     public static Date unpackDate(byte[] value){
@@ -87,29 +94,41 @@ public class TypeConvert {
         return value != null ? pack(value.booleanValue()) : EMPTY_BYTE_ARRAY;
     }
 
+    public static byte[] pack(double value) {
+        return pack(Double.doubleToRawLongBits(value));
+    }
+
+    public static byte[] pack(Double value){
+        return value != null ? pack(value.doubleValue()) : EMPTY_BYTE_ARRAY;
+    }
+
     public static byte[] pack(Date value){
         return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static <T> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
+    @SuppressWarnings("unchecked")
+    public static <T extends Serializable> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
             return packer.unpack(value);
         } else if (type == String.class) {
             return (T) unpackString(value);
         } else if (type == Long.class) {
             return (T) unpackLong(value);
-        } else if (type == Integer.class) {
-            return (T) unpackInteger(value);
         } else if (type == Boolean.class) {
             return (T) unpackBoolean(value);
-        } else if (type == byte[].class) {
-            return (T) value;
         } else if (type == Date.class) {
             return (T) unpackDate(value);
+        } else if (type == Integer.class) {
+            return (T) unpackInteger(value);
+        } else if (type == Double.class) {
+            return (T) unpackDouble(value);
+        } else if (type == byte[].class) {
+            return (T) value;
         }
-        throw new RuntimeException("Unsupported type " + type);
+        throw new IllegalTypeException("Unsupported type " + type);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> byte[] pack(Class<T> type, Object value, TypeConverter<T> converter){
         if (converter != null) {
             return converter.pack((T) value);
@@ -117,15 +136,17 @@ public class TypeConvert {
             return pack((String) value);
         } else if (type == Long.class) {
             return pack((Long) value);
-        } else if (type == Integer.class) {
-            return pack((Integer) value);
         } else if (type == Boolean.class) {
             return pack((Boolean) value);
-        } else if (type == byte[].class) {
-            return (byte[]) value;
         } else if (type == Date.class) {
             return pack((Date) value);
+        } else if (type == Integer.class) {
+            return pack((Integer) value);
+        } else if (type == Double.class) {
+            return pack((Double) value);
+        } else if (type == byte[].class) {
+            return (byte[]) value;
         }
-        throw new RuntimeException("Not support type: " + type);
+        throw new IllegalTypeException("Unsupported type: " + type);
     }
 }
