@@ -14,23 +14,6 @@ public class ExchangeFolderEditable extends ExchangeFolderReadable implements Do
         super(id);
     }
 
-    public String getUuid() throws DatabaseException {
-        return getString(FIELD_UUID);
-    }
-
-    public String getUserEmail() throws DatabaseException {
-        return getString(FIELD_USER_EMAIL);
-    }
-
-    public Date getSyncDate() throws DatabaseException {
-        return getDate(FIELD_SYNC_DATE);
-    }
-
-    public String getSyncState() throws DatabaseException {
-        return getString(FIELD_SYNC_STATE);
-    }
-
-
     public void setUuid(String uuid) {
         set(FIELD_UUID, uuid);
     }

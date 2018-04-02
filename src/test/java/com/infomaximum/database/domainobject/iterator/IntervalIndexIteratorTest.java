@@ -1,11 +1,11 @@
 package com.infomaximum.database.domainobject.iterator;
 
+import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
 import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -299,7 +299,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
 
-                result.add((T) storeFile.get(filter.getBeginValue().getClass(), filter.getIndexedFieldName()));
+                result.add((T) storeFile.get(filter.getIndexedFieldName()));
             }
             return result;
         }

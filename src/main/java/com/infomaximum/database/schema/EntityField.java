@@ -4,10 +4,12 @@ import com.infomaximum.database.anotation.Field;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
 
+import java.io.Serializable;
+
 public class EntityField {
 
     private final String name;
-    private final Class<?> type;
+    private final Class<? extends Serializable> type;
     private final TypeConverter converter;
     private final StructEntity foreignDependency;
 
@@ -34,7 +36,7 @@ public class EntityField {
         return name;
     }
 
-    public Class<?> getType() {
+    public Class<? extends Serializable> getType() {
         return type;
     }
 

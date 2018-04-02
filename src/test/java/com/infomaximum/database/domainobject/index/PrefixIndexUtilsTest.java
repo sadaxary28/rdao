@@ -1,11 +1,12 @@
 package com.infomaximum.database.domainobject.index;
 
-import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.Key;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.nio.LongBuffer;
 import java.util.*;
 
@@ -16,8 +17,8 @@ public class PrefixIndexUtilsTest {
         final Set<String> deletingLexemes = new HashSet<>();
         final Set<String> insertingLexemes = new HashSet<>();
         final List<Integer> fields = Arrays.asList(1, 2, 3);
-        Map<Integer, Object> prevValues = new HashMap<>();
-        Map<Integer, Object> newValues = new HashMap<>();
+        Map<Integer, Serializable> prevValues = new HashMap<>();
+        Map<Integer, Serializable> newValues = new HashMap<>();
 
         PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
         Assert.assertEquals(Collections.emptySet(), deletingLexemes);

@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils.key;
 
-import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -25,14 +25,6 @@ public class IntervalIndexKey  extends Key {
 
     public long[] getHashedValues() {
         return hashedValues;
-    }
-
-    public void setIndexedValue(Date value) {
-        indexedValue = castToLong(value);
-    }
-
-    public void setIndexedValue(Number value) {
-        indexedValue = castToLong(value);
     }
 
     public void setIndexedValue(Object value) {

@@ -1,19 +1,22 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.StoreFileDataTest;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class IndexIteratorTest extends StoreFileDataTest {
 
@@ -100,7 +103,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
-                Assert.assertNull(storeFile.get(Long.class, StoreFileReadable.FIELD_SIZE));
+                Assert.assertNull(storeFile.get(StoreFileReadable.FIELD_SIZE));
 
                 checkLoadedState(storeFile, loadingFields);
 
