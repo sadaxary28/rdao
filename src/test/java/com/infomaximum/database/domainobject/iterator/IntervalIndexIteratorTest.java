@@ -1,6 +1,8 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.domainobject.StoreFileDataTest;
+import com.infomaximum.database.domainobject.Transaction;
+import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
 import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
@@ -257,6 +259,64 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         assertIdEquals(Arrays.asList(2L, 3L, 4L, 5L, 6L),
                 new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 2L, 5L));
+    }
+
+    @Test
+    public void iterateAndChange() throws Exception {
+        final String name = "name";
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName(name);
+            obj.setSize(10);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName(name);
+            obj.setSize(20);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName(name);
+            obj.setSize(40);
+            transaction.save(obj);
+        });
+
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
+                    new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 10L, 20L)
+                            .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
+                List<Long> ids = new ArrayList<>();
+                while (i.hasNext()) {
+                    StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
+                    s.setSize(15);
+                    transaction.save(s);
+
+                    StoreFileReadable item = i.next();
+                    ids.add(item.getId());
+                }
+
+                Assert.assertEquals(Arrays.asList(1L, 2L), ids);
+            }
+        }
+
+        /*try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
+                    new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 10L, 50L)
+                            .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
+                List<Long> ids = new ArrayList<>();
+                while (i.hasNext()) {
+                    StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
+                    s.setFileName("another name");
+                    transaction.save(s);
+
+                    StoreFileReadable item = i.next();
+                    ids.add(item.getId());
+                }
+
+                Assert.assertEquals(Arrays.asList(1L, 2L, 3L), ids);
+            }
+        }*/
     }
 
     protected void assertValueEquals(List<Double> expected, String fieldName, Double begin, Double end) throws DatabaseException {

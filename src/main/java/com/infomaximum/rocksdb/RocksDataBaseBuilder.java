@@ -3,6 +3,7 @@ package com.infomaximum.rocksdb;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PathUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.util.TempLibraryCleaner;
 import org.rocksdb.*;
 
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ public class RocksDataBaseBuilder {
     }
 
     public RocksDBProvider build() throws DatabaseException {
+        TempLibraryCleaner.clear();
         PathUtils.checkPath(path);
         try (Options options = buildOptions()) {
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors(options);

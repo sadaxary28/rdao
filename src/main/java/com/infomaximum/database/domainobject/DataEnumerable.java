@@ -17,7 +17,6 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 public abstract class DataEnumerable {
@@ -26,12 +25,12 @@ public abstract class DataEnumerable {
 
         private long nextId = -1;
 
-        private boolean isEmpty() {
-            return nextId == -1;
+        private NextState(long recordId) {
+            this.nextId = recordId;
         }
 
-        private void clear() {
-            nextId = -1;
+        public boolean isEmpty() {
+            return nextId == -1;
         }
     }
 
@@ -52,7 +51,7 @@ public abstract class DataEnumerable {
         final String columnFamily = Schema.getEntity(clazz).getColumnFamily();
 
         try (DBIterator iterator = createIterator(columnFamily)) {
-            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, loadingFields),null);
+            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, loadingFields));
         }
     }
 
@@ -106,13 +105,12 @@ public abstract class DataEnumerable {
         }
 
         T obj = buildDomainObject(constructor, state.nextId, preInitializedFields);
-        state.clear();
-        readObject(obj, iterator, state);
+        state.nextId = readObject(obj, iterator);
         return obj;
     }
 
     public <T extends DomainObject> T seekObject(final Constructor<T> constructor, Collection<String> preInitializedFields,
-                                                 DBIterator iterator, KeyPattern pattern, NextState state) throws DatabaseException {
+                                                 DBIterator iterator, KeyPattern pattern) throws DatabaseException {
         KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return null;
@@ -124,11 +122,25 @@ public abstract class DataEnumerable {
         }
 
         T obj = buildDomainObject(constructor, key.getId(), preInitializedFields);
-        readObject(obj, iterator, state);
+        readObject(obj, iterator);
         return obj;
     }
 
-    private <T extends DomainObject> void readObject(T obj, DBIterator iterator, NextState state) throws DatabaseException {
+    public NextState seek(DBIterator iterator, KeyPattern pattern) throws DatabaseException {
+        KeyValue keyValue = iterator.seek(pattern);
+        if (keyValue == null) {
+            return new NextState(-1);
+        }
+
+        FieldKey key = FieldKey.unpack(keyValue.getKey());
+        if (!key.isBeginningObject()) {
+            return new NextState(-1);
+        }
+
+        return new NextState(key.getId());
+    }
+
+    private <T extends DomainObject> long readObject(T obj, DBIterator iterator) throws DatabaseException {
         KeyValue keyValue;
         FieldKey key;
         while ((keyValue = iterator.next()) != null) {
@@ -137,13 +149,12 @@ public abstract class DataEnumerable {
                 if (!key.isBeginningObject()) {
                     throw new UnexpectedEndObjectException(obj.getId(), key);
                 }
-                if (state != null) {
-                    state.nextId = key.getId();
-                }
-                break;
+                return key.getId();
             }
             EntityField field = obj.getStructEntity().getField(key.getFieldName());
             obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
+
+        return -1;
     }
 }

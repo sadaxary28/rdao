@@ -92,11 +92,11 @@ public class StoreFileReadable extends DomainObject {
         return getLong(FIELD_FOLDER_ID);
     }
 
-    public Long getDouble() throws DatabaseException {
-        return getLong(FIELD_DOUBLE);
+    public Double getDouble() throws DatabaseException {
+        return get(FIELD_DOUBLE);
     }
 
-    public Long getDate() throws DatabaseException {
-        return getLong(FIELD_DATE);
+    public Date getDate() throws DatabaseException {
+        return getDate(FIELD_DATE);
     }
 }

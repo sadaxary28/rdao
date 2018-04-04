@@ -76,7 +76,7 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
         dataKeyPattern.setPrefix(FieldKey.buildKeyPrefix(id));
 
-        E obj = dataEnumerable.seekObject(constructor, loadingFields, dataIterator, dataKeyPattern, null);
+        E obj = dataEnumerable.seekObject(constructor, loadingFields, dataIterator, dataKeyPattern);
         return checkFilter(obj) ? obj : null;
     }
 
