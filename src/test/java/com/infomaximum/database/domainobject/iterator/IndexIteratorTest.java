@@ -1,14 +1,14 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.StoreFileDataTest;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -100,7 +100,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
-                Assert.assertNull(storeFile.get(Long.class, StoreFileReadable.FIELD_SIZE));
+                Assert.assertNull(storeFile.get(StoreFileReadable.FIELD_SIZE));
 
                 checkLoadedState(storeFile, loadingFields);
 
@@ -229,6 +229,46 @@ public class IndexIteratorTest extends StoreFileDataTest {
                 ++count;
             }
             Assert.assertEquals(storedCount, count);
+        }
+    }
+
+    @Test
+    public void iterateAndChange() throws Exception {
+        final long value = 20;
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет всем");
+            obj.setSize(value);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет");
+            obj.setSize(value);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("ПРИВЕТ ВСЕМ");
+            obj.setSize(40);
+            transaction.save(obj);
+        });
+
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, value))) {
+                List<Long> ids = new ArrayList<>();
+                while (i.hasNext()) {
+                    StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
+                    s.setSize(value);
+                    transaction.save(s);
+
+                    StoreFileReadable item = i.next();
+                    Assert.assertEquals(value, item.getSize());
+
+                    ids.add(item.getId());
+                }
+
+                Assert.assertEquals(Arrays.asList(1L, 2L), ids);
+            }
         }
     }
 

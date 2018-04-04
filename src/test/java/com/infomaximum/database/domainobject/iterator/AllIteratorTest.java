@@ -140,6 +140,32 @@ public class AllIteratorTest extends StoreFileDataTest {
         }
     }
 
+    @Test
+    public void iterateAndChange() throws Exception {
+        final int insertedRecordCount = 10;
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+        try (Transaction transaction = domainObjectSource.buildTransaction()) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
+                while (i.hasNext()) {
+                    StoreFileReadable current = i.next();
+                    if (current.getId() == insertedRecordCount) {
+                        break;
+                    }
+
+                    StoreFileEditable newNext = transaction.get(StoreFileEditable.class, current.getId() + 1);
+                    newNext.setDouble(Double.POSITIVE_INFINITY);
+                    newNext.setFileName(UUID.randomUUID().toString());
+                    transaction.save(newNext);
+
+                    StoreFileReadable next = i.next();
+                    Assert.assertEquals("name", next.getFileName());
+                    Assert.assertNull(next.getDouble());
+                }
+            }
+        }
+    }
+
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; i++) {

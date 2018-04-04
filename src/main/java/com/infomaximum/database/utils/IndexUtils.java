@@ -1,12 +1,13 @@
 package com.infomaximum.database.utils;
 
 import com.google.common.primitives.UnsignedInts;
-import com.infomaximum.database.schema.EntityField;
-import com.infomaximum.database.schema.TypeConverter;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.TypeConverter;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class IndexUtils {
         return type != String.class;
     }
 
-    public static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Object> values, long[] destination) {
+    public static void setHashValues(final List<EntityField> sortedFields, final Map<EntityField, Serializable> values, long[] destination) {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
             destination[i] = buildHash(field.getType(), values.get(field), field.getConverter());
@@ -27,7 +28,7 @@ public class IndexUtils {
     public static void setHashValues(final List<EntityField> sortedFields, final DomainObject object, long[] destination) throws DatabaseException {
         for (int i = 0; i < sortedFields.size(); ++i) {
             EntityField field = sortedFields.get(i);
-            destination[i] = buildHash(field.getType(), object.get(field.getClass(), field.getName()), field.getConverter());
+            destination[i] = buildHash(field.getType(), object.get(field.getName()), field.getConverter());
         }
     }
 

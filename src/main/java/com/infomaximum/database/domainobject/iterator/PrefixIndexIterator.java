@@ -3,22 +3,25 @@ package com.infomaximum.database.domainobject.iterator;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.infomaximum.database.domainobject.DataEnumerable;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.EntityPrefixIndex;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
-import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.domainobject.DataEnumerable;
-import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
-import com.infomaximum.database.utils.key.PrefixIndexKey;
-import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.PrefixIndexKey;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterator<E> {
 
@@ -91,7 +94,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
     @Override
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
-            values[i] = obj.get(String.class, entityIndex.sortedFields.get(i).getName());
+            values[i] = obj.get(entityIndex.sortedFields.get(i).getName());
         }
         return PrefixIndexUtils.contains(searchingWords, values, tempList);
     }
