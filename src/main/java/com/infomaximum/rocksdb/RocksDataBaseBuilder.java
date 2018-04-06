@@ -5,7 +5,9 @@ import com.infomaximum.database.utils.PathUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.TempLibraryCleaner;
 import org.rocksdb.*;
+import org.rocksdb.util.SizeUnit;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -25,15 +27,15 @@ public class RocksDataBaseBuilder {
     public RocksDBProvider build() throws DatabaseException {
         TempLibraryCleaner.clear();
         PathUtils.checkPath(path);
-        try (Options options = buildOptions()) {
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors(options);
+        try (DBOptions options = buildOptions()) {
+            List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors();
 
             List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
             OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toString(), columnFamilyDescriptors, columnFamilyHandles);
 
             ConcurrentMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
             for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
-                String columnFamilyName = TypeConvert.unpackString(columnFamilyDescriptors.get(i).columnFamilyName());
+                String columnFamilyName = TypeConvert.unpackString(columnFamilyDescriptors.get(i).getName());
                 ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
                 columnFamilies.put(columnFamilyName, columnFamilyHandle);
             }
@@ -44,27 +46,31 @@ public class RocksDataBaseBuilder {
         }
     }
 
-    private Options buildOptions() throws RocksDBException {
+    private DBOptions buildOptions() throws RocksDBException {
         final String optionsFilePath = path.toString() + ".ini";
 
-        Options options;
-        if (Paths.get(optionsFilePath).toFile().exists()) {
-            options = RocksDB.loadOptionsFromFile(optionsFilePath, false);
+        DBOptions options = new DBOptions();
+        if (Files.exists(Paths.get(optionsFilePath))) {
+            final List<ColumnFamilyDescriptor> ignoreDescs = new ArrayList<>();
+            OptionsUtil.loadOptionsFromFile(optionsFilePath, Env.getDefault(), options, ignoreDescs, false);
         } else {
-            options = new Options().
-                    setInfoLogLevel(InfoLogLevel.WARN_LEVEL).
-                    setMaxTotalWalSize(100L * 1024L * 1024L);
+            options
+                    .setInfoLogLevel(InfoLogLevel.WARN_LEVEL)
+                    .setMaxTotalWalSize(100L * SizeUnit.MB);
         }
 
         return options.setCreateIfMissing(true);
     }
 
-    private List<ColumnFamilyDescriptor> getColumnFamilyDescriptors(Options options) throws RocksDBException {
+    private List<ColumnFamilyDescriptor> getColumnFamilyDescriptors() throws RocksDBException {
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
 
-        for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toString())) {
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
+        try (Options options = new Options()) {
+            for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, path.toString())) {
+                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(columnFamilyName));
+            }
         }
+
         if (columnFamilyDescriptors.isEmpty()) {
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDBProvider.DEFAULT_COLUMN_FAMILY)));
         }
