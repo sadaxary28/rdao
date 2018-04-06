@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
         );
         Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
-        try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), false)) {
+        try (DBOptions options = loadOptionsFromFile(optionsFilePath, false)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
             Assert.assertEquals(options.maxTotalWalSize(), 104857600);
             Assert.assertEquals(options.infoLogLevel(), InfoLogLevel.WARN_LEVEL);
@@ -69,7 +70,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
         );
         Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
-        try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), false)) {
+        try (DBOptions options = loadOptionsFromFile(optionsFilePath, false)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
             Assert.assertEquals(options.infoLogLevel(), InfoLogLevel.WARN_LEVEL);
         } catch (RocksDBException e) {
@@ -84,7 +85,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
     public void fromFileWithIgnoreWrongOptions() throws Exception {
         List<String> content = Arrays.asList(
                 "[Version]",
-                "rocksdb_version=5.7.3",
+                "rocksdb_version=1000.12.3",
                 "options_file_version=1.0",
                 "[DBOptions]",
                 "max_open_files=5",
@@ -94,9 +95,21 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
         );
         Files.write(optionsFilePath, content, StandardCharsets.UTF_8);
 
-        try (Options options = RocksDB.loadOptionsFromFile(optionsFilePath.toString(), true)) {
+        try (DBOptions options = loadOptionsFromFile(optionsFilePath, true)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
             Assert.assertEquals(options.infoLogLevel(), InfoLogLevel.WARN_LEVEL);
         }
+    }
+
+    private static DBOptions loadOptionsFromFile(Path optionsFilePath, boolean ignoreUnknownOptions) throws RocksDBException {
+        List<ColumnFamilyDescriptor> descs = new ArrayList<>();
+        DBOptions options = new DBOptions();
+        try {
+            OptionsUtil.loadOptionsFromFile(optionsFilePath.toString(), Env.getDefault(), options, descs, ignoreUnknownOptions);
+        } catch (Throwable e) {
+            try (DBOptions t = options) {}
+            throw e;
+        }
+        return options;
     }
 }

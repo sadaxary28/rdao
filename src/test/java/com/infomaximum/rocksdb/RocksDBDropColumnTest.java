@@ -54,16 +54,17 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
         // drop column family
         List<ColumnFamilyDescriptor> desc = new ArrayList<>();
-        try(final Options options = new Options().setCreateIfMissing(true)) {
+        try(DBOptions options = new DBOptions();
+            Options anotherOptions = new Options()) {
             int cfIndex = -1;
-            for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, pathDataBase.toString())) {
+            for (byte[] columnFamilyName : RocksDB.listColumnFamilies(anotherOptions, pathDataBase.toString())) {
                 desc.add(new ColumnFamilyDescriptor(columnFamilyName));
             }
             if (desc.isEmpty()) {
                 desc.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDBProvider.DEFAULT_COLUMN_FAMILY)));
             }
             for (int i = 0; i < desc.size(); ++i) {
-                if(Arrays.equals(desc.get(i).columnFamilyName(), cfName)) {
+                if(Arrays.equals(desc.get(i).getName(), cfName)) {
                     cfIndex = i;
                     break;
                 }
@@ -71,7 +72,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
             List<ColumnFamilyHandle> cfs = new ArrayList<>();
             try (OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString(), desc, cfs)) {
-               txnDb.getBaseDB().dropColumnFamily(cfs.get(cfIndex));
+                txnDb.getBaseDB().dropColumnFamily(cfs.get(cfIndex));
                 cfs.forEach(columnFamilyHandle -> columnFamilyHandle.close());
             }
         }
