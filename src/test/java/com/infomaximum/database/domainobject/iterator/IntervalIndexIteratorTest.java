@@ -2,7 +2,6 @@ package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
 import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
 import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
@@ -11,7 +10,11 @@ import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
@@ -57,20 +60,20 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime));
+            obj.setInstant(Instant.ofEpochMilli(currentTime));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime + 1000));
+            obj.setInstant(Instant.ofEpochMilli(currentTime + 1000));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime + 5 * 1000));
+            obj.setInstant(Instant.ofEpochMilli(currentTime + 5 * 1000));
             transaction.save(obj);
         });
 
-        assertValueEquals(Arrays.asList(new Date(currentTime), new Date(currentTime + 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime), new Date(currentTime + 1000));
-        assertValueEquals(Arrays.asList(new Date(currentTime + 1000), new Date(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime + 500), new Date(currentTime + 6 * 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime + 1000), Instant.ofEpochMilli(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime + 500), Instant.ofEpochMilli(currentTime + 6 * 1000));
     }
 
     @Test
@@ -327,7 +330,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         assertValueEquals(expected, new IntervalIndexFilter(fieldName, begin, end));
     }
 
-    protected void assertValueEquals(List<Date> expected, String fieldName, Date begin, Date end) throws DatabaseException {
+    protected void assertValueEquals(List<Instant> expected, String fieldName, Instant begin, Instant end) throws DatabaseException {
         assertValueEquals(expected, new IntervalIndexFilter(fieldName, begin, end));
     }
 

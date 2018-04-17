@@ -5,7 +5,7 @@ import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
-import java.util.Date;
+import java.time.Instant;
 
 public class IntervalIndexKey  extends Key {
 
@@ -87,8 +87,8 @@ public class IntervalIndexKey  extends Key {
         return val < 0 ? 0x8000000000000000L - val : val;
     }
 
-    public static long castToLong(Date value) {
-        return value.getTime();
+    public static long castToLong(Instant value) {
+        return value.toEpochMilli();
     }
 
     public static long castToLong(Object value) {
@@ -98,8 +98,8 @@ public class IntervalIndexKey  extends Key {
 
         if (value.getClass() == Long.class) {
             return castToLong(((Long) value).longValue());
-        } else if (value.getClass() == Date.class) {
-            return castToLong((Date) value);
+        } else if (value.getClass() == Instant.class) {
+            return castToLong((Instant) value);
         } else if (value.getClass() == Double.class) {
             return castToLong(((Double) value).doubleValue());
         }
