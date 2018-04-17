@@ -19,8 +19,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     private final Set<String> loadingFields;
     private final DBIterator dataIterator;
 
-    private E nextElement;
-    private DataEnumerable.NextState state = new DataEnumerable.NextState();
+    private final DataEnumerable.NextState state;
 
     public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
@@ -30,37 +29,33 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
         this.dataIterator = dataEnumerable.createIterator(columnFamily);
 
         KeyPattern dataKeyPattern = loadingFields != null ? FieldKey.buildKeyPattern(loadingFields) : null;
-        nextElement = dataEnumerable.seekObject(constructor, loadingFields, dataIterator, dataKeyPattern, state);
-        if (nextElement == null) {
+        this.state = dataEnumerable.seek(dataIterator, dataKeyPattern);
+        if (this.state.isEmpty()) {
             close();
         }
     }
 
     @Override
     public boolean hasNext() {
-        return nextElement != null;
+        return !state.isEmpty();
     }
 
     @Override
     public E next() throws DatabaseException {
-        if (nextElement == null) {
+        if (state.isEmpty()) {
             throw new NoSuchElementException();
         }
 
-        E element = nextElement;
-        nextImpl();
-        return element;
+        E result = dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
+        if (result == null) {
+            close();
+        }
+
+        return result;
     }
 
     @Override
     public void close() throws DatabaseException {
         dataIterator.close();
-    }
-
-    private void nextImpl() throws DatabaseException {
-        nextElement = dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
-        if (nextElement == null) {
-            close();
-        }
     }
 }

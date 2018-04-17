@@ -8,7 +8,11 @@ import com.infomaximum.database.schema.StructEntity;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public abstract class DomainObject implements Serializable {
 
@@ -90,7 +94,7 @@ public abstract class DomainObject implements Serializable {
         return get(fieldName);
     }
 
-    protected Date getDate(String fieldName) {
+    protected Instant getInstant(String fieldName) {
         return get(fieldName);
     }
 

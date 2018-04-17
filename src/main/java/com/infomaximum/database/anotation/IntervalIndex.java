@@ -10,7 +10,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface IntervalIndex {
 
     /**
-     * Supported Integer, Double, Date types only.
+     * Supported Integer, Double, Instant types only.
      */
     String indexedField();
 
