@@ -3,7 +3,7 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.anotation.IntervalIndex;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 public class EntityIntervalIndex extends BaseIndex {
@@ -27,7 +27,7 @@ public class EntityIntervalIndex extends BaseIndex {
 
     private static List<EntityField> buildIndexedFields(IntervalIndex index, StructEntity parent) {
         EntityField indexedField = parent.getField(index.indexedField());
-        if (!Number.class.isAssignableFrom(indexedField.getType()) && indexedField.getType() != Date.class) {
+        if (!Number.class.isAssignableFrom(indexedField.getType()) && indexedField.getType() != Instant.class) {
             throw new IllegalTypeException(indexedField.getType(), Number.class);
         }
 

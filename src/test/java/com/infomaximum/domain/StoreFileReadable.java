@@ -9,7 +9,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.domain.type.FormatType;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Created by user on 19.04.2017.
@@ -25,7 +25,7 @@ import java.util.Date;
                 @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
                 @Field(name = StoreFileReadable.FIELD_FOLDER_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
                 @Field(name = StoreFileReadable.FIELD_DOUBLE, type = Double.class),
-                @Field(name = StoreFileReadable.FIELD_DATE, type = Date.class)
+                @Field(name = StoreFileReadable.FIELD_DATE, type = Instant.class)
         },
         indexes = {
                 @Index(fields = {StoreFileReadable.FIELD_SIZE}),
@@ -96,7 +96,7 @@ public class StoreFileReadable extends DomainObject {
         return get(FIELD_DOUBLE);
     }
 
-    public Date getDate() throws DatabaseException {
-        return getDate(FIELD_DATE);
+    public Instant getInstant() throws DatabaseException {
+        return getInstant(FIELD_DATE);
     }
 }

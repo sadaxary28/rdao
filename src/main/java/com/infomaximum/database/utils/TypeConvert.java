@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import java.time.Instant;
 
 public class TypeConvert {
 
@@ -62,8 +62,8 @@ public class TypeConvert {
         return !ByteUtils.isNullOrEmpty(value) ? value[0] == (byte) 1 : null;
     }
 
-    public static Date unpackDate(byte[] value){
-        return !ByteUtils.isNullOrEmpty(value) ? new Date(Longs.fromByteArray(value)) : null;
+    public static Instant unpackInstant(byte[] value) {
+        return !ByteUtils.isNullOrEmpty(value) ? Instant.ofEpochMilli(Longs.fromByteArray(value)) : null;
     }
 
     public static byte[] pack(String value){
@@ -102,8 +102,8 @@ public class TypeConvert {
         return value != null ? pack(value.doubleValue()) : EMPTY_BYTE_ARRAY;
     }
 
-    public static byte[] pack(Date value){
-        return value != null ? pack(value.getTime()) : EMPTY_BYTE_ARRAY;
+    public static byte[] pack(Instant value) {
+        return value != null ? pack(value.toEpochMilli()) : EMPTY_BYTE_ARRAY;
     }
 
     @SuppressWarnings("unchecked")
@@ -116,8 +116,8 @@ public class TypeConvert {
             return (T) unpackLong(value);
         } else if (type == Boolean.class) {
             return (T) unpackBoolean(value);
-        } else if (type == Date.class) {
-            return (T) unpackDate(value);
+        } else if (type == Instant.class) {
+            return (T) unpackInstant(value);
         } else if (type == Integer.class) {
             return (T) unpackInteger(value);
         } else if (type == Double.class) {
@@ -138,8 +138,8 @@ public class TypeConvert {
             return pack((Long) value);
         } else if (type == Boolean.class) {
             return pack((Boolean) value);
-        } else if (type == Date.class) {
-            return pack((Date) value);
+        } else if (type == Instant.class) {
+            return pack((Instant) value);
         } else if (type == Integer.class) {
             return pack((Integer) value);
         } else if (type == Double.class) {

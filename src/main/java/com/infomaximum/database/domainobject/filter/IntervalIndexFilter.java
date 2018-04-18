@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.filter;
 
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +25,7 @@ public class IntervalIndexFilter implements Filter {
         this.endValue = endValue;
     }
 
-    public IntervalIndexFilter(String indexedFieldName, Date beginValue, Date endValue) {
+    public IntervalIndexFilter(String indexedFieldName, Instant beginValue, Instant endValue) {
         this.indexedFieldName = indexedFieldName;
         this.beginValue = beginValue;
         this.endValue = endValue;

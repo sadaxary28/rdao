@@ -3,7 +3,7 @@ package com.infomaximum.domain;
 import com.infomaximum.database.domainobject.DomainObjectEditable;
 import com.infomaximum.domain.type.FormatType;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Created by user on 19.04.2017.
@@ -42,7 +42,7 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
         set(FIELD_DOUBLE, value);
     }
 
-    public void setDate(Date value) {
+    public void setInstant(Instant value) {
         set(FIELD_DATE, value);
     }
 }

@@ -8,7 +8,7 @@ import com.infomaximum.database.schema.EntityField;
 import com.infomaximum.database.schema.TypeConverter;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +48,8 @@ public class IndexUtils {
             return hash(TypeConvert.pack(((String) value).toLowerCase()));
         } else if (type == Boolean.class) {
             return ((Boolean) value) ? 1 : 0;
-        } else if (type == Date.class) {
-            return ((Date) value).getTime();
+        } else if (type == Instant.class) {
+            return ((Instant) value).toEpochMilli();
         } else if (type == Integer.class) {
             return UnsignedInts.toLong((Integer) value);
         }
