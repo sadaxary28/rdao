@@ -2,7 +2,7 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.utils.key.FieldKey;
 
 import com.infomaximum.database.exception.DatabaseException;
@@ -36,7 +36,7 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     @Override
-    public <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DatabaseException {
+    public <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException {
         byte[] value = dbProvider.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getName()).pack());
         return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }

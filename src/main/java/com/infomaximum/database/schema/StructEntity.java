@@ -1,11 +1,9 @@
 package com.infomaximum.database.schema;
 
-import com.infomaximum.database.anotation.Entity;
-import com.infomaximum.database.anotation.Field;
-import com.infomaximum.database.anotation.Index;
-import com.infomaximum.database.anotation.IntervalIndex;
+import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.runtime.FieldNotFoundException;
+import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
 
 import java.util.*;
@@ -15,9 +13,9 @@ public class StructEntity {
     public static class Reference {
 
         public final Class objClass;
-        public final EntityIndex fieldIndex;
+        public final HashIndex fieldIndex;
 
-        private Reference(Class objClass, EntityIndex fieldIndex) {
+        private Reference(Class objClass, HashIndex fieldIndex) {
             this.objClass = objClass;
             this.fieldIndex = fieldIndex;
         }
@@ -28,11 +26,12 @@ public class StructEntity {
     private final Class<? extends DomainObject> clazz;
     private final String name;
     private final String columnFamily;
-    private final Set<EntityField> fields;
-    private final Map<String, EntityField> nameFields;
-    private final List<EntityIndex> indexes;
-    private final List<EntityPrefixIndex> prefixIndexes;
-    private final List<EntityIntervalIndex> intervalIndexes;
+    private final Set<Field> fields;
+    private final Map<String, Field> nameFields;
+    private final List<HashIndex> hashIndexes;
+    private final List<PrefixIndex> prefixIndexes;
+    private final List<IntervalIndex> intervalIndexes;
+    private final List<RangeIndex> rangeIndexes;
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     StructEntity(Class<? extends DomainObject> clazz) {
@@ -42,16 +41,16 @@ public class StructEntity {
         this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
 
-        Set<EntityField> modifiableFields = new HashSet<>(annotationEntity.fields().length);
-        Map<String, EntityField> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
+        Set<Field> modifiableFields = new HashSet<>(annotationEntity.fields().length);
+        Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
-        for(Field field: annotationEntity.fields()) {
+        for(com.infomaximum.database.anotation.Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
             if (modifiableNameToFields.containsKey(field.name())) {
                 throw new StructEntityException("Field " + field.name() + " already exists into " + clazz.getName() + ".");
             }
 
-            EntityField f = new EntityField(field, this);
+            Field f = new Field(field, this);
 
             modifiableFields.add(f);
             modifiableNameToFields.put(f.getName(), f);
@@ -63,12 +62,13 @@ public class StructEntity {
 
         this.nameFields = Collections.unmodifiableMap(modifiableNameToFields);
         this.fields = Collections.unmodifiableSet(modifiableFields);
-        this.indexes = buildIndexes(annotationEntity);
+        this.hashIndexes = buildHashIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
         this.intervalIndexes = buildIntervalIndexes(annotationEntity);
+        this.rangeIndexes = buildRangeIndexes(annotationEntity);
     }
 
-    private void registerToForeignEntity(EntityField foreignField) {
+    private void registerToForeignEntity(Field foreignField) {
         foreignField.getForeignDependency().referencingForeignFields.add(new Reference(clazz, buildForeignIndex(foreignField)));
     }
 
@@ -84,20 +84,20 @@ public class StructEntity {
         return clazz;
     }
 
-    public EntityField getField(String name) {
-        EntityField field = nameFields.get(name);
+    public Field getField(String name) {
+        Field field = nameFields.get(name);
         if (field == null) {
             throw new FieldNotFoundException(clazz, name);
         }
         return field;
     }
 
-    public Set<EntityField> getFields() {
+    public Set<Field> getFields() {
         return fields;
     }
 
-    public EntityIndex getIndex(Collection<String> indexedFields) {
-        for (EntityIndex index : indexes) {
+    public HashIndex getHashIndex(Collection<String> indexedFields) {
+        for (HashIndex index : hashIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
@@ -106,11 +106,12 @@ public class StructEntity {
                 return index;
             }
         }
-        return null;
+
+        throw new IndexNotFoundException(HashIndex.toString(indexedFields), clazz);
     }
 
-    public EntityPrefixIndex getPrefixIndex(Collection<String> indexedFields) {
-        for (EntityPrefixIndex index : prefixIndexes) {
+    public PrefixIndex getPrefixIndex(Collection<String> indexedFields) {
+        for (PrefixIndex index : prefixIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
@@ -119,11 +120,12 @@ public class StructEntity {
                 return index;
             }
         }
-        return null;
+
+        throw new IndexNotFoundException(PrefixIndex.toString(indexedFields), clazz);
     }
 
-    public EntityIntervalIndex getIntervalIndex(Collection<String> hashedFields, String indexedField) {
-        for (EntityIntervalIndex index : intervalIndexes) {
+    public IntervalIndex getIntervalIndex(Collection<String> hashedFields, String indexedField) {
+        for (IntervalIndex index : intervalIndexes) {
             if (index.sortedFields.size() != (hashedFields.size() + 1)) {
                 continue;
             }
@@ -136,19 +138,42 @@ public class StructEntity {
                 return index;
             }
         }
-        return null;
+
+        throw new IndexNotFoundException(IntervalIndex.toString(hashedFields, indexedField), clazz);
     }
 
-    public List<EntityIndex> getIndexes() {
-        return indexes;
+    public RangeIndex getRangeIndex(Collection<String> hashedFields, String beginField, String endField) {
+        for (RangeIndex index : rangeIndexes) {
+            if (index.sortedFields.size() != (hashedFields.size() + 2)) {
+                continue;
+            }
+
+            if (!index.getBeginIndexedField().getName().equals(beginField) || !index.getEndIndexedField().getName().equals(endField)) {
+                continue;
+            }
+
+            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getName()))) {
+                return index;
+            }
+        }
+
+        throw new IndexNotFoundException(RangeIndex.toString(hashedFields, beginField, endField), clazz);
     }
 
-    public List<EntityPrefixIndex> getPrefixIndexes() {
+    public List<HashIndex> getHashIndexes() {
+        return hashIndexes;
+    }
+
+    public List<PrefixIndex> getPrefixIndexes() {
         return prefixIndexes;
     }
 
-    public List<EntityIntervalIndex> getIntervalIndexes() {
+    public List<IntervalIndex> getIntervalIndexes() {
         return intervalIndexes;
+    }
+
+    public List<RangeIndex> getRangeIndexes() {
+        return rangeIndexes;
     }
 
     public List<Reference> getReferencingForeignFields() {
@@ -172,13 +197,13 @@ public class StructEntity {
                 .toString();
     }
 
-    private List<EntityIndex> buildIndexes(Entity entity) {
-        List<EntityIndex> result = new ArrayList<>(entity.indexes().length);
-        for (Index index: entity.indexes()) {
-            result.add(new EntityIndex(index, this));
+    private List<HashIndex> buildHashIndexes(Entity entity) {
+        List<HashIndex> result = new ArrayList<>(entity.hashIndexes().length);
+        for (com.infomaximum.database.anotation.HashIndex index: entity.hashIndexes()) {
+            result.add(new HashIndex(index, this));
         }
 
-        for (EntityField field : fields) {
+        for (Field field : fields) {
             if (!field.isForeign()) {
                 continue;
             }
@@ -193,23 +218,44 @@ public class StructEntity {
         return Collections.unmodifiableList(result);
     }
 
-    private EntityIndex buildForeignIndex(EntityField foreignField) {
-        return new EntityIndex(foreignField, this);
+    private HashIndex buildForeignIndex(Field foreignField) {
+        return new HashIndex(foreignField, this);
     }
 
-    private List<EntityPrefixIndex> buildPrefixIndexes(Entity entity) {
-        List<EntityPrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
-        for (Index index: entity.prefixIndexes()) {
-            result.add(new EntityPrefixIndex(index, this));
+    private List<PrefixIndex> buildPrefixIndexes(Entity entity) {
+        if (entity.prefixIndexes().length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<PrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
+        for (com.infomaximum.database.anotation.PrefixIndex index: entity.prefixIndexes()) {
+            result.add(new PrefixIndex(index, this));
         }
 
         return Collections.unmodifiableList(result);
     }
 
-    private List<EntityIntervalIndex> buildIntervalIndexes(Entity entity) {
-        List<EntityIntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
-        for (IntervalIndex index: entity.intervalIndexes()) {
-            result.add(new EntityIntervalIndex(index, this));
+    private List<IntervalIndex> buildIntervalIndexes(Entity entity) {
+        if (entity.intervalIndexes().length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<IntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
+        for (com.infomaximum.database.anotation.IntervalIndex index: entity.intervalIndexes()) {
+            result.add(new IntervalIndex(index, this));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    private List<RangeIndex> buildRangeIndexes(Entity entity) {
+        if (entity.rangeIndexes().length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<RangeIndex> result = new ArrayList<>(entity.rangeIndexes().length);
+        for (com.infomaximum.database.anotation.RangeIndex index: entity.rangeIndexes()) {
+            result.add(new RangeIndex(index, this));
         }
 
         return Collections.unmodifiableList(result);

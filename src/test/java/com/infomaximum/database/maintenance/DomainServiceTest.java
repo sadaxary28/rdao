@@ -3,8 +3,8 @@ package com.infomaximum.database.maintenance;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
@@ -84,11 +84,11 @@ public class DomainServiceTest extends DomainDataTest {
                 .setDomain(entity)
                 .execute();
 
-        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
             Assert.assertNotNull(iter.next());
         }
 
-        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME,"tes"))) {
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME,"tes"))) {
             Assert.assertNotNull(iter.next());
         }
     }

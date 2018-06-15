@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
@@ -24,7 +24,7 @@ public class IndexTest extends StoreFileDataTest {
         });
 
         for (long size = 0; size < recordCount; size++) {
-            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, size))) {
+            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, size))) {
                 Assert.assertTrue(i.hasNext());
                 Assert.assertEquals(size, i.next().getSize());
                 Assert.assertFalse(i.hasNext());
@@ -52,7 +52,7 @@ public class IndexTest extends StoreFileDataTest {
             }
         });
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FORMAT, FormatType.A))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FORMAT, FormatType.A))) {
             long id = 1;
             int count = 0;
             while (i.hasNext()) {
@@ -65,7 +65,7 @@ public class IndexTest extends StoreFileDataTest {
             Assert.assertEquals(recordCount, count);
         }
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FORMAT, null))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FORMAT, null))) {
             long id = 3;
             int count = 0;
             while (i.hasNext()) {
@@ -105,13 +105,13 @@ public class IndexTest extends StoreFileDataTest {
 
         // find
         for (long size = (0 + 2 * recordCount); size < (recordCount + 2 * recordCount); size++) {
-            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, size))) {
+            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, size))) {
                 Assert.assertTrue(i.hasNext());
                 Assert.assertEquals(size, i.next().getSize());
                 Assert.assertFalse(i.hasNext());
             }
 
-            IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, size).appendField(StoreFileReadable.FIELD_FILE_NAME, fileName);
+            HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, size).appendField(StoreFileReadable.FIELD_FILE_NAME, fileName);
             try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, filter)) {
                 Assert.assertTrue(i.hasNext());
                 Assert.assertEquals(size, i.next().getSize());

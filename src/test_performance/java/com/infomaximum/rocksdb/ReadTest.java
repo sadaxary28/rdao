@@ -4,7 +4,7 @@ import com.infomaximum.database.domainobject.DomainDataTest;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class ReadTest extends DomainDataTest {
             transaction.commit();
         }
 
-        final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
+        final HashFilter filter = new HashFilter(RecordIndexEditable.FIELD_STRING_1, fixedString);
 
         PerfomanceTest.test(1, step -> {
             try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
@@ -91,7 +91,7 @@ public class ReadTest extends DomainDataTest {
             transaction.commit();
         }
 
-        final IndexFilter filter = new IndexFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
+        final HashFilter filter = new HashFilter(RecordIndexEditable.FIELD_LONG_1, fixedLong);
 
         PerfomanceTest.test(1000, step -> {
             try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {

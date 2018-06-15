@@ -2,49 +2,45 @@ package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.runtime.NotFoundIndexException;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.EntityField;
-import com.infomaximum.database.schema.EntityIndex;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.HashIndex;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
-import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.key.IndexKey;
 
 import java.util.*;
 
-public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> {
+public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator<E> {
 
-    private final List<EntityField> checkedFilterFields;
+    private final List<Field> checkedFilterFields;
     private final List<Object> filterValues;
 
     private KeyValue indexKeyValue;
 
-    public IndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IndexFilter filter) throws DatabaseException {
+    public HashIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, HashFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
 
         StructEntity structEntity = Schema.getEntity(clazz);
         Map<String, Object> filters = filter.getValues();
-        final EntityIndex entityIndex = structEntity.getIndex(filters.keySet());
-        if (entityIndex == null) {
-            throw new NotFoundIndexException(clazz, filters.keySet());
-        }
+        final HashIndex index = structEntity.getHashIndex(filters.keySet());
 
-        List<EntityField> filterFields = null;
+        List<Field> filterFields = null;
         List<Object> filterValues = null;
 
-        long[] values = new long[entityIndex.sortedFields.size()];
-        for (int i = 0; i < entityIndex.sortedFields.size(); ++i) {
-            EntityField field = entityIndex.sortedFields.get(i);
+        long[] values = new long[index.sortedFields.size()];
+        for (int i = 0; i < index.sortedFields.size(); ++i) {
+            Field field = index.sortedFields.get(i);
             Object value = filters.get(field.getName());
             if (value != null) {
                 field.throwIfNotMatch(value.getClass());
             }
 
-            values[i] = IndexUtils.buildHash(field.getType(), value, field.getConverter());
-            if (IndexUtils.toLongCastable(field.getType())) {
+            values[i] = HashIndexUtils.buildHash(field.getType(), value, field.getConverter());
+            if (HashIndexUtils.toLongCastable(field.getType())) {
                 continue;
             }
 
@@ -65,7 +61,7 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
             this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
         }
 
-        this.indexIterator = dataEnumerable.createIterator(entityIndex.columnFamily);
+        this.indexIterator = dataEnumerable.createIterator(index.columnFamily);
         this.indexKeyValue = indexIterator.seek(IndexKey.buildKeyPattern(values));
 
         nextImpl();
@@ -88,8 +84,8 @@ public class IndexIterator<E extends DomainObject> extends BaseIndexIterator<E> 
     @Override
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
-            EntityField field = checkedFilterFields.get(i);
-            if (!IndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getName()))) {
+            Field field = checkedFilterFields.get(i);
+            if (!HashIndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getName()))) {
                 return false;
             }
         }

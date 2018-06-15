@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
@@ -29,7 +29,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
         });
 
         //Ищем объекты по size
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, oldValue))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, oldValue))) {
             Assert.assertFalse(i.hasNext());
         }
     }
@@ -55,7 +55,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
         });
 
         //Ищем объекты по size
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, prevValue))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, prevValue))) {
             StoreFileReadable storeFile = i.next();
             Assert.assertEquals(2L, storeFile.getId());
             Assert.assertEquals(prevValue, storeFile.getSize());
@@ -85,7 +85,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
         });
 
         //Ищем объекты по size
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, value))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, value))) {
             int count = 0;
             while(i.hasNext()) {
                 StoreFileReadable storeFile = i.next();

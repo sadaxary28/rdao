@@ -4,8 +4,8 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
@@ -15,7 +15,7 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class IndexIteratorTest extends StoreFileDataTest {
+public class HashIndexIteratorTest extends StoreFileDataTest {
 
     @Test
     public void ignoreCaseFind() throws Exception {
@@ -51,7 +51,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         });
 
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
-        IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, sizeExpected).appendField(StoreFileReadable.FIELD_FILE_NAME, nameExpected);
+        HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, sizeExpected).appendField(StoreFileReadable.FIELD_FILE_NAME, nameExpected);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
@@ -69,7 +69,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         initAndFillStoreFiles(domainObjectSource, 100);
 
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
-        IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, 9L);
+        HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 9L);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
@@ -95,7 +95,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         fieldValuesField.setAccessible(true);
 
         Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
-        IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, null);
+        HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, null);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
@@ -115,7 +115,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         initAndFillStoreFiles(domainObjectSource, 100);
 
         Set<String> loadingFields = Collections.emptySet();
-        IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, 9L);
+        HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 9L);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
             while (iterator.hasNext()) {
@@ -144,7 +144,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
             obj.setSize(20);
             transaction.save(obj);
 
-            IndexFilter filter = new IndexFilter(StoreFileReadable.FIELD_SIZE, 20L);
+            HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 20L);
             try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, filter)) {
                 Assert.assertTrue(i.hasNext());
             }
@@ -175,11 +175,11 @@ public class IndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 50L))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 50L))) {
             Assert.assertFalse(i.hasNext());
         }
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 30L))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 30L))) {
             int count = 0;
             while (i.hasNext()) {
                 i.next();
@@ -188,11 +188,15 @@ public class IndexIteratorTest extends StoreFileDataTest {
             Assert.assertEquals(1, count);
         }
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, "unknown"))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "unknown"))) {
             Assert.assertFalse(i.hasNext());
         }
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameExpected))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, nameExpected), Collections.emptySet())) {
+            Assert.assertTrue(i.hasNext());
+        }
+
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, nameExpected))) {
             int count = 0;
             while (i.hasNext()) {
                 i.next();
@@ -208,7 +212,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         final String nameCol1 = "http://ccwf/login.aspx?login=auto&crid=20560116";
         final String nameCol2 = "http://ccwf/login.aspx?login=auto&crid=20517268";
         Assert.assertEquals("Hash of names must be equals",
-                IndexUtils.buildHash(String.class, nameCol2, null), IndexUtils.buildHash(String.class, nameCol1, null));
+                HashIndexUtils.buildHash(String.class, nameCol2, null), HashIndexUtils.buildHash(String.class, nameCol1, null));
 
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < storedCount; ++i) {
@@ -218,11 +222,11 @@ public class IndexIteratorTest extends StoreFileDataTest {
             }
         });
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol2))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol2))) {
             Assert.assertFalse(i.hasNext());
         }
 
-        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol1))) {
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, nameCol1))) {
             int count = 0;
             while (i.hasNext()) {
                 i.next();
@@ -254,7 +258,7 @@ public class IndexIteratorTest extends StoreFileDataTest {
         });
 
         try (Transaction transaction = domainObjectSource.buildTransaction()) {
-            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, value))) {
+            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, value))) {
                 List<Long> ids = new ArrayList<>();
                 while (i.hasNext()) {
                     StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);

@@ -7,12 +7,13 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Target({})
 @Retention(RUNTIME)
-public @interface IntervalIndex {
+public @interface RangeIndex {
 
     /**
-     * Supported Long, Double, Instant types only.
+     * Supported Long, Instant and Double types only.
      */
-    String indexedField();
+    String beginField();
+    String endField();
 
     String[] hashedFields() default {};
 }

@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
@@ -25,7 +25,7 @@ public class MultiIndexWithNullTest extends StoreFileDataTest {
 
         for (long size = 0; size < recordCount; size++) {
             try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class,
-                    new IndexFilter(StoreFileReadable.FIELD_SIZE, size).appendField(StoreFileReadable.FIELD_FILE_NAME, null))) {
+                    new HashFilter(StoreFileReadable.FIELD_SIZE, size).appendField(StoreFileReadable.FIELD_FILE_NAME, null))) {
                 Assert.assertTrue(i.hasNext());
 
                 StoreFileReadable storeFileReadable = i.next();
