@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.provider.DBIterator;
-import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -54,7 +54,7 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     abstract void nextImpl() throws DatabaseException;
 
-    static KeyPattern buildDataKeyPattern(List<EntityField> fields1, Set<String> loadingFields) {
+    static KeyPattern buildDataKeyPattern(List<Field> fields1, Set<String> loadingFields) {
         if (loadingFields == null) {
             return FieldKey.buildKeyPattern(0, null);
         }

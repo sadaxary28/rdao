@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
@@ -35,7 +35,7 @@ public class MuiltiIndexUpdateTest extends StoreFileDataTest {
 
         //Ищем объекты по size
         int count=0;
-        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, new IndexFilter(StoreFileReadable.FIELD_SIZE, 100L)
+        try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 100L)
              .appendField(StoreFileReadable.FIELD_FILE_NAME, "1"))) {
             while(iStoreFileReadable.hasNext()) {
                 StoreFileReadable storeFile = iStoreFileReadable.next();

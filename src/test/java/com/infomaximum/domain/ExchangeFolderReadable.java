@@ -2,7 +2,7 @@ package com.infomaximum.domain;
 
 import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;
-import com.infomaximum.database.anotation.Index;
+import com.infomaximum.database.anotation.HashIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 
@@ -21,8 +21,8 @@ import java.time.Instant;
                 @Field(name = ExchangeFolderReadable.FIELD_SYNC_STATE, type = String.class),
                 @Field(name = ExchangeFolderReadable.FIELD_PARENT_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
         },
-        indexes = {
-                @Index(fields = {ExchangeFolderReadable.FIELD_USER_EMAIL, ExchangeFolderReadable.FIELD_UUID})
+        hashIndexes = {
+                @HashIndex(fields = {ExchangeFolderReadable.FIELD_USER_EMAIL, ExchangeFolderReadable.FIELD_UUID})
         }
 )
 public class ExchangeFolderReadable extends DomainObject {

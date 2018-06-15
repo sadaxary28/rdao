@@ -4,21 +4,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IndexFilter implements Filter {
+public class HashFilter implements Filter {
 
     private final Map<String, Object> values = new HashMap<>();
 
-    public IndexFilter(String fieldName, Object fieldValue) {
+    public HashFilter(String fieldName, Object fieldValue) {
         appendField(fieldName, fieldValue);
     }
 
-    public IndexFilter appendField(String name, Object value) {
+    public HashFilter appendField(String name, Object value) {
         values.put(name, value);
-        return this;
-    }
-
-    public IndexFilter removeField(String name) {
-        values.remove(name);
         return this;
     }
 

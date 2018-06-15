@@ -3,7 +3,7 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.domainobject.iterator.*;
-import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
@@ -44,7 +44,7 @@ public abstract class DataEnumerable {
         return dbProvider;
     }
 
-    public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DatabaseException;
+    public abstract <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException;
     public abstract DBIterator createIterator(String columnFamily) throws DatabaseException;
 
     public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DatabaseException {
@@ -62,13 +62,16 @@ public abstract class DataEnumerable {
     public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<String> loadingFields) throws DatabaseException {
         if (filter instanceof EmptyFilter) {
             return new AllIterator<>(this, clazz, loadingFields);
-        } else if (filter instanceof IndexFilter) {
-            return new IndexIterator<>(this, clazz, loadingFields, (IndexFilter)filter);
-        } else if (filter instanceof PrefixIndexFilter) {
-            return new PrefixIndexIterator<>( this, clazz, loadingFields, (PrefixIndexFilter)filter);
-        } else if (filter instanceof IntervalIndexFilter) {
-            return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalIndexFilter) filter);
+        } else if (filter instanceof HashFilter) {
+            return new HashIndexIterator<>(this, clazz, loadingFields, (HashFilter)filter);
+        } else if (filter instanceof PrefixFilter) {
+            return new PrefixIndexIterator<>( this, clazz, loadingFields, (PrefixFilter)filter);
+        } else if (filter instanceof IntervalFilter) {
+            return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
+        } else if (filter instanceof RangeFilter) {
+            return new RangeIndexIterator<>(this, clazz, loadingFields, (RangeFilter) filter);
         }
+
         throw new IllegalArgumentException("Unknown filter type " + filter.getClass());
     }
 
@@ -79,7 +82,7 @@ public abstract class DataEnumerable {
     public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<String> preInitializedFields) {
         T obj = buildDomainObject(constructor, id);
         if (preInitializedFields == null) {
-            for (EntityField field : obj.getStructEntity().getFields()) {
+            for (Field field : obj.getStructEntity().getFields()) {
                 obj._setLoadedField(field.getName(), null);
             }
         } else {
@@ -151,7 +154,7 @@ public abstract class DataEnumerable {
                 }
                 return key.getId();
             }
-            EntityField field = obj.getStructEntity().getField(key.getFieldName());
+            Field field = obj.getStructEntity().getField(key.getFieldName());
             obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
 

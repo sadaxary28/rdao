@@ -11,12 +11,14 @@ import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.*;
-import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
+import com.infomaximum.database.utils.RangeIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.IndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
+import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.util.Arrays;
 import java.util.List;
@@ -77,15 +79,19 @@ public class DomainService {
 
         existsData = ensureColumnFamily(dataColumnFamily);
 
-        for (EntityIndex index : domain.getIndexes()) {
+        for (HashIndex index : domain.getHashIndexes()) {
             ensureIndex(index, () -> doIndex(index));
         }
 
-        for (EntityPrefixIndex index : domain.getPrefixIndexes()) {
+        for (PrefixIndex index : domain.getPrefixIndexes()) {
             ensureIndex(index, () -> doPrefixIndex(index));
         }
 
-        for (EntityIntervalIndex index : domain.getIntervalIndexes()) {
+        for (IntervalIndex index : domain.getIntervalIndexes()) {
+            ensureIndex(index, () -> doIntervalIndex(index));
+        }
+
+        for (RangeIndex index : domain.getRangeIndexes()) {
             ensureIndex(index, () -> doIntervalIndex(index));
         }
 
@@ -99,15 +105,19 @@ public class DomainService {
     static void removeDomainColumnFamiliesFrom(Set<String> columnFamilies, final StructEntity domain) {
         columnFamilies.remove(domain.getColumnFamily());
 
-        for (EntityIndex index : domain.getIndexes()) {
+        for (HashIndex index : domain.getHashIndexes()) {
             columnFamilies.remove(index.columnFamily);
         }
 
-        for (EntityPrefixIndex index : domain.getPrefixIndexes()) {
+        for (PrefixIndex index : domain.getPrefixIndexes()) {
             columnFamilies.remove(index.columnFamily);
         }
 
-        for (EntityIntervalIndex index : domain.getIntervalIndexes()) {
+        for (IntervalIndex index : domain.getIntervalIndexes()) {
+            columnFamilies.remove(index.columnFamily);
+        }
+
+        for (RangeIndex index : domain.getRangeIndexes()) {
             columnFamilies.remove(index.columnFamily);
         }
     }
@@ -144,43 +154,58 @@ public class DomainService {
         }
     }
 
-    private void doIndex(EntityIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+    private void doIndex(HashIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
         final IndexKey indexKey = new IndexKey(0, new long[index.sortedFields.size()]);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());
-            IndexUtils.setHashValues(index.sortedFields, obj, indexKey.getFieldValues());
+            HashIndexUtils.setHashValues(index.sortedFields, obj, indexKey.getFieldValues());
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
     }
 
-    private void doPrefixIndex(EntityPrefixIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
+    private void doPrefixIndex(PrefixIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
         final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
 
         indexData(indexingFields, (obj, transaction) -> {
             lexemes.clear();
-            for (EntityField field : index.sortedFields) {
+            for (Field field : index.sortedFields) {
                 PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getName()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
         });
     }
 
-    private void doIntervalIndex(EntityIntervalIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(EntityField::getName).collect(Collectors.toSet());
-        final List<EntityField> hashedFields = index.getHashedFields();
-        final EntityField indexedField = index.getIndexedField();
+    private void doIntervalIndex(IntervalIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final List<Field> hashedFields = index.getHashedFields();
+        final Field indexedField = index.getIndexedField();
         final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.size()]);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());
-            IndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
             indexKey.setIndexedValue(obj.get(indexedField.getName()));
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+        });
+    }
+
+    private void doIntervalIndex(RangeIndex index) throws DatabaseException {
+        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final List<Field> hashedFields = index.getHashedFields();
+        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()]);
+
+        indexData(indexingFields, (obj, transaction) -> {
+            indexKey.setId(obj.getId());
+            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            RangeIndexUtils.insertIndexedRange(index, indexKey,
+                    obj.get(index.getBeginIndexedField().getName()),
+                    obj.get(index.getEndIndexedField().getName()),
+                    transaction);
         });
     }
 
@@ -237,9 +262,9 @@ public class DomainService {
             return;
         }
 
-        List<EntityField> foreignFields = domain.getFields()
+        List<Field> foreignFields = domain.getFields()
                 .stream()
-                .filter(EntityField::isForeign)
+                .filter(Field::isForeign)
                 .collect(Collectors.toList());
 
         if (foreignFields.isEmpty()) {
@@ -248,7 +273,7 @@ public class DomainService {
 
         Set<String> fieldNames = foreignFields
                 .stream()
-                .map(EntityField::getName)
+                .map(Field::getName)
                 .collect(Collectors.toSet());
 
         FieldKey fieldKey = new FieldKey(0);
@@ -258,7 +283,7 @@ public class DomainService {
             while (iter.hasNext()) {
                 DomainObject obj = iter.next();
 
-                for (EntityField field : foreignFields) {
+                for (Field field : foreignFields) {
                     Long value = obj.get(field.getName());
                     if (value == null) {
                         continue;

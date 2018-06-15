@@ -14,7 +14,8 @@ public @interface Entity {
     String name();
     Field[] fields();
 
-    Index[] indexes() default {};
-    Index[] prefixIndexes() default {};
+    HashIndex[] hashIndexes() default {};
+    PrefixIndex[] prefixIndexes() default {};
     IntervalIndex[] intervalIndexes() default {};
+    RangeIndex[] rangeIndexes() default {};
 }

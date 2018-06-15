@@ -4,7 +4,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.EntityPrefixIndex;
+import com.infomaximum.database.schema.PrefixIndex;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
@@ -178,8 +178,6 @@ public class PrefixIndexUtils {
 
     /**
      * @param sortedSearchingWords is sorted list by length of word
-     * @param indexingTexts
-     * @return
      */
     public static boolean contains(final List<String> sortedSearchingWords, final String[] indexingTexts, List<String> tempList) {
         tempList.clear();
@@ -206,7 +204,7 @@ public class PrefixIndexUtils {
         return matchCount == sortedSearchingWords.size();
     }
 
-    public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
+    public static void removeIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
@@ -230,7 +228,7 @@ public class PrefixIndexUtils {
         }
     }
 
-    public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
+    public static void insertIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }

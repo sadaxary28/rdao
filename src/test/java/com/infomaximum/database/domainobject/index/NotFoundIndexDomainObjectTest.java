@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.exception.runtime.NotFoundIndexException;
+import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.database.domainobject.ExchangeFolderDataTest;
 import org.junit.Assert;
@@ -15,14 +15,14 @@ public class NotFoundIndexDomainObjectTest extends ExchangeFolderDataTest {
     @Test
     public void run() throws Exception {
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter("uuid", ""));
+            domainObjectSource.find(ExchangeFolderReadable.class, new HashFilter("uuid", ""));
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (IndexNotFoundException ignore) {}
 
         try {
-            domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter(ExchangeFolderReadable.FIELD_UUID, "")
+            domainObjectSource.find(ExchangeFolderReadable.class, new HashFilter(ExchangeFolderReadable.FIELD_UUID, "")
                 .appendField(ExchangeFolderReadable.FIELD_SYNC_DATE, ""));
             Assert.fail();
-        } catch (NotFoundIndexException ignore) {}
+        } catch (IndexNotFoundException ignore) {}
     }
 }

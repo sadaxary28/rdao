@@ -1,19 +1,18 @@
 package com.infomaximum.database.schema;
 
-import com.infomaximum.database.anotation.Field;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
 
 import java.io.Serializable;
 
-public class EntityField {
+public class Field {
 
     private final String name;
     private final Class<? extends Serializable> type;
     private final TypeConverter converter;
     private final StructEntity foreignDependency;
 
-    EntityField(Field field, StructEntity parent) {
+    Field(com.infomaximum.database.anotation.Field field, StructEntity parent) {
         this.name = field.name();
         this.type = field.type();
         this.converter = buildPacker(field.packerType());

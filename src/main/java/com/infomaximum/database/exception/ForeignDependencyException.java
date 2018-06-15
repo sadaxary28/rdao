@@ -1,10 +1,10 @@
 package com.infomaximum.database.exception;
 
-import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Field;
 
 public class ForeignDependencyException extends DatabaseException {
 
-    public ForeignDependencyException(long objId, Class objClass, EntityField foreignField, long notExistenceFieldValue) {
+    public ForeignDependencyException(long objId, Class objClass, Field foreignField, long notExistenceFieldValue) {
         super(String.format("Foreign field %s.%s = %d not exists into %s, for object id = %d.",
                 objClass.getName(), foreignField.getName(), notExistenceFieldValue,
                 foreignField.getForeignDependency().getObjectClass().getName(), objId));
