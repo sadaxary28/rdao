@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
@@ -54,7 +54,7 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        final PrefixIndexFilter filter = new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME, "");
+        final PrefixFilter filter = new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "");
 
         filter.setFieldValue("ghbdtn");
         testFind(filter);
@@ -142,7 +142,7 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        final PrefixIndexFilter filter = new PrefixIndexFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "");
+        final PrefixFilter filter = new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "");
 
         filter.setFieldValue("ghbdtn");
         testFind(filter);
@@ -189,16 +189,16 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             }
         });
 
-        final PrefixIndexFilter filter = new PrefixIndexFilter(StoreFileReadable.FIELD_FILE_NAME, "всем");
+        final PrefixFilter filter = new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "всем");
 
         testFind(filter, expectedIds);
     }
 
-    private void testFind(PrefixIndexFilter filter, long... expectedIds) throws DatabaseException {
+    private void testFind(PrefixFilter filter, long... expectedIds) throws DatabaseException {
         testFind(filter, Longs.asList(expectedIds));
     }
 
-    private void testFind(PrefixIndexFilter filter, List<Long> expectedIds) throws DatabaseException {
+    private void testFind(PrefixFilter filter, List<Long> expectedIds) throws DatabaseException {
         List<Long> temp = new ArrayList<>(expectedIds);
 
         List<Long> foundIds = new ArrayList<>(temp.size());

@@ -2,7 +2,7 @@ package com.infomaximum.domain.proxy;
 
 import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;
-import com.infomaximum.database.anotation.Index;
+import com.infomaximum.database.anotation.HashIndex;
 import com.infomaximum.domain.type.FormatType;
 
 /**
@@ -18,9 +18,9 @@ import com.infomaximum.domain.type.FormatType;
                 @Field(name = ProxyStoreFileReadable.FIELD_SINGLE, type = Boolean.class),
                 @Field(name = ProxyStoreFileReadable.FIELD_FORMAT, type = FormatType.class)
         },
-        indexes = {
-                @Index(fields = {ProxyStoreFileReadable.FIELD_SIZE}),
-                @Index(fields = {ProxyStoreFileReadable.FIELD_SIZE, ProxyStoreFileReadable.FIELD_FILE_NAME})
+        hashIndexes = {
+                @HashIndex(fields = {ProxyStoreFileReadable.FIELD_SIZE}),
+                @HashIndex(fields = {ProxyStoreFileReadable.FIELD_SIZE, ProxyStoreFileReadable.FIELD_FILE_NAME})
         }
 )
 public class ProxyStoreFileReadable extends ProxyDomainObject {

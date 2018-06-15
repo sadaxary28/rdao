@@ -1,15 +1,13 @@
 package com.infomaximum.domain;
 
-import com.infomaximum.database.anotation.Entity;
-import com.infomaximum.database.anotation.Field;
-import com.infomaximum.database.anotation.Index;
-import com.infomaximum.database.anotation.IntervalIndex;
+import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.domain.type.FormatType;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Created by user on 19.04.2017.
@@ -25,17 +23,19 @@ import java.util.Date;
                 @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
                 @Field(name = StoreFileReadable.FIELD_FOLDER_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
                 @Field(name = StoreFileReadable.FIELD_DOUBLE, type = Double.class),
-                @Field(name = StoreFileReadable.FIELD_DATE, type = Date.class)
+                @Field(name = StoreFileReadable.FIELD_DATE, type = Instant.class),
+                @Field(name = StoreFileReadable.FIELD_BEGIN, type = Long.class),
+                @Field(name = StoreFileReadable.FIELD_END, type = Long.class)
         },
-        indexes = {
-                @Index(fields = {StoreFileReadable.FIELD_SIZE}),
-                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME}),
-                @Index(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
-                @Index(fields = {StoreFileReadable.FIELD_FORMAT})
+        hashIndexes = {
+                @HashIndex(fields = {StoreFileReadable.FIELD_SIZE}),
+                @HashIndex(fields = {StoreFileReadable.FIELD_FILE_NAME}),
+                @HashIndex(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
+                @HashIndex(fields = {StoreFileReadable.FIELD_FORMAT})
         },
         prefixIndexes = {
-                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME}),
-                @Index(fields = {StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE})
+                @PrefixIndex(fields = {StoreFileReadable.FIELD_FILE_NAME}),
+                @PrefixIndex(fields = {StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE})
         },
         intervalIndexes = {
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE),
@@ -43,6 +43,10 @@ import java.util.Date;
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DATE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
+        },
+        rangeIndexes = {
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
         }
 )
 public class StoreFileReadable extends DomainObject {
@@ -55,6 +59,11 @@ public class StoreFileReadable extends DomainObject {
     public final static String FIELD_FOLDER_ID = "folder_id";
     public final static String FIELD_DOUBLE = "double";
     public final static String FIELD_DATE = "date";
+
+    public final static String FIELD_BEGIN = "begin";
+    public final static String FIELD_END = "end";
+
+    public final static RangeFilter.IndexedField RANGE_INDEXED_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
 
     public static class FormatConverter extends EnumConverter<FormatType> {
 
@@ -96,7 +105,11 @@ public class StoreFileReadable extends DomainObject {
         return get(FIELD_DOUBLE);
     }
 
-    public Date getDate() throws DatabaseException {
-        return getDate(FIELD_DATE);
+    public Instant getInstant() throws DatabaseException {
+        return getInstant(FIELD_DATE);
+    }
+
+    public Long getBegin() {
+        return getLong(FIELD_BEGIN);
     }
 }

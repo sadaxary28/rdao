@@ -2,8 +2,7 @@ package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.domainobject.filter.IntervalIndexFilter;
+import com.infomaximum.database.domainobject.filter.IntervalFilter;
 import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
@@ -11,7 +10,11 @@ import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
@@ -57,20 +60,20 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime));
+            obj.setInstant(Instant.ofEpochMilli(currentTime));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime + 1000));
+            obj.setInstant(Instant.ofEpochMilli(currentTime + 1000));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setDate(new Date(currentTime + 5 * 1000));
+            obj.setInstant(Instant.ofEpochMilli(currentTime + 5 * 1000));
             transaction.save(obj);
         });
 
-        assertValueEquals(Arrays.asList(new Date(currentTime), new Date(currentTime + 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime), new Date(currentTime + 1000));
-        assertValueEquals(Arrays.asList(new Date(currentTime + 1000), new Date(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, new Date(currentTime + 500), new Date(currentTime + 6 * 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime + 1000), Instant.ofEpochMilli(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime + 500), Instant.ofEpochMilli(currentTime + 6 * 1000));
     }
 
     @Test
@@ -184,11 +187,11 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        assertValueEquals(Arrays.asList(-4L, 3L, 5L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertValueEquals(Arrays.asList(-4L, 3L, 5L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name1));
-        assertValueEquals(Arrays.asList(-2L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
+        assertValueEquals(Arrays.asList(-2L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name2));
-        assertValueEquals(Arrays.asList(), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
+        assertValueEquals(Arrays.asList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, "name3"));
     }
 
@@ -213,13 +216,13 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        assertIdEquals(Arrays.asList(2L, 1L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertIdEquals(Arrays.asList(2L, 1L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
-        assertIdEquals(Arrays.asList(1L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 5L, 5L)
+        assertIdEquals(Arrays.asList(1L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, 5L, 5L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
-        assertIdEquals(Arrays.asList(3L), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertIdEquals(Arrays.asList(3L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 2L));
-        assertIdEquals(Arrays.asList(), new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertIdEquals(Arrays.asList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 3L));
     }
 
@@ -252,13 +255,13 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         });
 
         assertIdEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L),
-                new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L));
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L));
 
         assertIdEquals(Arrays.asList(1L, 2L, 3L),
-                new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, -5L, 3L));
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 3L));
 
         assertIdEquals(Arrays.asList(2L, 3L, 4L, 5L, 6L),
-                new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 2L, 5L));
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 5L));
     }
 
     @Test
@@ -284,7 +287,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         try (Transaction transaction = domainObjectSource.buildTransaction()) {
             try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
-                    new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 10L, 20L)
+                    new IntervalFilter(StoreFileReadable.FIELD_SIZE, 10L, 20L)
                             .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
                 List<Long> ids = new ArrayList<>();
                 while (i.hasNext()) {
@@ -302,7 +305,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         /*try (Transaction transaction = domainObjectSource.buildTransaction()) {
             try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
-                    new IntervalIndexFilter(StoreFileReadable.FIELD_SIZE, 10L, 50L)
+                    new IntervalFilter(StoreFileReadable.FIELD_SIZE, 10L, 50L)
                             .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
                 List<Long> ids = new ArrayList<>();
                 while (i.hasNext()) {
@@ -320,18 +323,18 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
     }
 
     protected void assertValueEquals(List<Double> expected, String fieldName, Double begin, Double end) throws DatabaseException {
-        assertValueEquals(expected, new IntervalIndexFilter(fieldName, begin, end));
+        assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
     protected void assertValueEquals(List<Long> expected, String fieldName, Long begin, Long end) throws DatabaseException {
-        assertValueEquals(expected, new IntervalIndexFilter(fieldName, begin, end));
+        assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
-    protected void assertValueEquals(List<Date> expected, String fieldName, Date begin, Date end) throws DatabaseException {
-        assertValueEquals(expected, new IntervalIndexFilter(fieldName, begin, end));
+    protected void assertValueEquals(List<Instant> expected, String fieldName, Instant begin, Instant end) throws DatabaseException {
+        assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
-    private <T> void assertValueEquals(List<T> expected, IntervalIndexFilter filter) throws DatabaseException {
+    private <T> void assertValueEquals(List<T> expected, IntervalFilter filter) throws DatabaseException {
         filter.setSortDirection(SortDirection.ASC);
         List<T> actual = getValues(filter);
         Assert.assertEquals(expected, actual);
@@ -342,7 +345,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         Assert.assertEquals(expected, actual);
     }
 
-    private void assertIdEquals(List<Long> expected, IntervalIndexFilter filter) throws DatabaseException {
+    private void assertIdEquals(List<Long> expected, IntervalFilter filter) throws DatabaseException {
         filter.setSortDirection(SortDirection.ASC);
         List<Long> actual = getIds(filter);
         Assert.assertEquals(expected, actual);
@@ -353,7 +356,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         Assert.assertEquals(expected, actual);
     }
 
-    private <T> List<T> getValues(IntervalIndexFilter filter) throws DatabaseException {
+    private <T> List<T> getValues(IntervalFilter filter) throws DatabaseException {
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
             List<T> result = new ArrayList<>();
             while (iterator.hasNext()) {
@@ -365,7 +368,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         }
     }
 
-    private List<Long> getIds(IntervalIndexFilter filter) throws DatabaseException {
+    private List<Long> getIds(IntervalFilter filter) throws DatabaseException {
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
             List<Long> result = new ArrayList<>();
             while (iterator.hasNext()) {

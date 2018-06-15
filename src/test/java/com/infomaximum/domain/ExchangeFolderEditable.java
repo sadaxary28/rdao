@@ -3,7 +3,7 @@ package com.infomaximum.domain;
 import com.infomaximum.database.domainobject.DomainObjectEditable;
 import com.infomaximum.database.exception.DatabaseException;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Created by kris on 27.06.17.
@@ -22,8 +22,8 @@ public class ExchangeFolderEditable extends ExchangeFolderReadable implements Do
         set(FIELD_USER_EMAIL, userEmail);
     }
 
-    public void setSyncDate(Date syncDate) {
-        set(FIELD_SYNC_DATE, syncDate);
+    public void setSyncDate(Instant syncInstant) {
+        set(FIELD_SYNC_DATE, syncInstant);
     }
 
     public void setSyncState(String syncState) {

@@ -2,13 +2,17 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
-import com.infomaximum.database.schema.EntityField;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public abstract class DomainObject implements Serializable {
 
@@ -48,7 +52,7 @@ public abstract class DomainObject implements Serializable {
             newFieldValues = new HashMap<>();
         }
 
-        EntityField field = getStructEntity().getField(fieldName);
+        Field field = getStructEntity().getField(fieldName);
 
         if (value != null) {
             field.throwIfNotMatch(value.getClass());
@@ -90,7 +94,7 @@ public abstract class DomainObject implements Serializable {
         return get(fieldName);
     }
 
-    protected Date getDate(String fieldName) {
+    protected Instant getInstant(String fieldName) {
         return get(fieldName);
     }
 
@@ -109,20 +113,20 @@ public abstract class DomainObject implements Serializable {
         return lazyStructEntity;
     }
 
-    protected Map<EntityField, Serializable> getLoadedValues() {
-        Map<EntityField, Serializable> values = new HashMap<>(loadedFieldValues.size());
+    protected Map<Field, Serializable> getLoadedValues() {
+        Map<Field, Serializable> values = new HashMap<>(loadedFieldValues.size());
         for (Map.Entry<String, Optional<Serializable>> entry : loadedFieldValues.entrySet()) {
             values.put(getStructEntity().getField(entry.getKey()), entry.getValue().orElse(null));
         }
         return values;
     }
 
-    protected Map<EntityField, Serializable> getNewValues() {
+    protected Map<Field, Serializable> getNewValues() {
         if (newFieldValues == null || newFieldValues.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<EntityField, Serializable> values = new HashMap<>(newFieldValues.size());
+        Map<Field, Serializable> values = new HashMap<>(newFieldValues.size());
         for (Map.Entry<String, Serializable> entry : newFieldValues.entrySet()) {
             values.put(getStructEntity().getField(entry.getKey()), entry.getValue());
         }

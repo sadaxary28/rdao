@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.database.domainobject.ExchangeFolderDataTest;
@@ -27,7 +27,7 @@ public class MultiIndexCreateTest extends ExchangeFolderDataTest {
         });
 
         //Ищем объект
-         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, new IndexFilter(ExchangeFolderReadable.FIELD_UUID, uuid)
+         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, new HashFilter(ExchangeFolderReadable.FIELD_UUID, uuid)
               .appendField(ExchangeFolderReadable.FIELD_USER_EMAIL, userEmail))) {
              ExchangeFolderReadable exchangeFolder = i.next();
              Assert.assertNotNull(exchangeFolder);

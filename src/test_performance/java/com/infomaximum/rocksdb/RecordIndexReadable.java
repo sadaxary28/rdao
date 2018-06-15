@@ -2,7 +2,7 @@ package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;
-import com.infomaximum.database.anotation.Index;
+import com.infomaximum.database.anotation.HashIndex;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 
@@ -15,10 +15,10 @@ import com.infomaximum.database.exception.DatabaseException;
                 @Field(name = RecordIndexReadable.FIELD_INT_1, type = Integer.class),
                 @Field(name = RecordIndexReadable.FIELD_BOOLEAN_1, type = Boolean.class)
         },
-        indexes = {
-                @Index(fields = {RecordIndexReadable.FIELD_STRING_1}),
-                @Index(fields = {RecordIndexReadable.FIELD_LONG_1}),
-                @Index(fields = {RecordIndexReadable.FIELD_LONG_1, RecordIndexReadable.FIELD_STRING_1})
+        hashIndexes = {
+                @HashIndex(fields = {RecordIndexReadable.FIELD_STRING_1}),
+                @HashIndex(fields = {RecordIndexReadable.FIELD_LONG_1}),
+                @HashIndex(fields = {RecordIndexReadable.FIELD_LONG_1, RecordIndexReadable.FIELD_STRING_1})
         }
 )
 public class RecordIndexReadable  extends DomainObject {
