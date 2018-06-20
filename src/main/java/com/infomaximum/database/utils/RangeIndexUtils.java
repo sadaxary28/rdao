@@ -97,15 +97,18 @@ public class RangeIndexUtils {
         IntervalIndexUtils.checkInterval(begin, end);
 
         try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
-            KeyValue keyValue = iterator.seek(RangeIndexKey.buildLeftBorder(key.getHashedValues(), begin));
+            KeyValue keyValue = iterator.seek(RangeIndexKey.buildBeginPattern(key.getHashedValues(), begin));
             while (keyValue != null) {
                 if (RangeIndexKey.unpackId(keyValue.getKey()) == key.getId()) {
                     transaction.delete(index.columnFamily, keyValue.getKey());
-                }
 
-                if (RangeIndexKey.unpackEndOfRange(keyValue.getKey())) {
+                    if (RangeIndexKey.unpackEndOfRange(keyValue.getKey())) {
+                        break;
+                    }
+                } else if (RangeIndexKey.unpackIndexedValue(keyValue.getKey()) > end) {
                     break;
                 }
+
                 keyValue = iterator.next();
             }
         }
