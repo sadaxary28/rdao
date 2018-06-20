@@ -31,20 +31,20 @@ public abstract class BaseIntervalIndexKey extends Key {
 
     public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
-        fillPattern(hashedValues, indexedValue, buffer);
+        fillBuffer(hashedValues, indexedValue, buffer);
         return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
     }
 
     public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
-        fillPattern(hashedValues, indexedValue, buffer);
+        fillBuffer(hashedValues, indexedValue, buffer);
         buffer.putLong(0xffffffffffffffffL);
         KeyPattern pattern = new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
         pattern.setForBackward(true);
         return pattern;
     }
 
-    static void fillPattern(long[] hashedValues, long indexedValue, ByteBuffer destination) {
+    static void fillBuffer(long[] hashedValues, long indexedValue, ByteBuffer destination) {
         for (int i = 0; i < hashedValues.length; ++i) {
             destination.putLong(hashedValues[i]);
         }
@@ -52,7 +52,7 @@ public abstract class BaseIntervalIndexKey extends Key {
         destination.putLong(indexedValue);
     }
 
-    static Byte getSignByte(long value) {
+    private static Byte getSignByte(long value) {
         return value < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE;
     }
 }

@@ -127,6 +127,74 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         );
     }
 
+    @Test
+    public void updateAndFind() throws Exception {
+        final long id1 = 1L;
+        final long id2 = 2L;
+        final List<StoreFileReadable> expected = Arrays.asList(
+                new StoreFileReadable(id1), new StoreFileReadable(id2)
+        );
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(10L);
+            s.setEnd(20L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(20L);
+            s.setEnd(21L);
+            transaction.save(s);
+        });
+
+        Assert.assertEquals(expected, findAll(new Interval(0, 40)));
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.get(StoreFileEditable.class, id2);
+            s.setEnd(22L);
+            transaction.save(s);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.get(StoreFileEditable.class, id1);
+            s.setEnd(23L);
+            transaction.save(s);
+        });
+
+        Assert.assertEquals(expected, findAll(new Interval(0, 40)));
+    }
+
+    @Test
+    public void deleteAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(10L);
+            s.setEnd(20L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(20L);
+            s.setEnd(25L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(15L);
+            s.setEnd(23L);
+            transaction.save(s);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class,
+                    new RangeFilter(StoreFileEditable.RANGE_INDEXED_FIELD, 0L, 50L))) {
+                while (i.hasNext()) {
+                    transaction.remove(i.next());
+                }
+            }
+        });
+
+        Assert.assertEquals(Collections.emptyList(), findAll(new Interval(0, 50)));
+    }
+
     /**
      * @param f filter
      */
@@ -160,8 +228,15 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     }
 
     private void assertEquals(String filter, List<StoreFileReadable> expected) throws DatabaseException {
-        List<StoreFileReadable> actual = new ArrayList<>(expected.size());
         Interval interval = parseInterval(filter);
+        List<StoreFileReadable> actual = findAll(interval);
+
+        expected.sort(Comparator.comparingLong(StoreFileReadable::getBegin));
+        Assert.assertEquals(expected, actual);
+    }
+
+    private List<StoreFileReadable> findAll(Interval interval) throws DatabaseException {
+        List<StoreFileReadable> result = new ArrayList<>();
 
         RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INDEXED_FIELD, interval.begin, interval.end);
         if (interval.folderId != null) {
@@ -169,12 +244,11 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         }
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
             while (i.hasNext()) {
-                actual.add(i.next());
+                result.add(i.next());
             }
         }
 
-        expected.sort(Comparator.comparingLong(StoreFileReadable::getBegin));
-        Assert.assertEquals(expected, actual);
+        return result;
     }
 
     private static Interval parseInterval(String src) {
@@ -197,6 +271,10 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             this.end = end;
             this.isMatched = isMatched;
             this.folderId = folderId;
+        }
+
+        Interval(long begin, long end) {
+            this(begin, end, false, null);
         }
     }
 }

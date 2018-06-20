@@ -18,11 +18,7 @@ public class IntervalIndexKey extends BaseIntervalIndexKey {
     @Override
     public byte[] pack() {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
-        for (int i = 0; i < hashedValues.length; ++i) {
-            buffer.putLong(hashedValues[i]);
-        }
-        buffer.put(getSignByte(indexedValue));
-        buffer.putLong(indexedValue);
+        fillBuffer(hashedValues, indexedValue, buffer);
         buffer.putLong(getId());
         return buffer.array();
     }

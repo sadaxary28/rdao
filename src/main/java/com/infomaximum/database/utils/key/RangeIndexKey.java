@@ -1,5 +1,6 @@
 package com.infomaximum.database.utils.key;
 
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -32,20 +33,9 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     @Override
     public byte[] pack() {
         ByteBuffer buffer = TypeConvert.allocateBuffer((hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
-        for (int i = 0; i < hashedValues.length; ++i) {
-            buffer.putLong(hashedValues[i]);
-        }
-        buffer.put(getSignByte(indexedValue));
-        buffer.putLong(indexedValue);
+        fillBuffer(hashedValues, indexedValue, buffer);
         // for segment sorting
-        if (isEndOfRange) {
-            buffer.put(END_OF_RANGE_VALUE);
-            buffer.putLong(0);
-        } else {
-            buffer.put(beginRangeValue < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE);
-            buffer.putLong(beginRangeValue);
-        }
-
+        putBeginRange(beginRangeValue, isEndOfRange, buffer);
         buffer.putLong(getId());
         return buffer.array();
     }
@@ -60,5 +50,22 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
 
     public static void setIndexedValue(long indexedValue, byte[] dstKey) {
         TypeConvert.pack(indexedValue, dstKey, dstKey.length - ID_BYTE_SIZE - 2 * Long.BYTES - Byte.BYTES);
+    }
+
+    public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
+        fillBuffer(hashedValues, beginRangeValue, buffer);
+        putBeginRange(beginRangeValue, false, buffer);
+        return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
+    }
+
+    private static void putBeginRange(long beginRangeValue, boolean isEndOfRange, ByteBuffer destination) {
+        if (isEndOfRange) {
+            destination.put(END_OF_RANGE_VALUE);
+            destination.putLong(0);
+        } else {
+            destination.put(beginRangeValue < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE);
+            destination.putLong(beginRangeValue);
+        }
     }
 }
