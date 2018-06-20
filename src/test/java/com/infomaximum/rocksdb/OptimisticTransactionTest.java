@@ -1,14 +1,10 @@
 package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.utils.TypeConvert;
-//import com.infomaximum.rocksdb.RocksDataTest;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.rocksdb.*;
-
-//import javax.swing.*;
-//import java.security.SecureRandom;
 
 public class OptimisticTransactionTest extends RocksDataTest {
 
@@ -19,69 +15,6 @@ public class OptimisticTransactionTest extends RocksDataTest {
     final byte[] key2 = TypeConvert.pack("key2");
     final byte[] value2_old = TypeConvert.pack("value2_old");
     final byte[] value2_new = TypeConvert.pack("value2_new");
-
-//    private static String PROCESS_PID = "-";
-//    static {
-//        try {
-//            String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-//            if (processName != null && processName.length() > 0) {
-//                String[] parse = processName.split("@");
-//                PROCESS_PID = parse[0];
-//            }
-//        } catch (Throwable e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    private static void showMessage(String message) {
-//        JOptionPane optionPane = new JOptionPane(message);
-//        JDialog dialog = optionPane.createDialog("Perfomance test");
-//        dialog.setAlwaysOnTop(true);
-//        dialog.setVisible(true);
-//    }
-
-//    @Test
-//    public void test() throws RocksDBException {
-//        try(final Options options = new Options().setCreateIfMissing(true);
-//            final OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString());
-//            final WriteOptions writeOptions = new WriteOptions();
-//            final ReadOptions readOptions = new ReadOptions()) {
-//
-//            System.out.println(PROCESS_PID);
-//
-//            showMessage("Test on starting...");
-//
-//            final long totalSize = 2L * 1024L * 1024L * 1024L;
-//            final long packageSize = 50L * 1024L * 1024L;
-//            final int valueSize = 1024;
-//            final int keySize = 100;
-//
-//            final SecureRandom secureRandom = new SecureRandom();
-//
-//            long totalCommitedSize = 0;
-//            while (totalCommitedSize < totalSize) {
-//                //try (final Transaction txn = txnDb.beginTransaction(writeOptions)) {
-//                    long commitedSize = 0;
-//                    while (commitedSize < packageSize) {
-//                        byte[] key = secureRandom.generateSeed(keySize);
-//                        byte[] value = secureRandom.generateSeed(valueSize);
-//                        //txn.put(key, value);
-//                        txnDb.getBaseDB().put(key, value);
-//                        commitedSize += valueSize;
-//                    }
-//                    //txn.commit();
-//                    totalCommitedSize += commitedSize;
-//                //}
-////                try {
-////                    Thread.sleep(500);
-////                } catch (InterruptedException e) {
-////                    throw new RuntimeException(e);
-////                }
-//            }
-//
-//            showMessage("Test on stopped.");
-//        }
-//    }
 
     @Test
     public void commit() throws RocksDBException {
