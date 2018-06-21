@@ -76,7 +76,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // update hash-indexed values
         for (HashIndex index: object.getStructEntity().getHashIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
-                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                tryLoadFields(columnFamily, object, index.sortedFields, loadedValues);
                 updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
@@ -84,7 +84,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // update prefix-indexed values
         for (PrefixIndex index: object.getStructEntity().getPrefixIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
-                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                tryLoadFields(columnFamily, object, index.sortedFields, loadedValues);
                 updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
@@ -92,7 +92,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // update interval-indexed values
         for (IntervalIndex index: object.getStructEntity().getIntervalIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
-                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                tryLoadFields(columnFamily, object, index.sortedFields, loadedValues);
                 updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
@@ -100,7 +100,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         // update range-indexed values
         for (RangeIndex index: object.getStructEntity().getRangeIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
-                tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
+                tryLoadFields(columnFamily, object, index.sortedFields, loadedValues);
                 updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
@@ -135,25 +135,25 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // delete hash-indexed values
         for (HashIndex index : obj.getStructEntity().getHashIndexes()) {
-            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete prefix-indexed values
         for (PrefixIndex index: obj.getStructEntity().getPrefixIndexes()) {
-            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete interval-indexed values
         for (IntervalIndex index: obj.getStructEntity().getIntervalIndexes()) {
-            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
         // delete interval-indexed values
         for (RangeIndex index: obj.getStructEntity().getRangeIndexes()) {
-            tryLoadFields(columnFamily, obj.getId(), index.sortedFields, loadedValues);
+            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
@@ -201,9 +201,13 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
     }
 
-    private void tryLoadFields(String columnFamily, long id, final List<Field> fields, Map<Field, Serializable> loadedValues) throws DatabaseException {
+    private void tryLoadFields(String columnFamily, DomainObject obj, final List<Field> fields, Map<Field, Serializable> loadedValues) throws DatabaseException {
+        if (obj._isJustCreated()) {
+            return;
+        }
+
         for (Field field: fields) {
-            tryLoadField(columnFamily, id, field, loadedValues);
+            tryLoadField(columnFamily, obj.getId(), field, loadedValues);
         }
     }
 

@@ -36,10 +36,10 @@ public class FieldKey extends Key {
 
     @Override
     public byte[] pack() {
-        final ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE + fieldName.length);
-        buffer.putLong(getId());
-        buffer.put(fieldName);
-        return buffer.array();
+        byte[] buffer = new byte[ID_BYTE_SIZE + fieldName.length];
+        TypeConvert.pack(getId(), buffer, 0);
+        System.arraycopy(fieldName, 0, buffer, ID_BYTE_SIZE, fieldName.length);
+        return buffer;
     }
 
     public static long unpackId(byte[] src) {
