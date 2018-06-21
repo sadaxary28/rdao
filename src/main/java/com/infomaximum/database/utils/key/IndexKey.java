@@ -25,12 +25,14 @@ public class IndexKey extends Key {
 
     @Override
     public byte[] pack() {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length);
+        byte[] buffer = new byte[ID_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length];
+        int offset = 0;
         for (int i = 0; i < fieldValues.length; ++i) {
-            buffer.putLong(fieldValues[i]);
+            TypeConvert.pack(fieldValues[i], buffer, offset);
+            offset += ID_BYTE_SIZE;
         }
-        buffer.putLong(getId());
-        return buffer.array();
+        TypeConvert.pack(getId(), buffer, offset);
+        return buffer;
     }
 
     public static IndexKey unpack(final byte[] src) {

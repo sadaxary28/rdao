@@ -17,7 +17,7 @@ public class DomainObjectSource extends DataEnumerable {
          * @param transaction Контекст, в котором выполняется операция.
          * @throws Exception Если во время выполнения операции возникла ошибка.
          */
-        public void action(final Transaction transaction) throws Exception;
+        void action(final Transaction transaction) throws Exception;
     }
 
     public DomainObjectSource(DBProvider dbProvider) {
@@ -37,7 +37,7 @@ public class DomainObjectSource extends DataEnumerable {
 
     @Override
     public <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException {
-        byte[] value = dbProvider.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getName()).pack());
+        byte[] value = dbProvider.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getNameBytes()).pack());
         return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 

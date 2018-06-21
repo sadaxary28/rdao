@@ -2,29 +2,31 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.exception.runtime.KeyCorruptedException;
+import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Set;
 
 public class FieldKey extends Key {
 
-    private final String fieldName;
+    private final byte[] fieldName;
 
     public FieldKey(long id) {
         super(id);
-        this.fieldName = null;
+        this.fieldName = TypeConvert.EMPTY_BYTE_ARRAY;
     }
 
-    public FieldKey(long id, String fieldName) {
+    public FieldKey(long id, byte[] fieldName) {
         super(id);
-        if (fieldName == null || fieldName.isEmpty()) {
+        if (ByteUtils.isNullOrEmpty(fieldName)) {
             throw new IllegalArgumentException();
         }
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
+    public byte[] getFieldName() {
         return fieldName;
     }
 
@@ -34,28 +36,22 @@ public class FieldKey extends Key {
 
     @Override
     public byte[] pack() {
-        final byte[] name = fieldName != null ? TypeConvert.pack(fieldName) : null;
-        final ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE + (name != null ? name.length : 0));
-
-        buffer.putLong(getId());
-        if (name != null) {
-            buffer.put(name);
-        }
-
-        return buffer.array();
+        byte[] buffer = new byte[ID_BYTE_SIZE + fieldName.length];
+        TypeConvert.pack(getId(), buffer, 0);
+        System.arraycopy(fieldName, 0, buffer, ID_BYTE_SIZE, fieldName.length);
+        return buffer;
     }
 
-    public static FieldKey unpack(final byte[] src) {
-        if (src.length < ID_BYTE_SIZE) {
-            throw new KeyCorruptedException(src);
-        }
+    public static long unpackId(byte[] src) {
+        return TypeConvert.unpackLong(src, 0);
+    }
 
-        long id = TypeConvert.unpackLong(src, 0);
-        if (src.length == ID_BYTE_SIZE) {
-            return new FieldKey(id);
-        }
+    public static boolean unpackBeginningObject(byte[] src) {
+        return src.length == ID_BYTE_SIZE;
+    }
 
-        return new FieldKey(id, TypeConvert.unpackString(src, ID_BYTE_SIZE, src.length - ID_BYTE_SIZE));
+    public static String unpackFieldName(byte[] src) {
+        return TypeConvert.unpackString(src, ID_BYTE_SIZE, src.length - ID_BYTE_SIZE);
     }
 
     public static byte[] buildKeyPrefix(long id) {
