@@ -49,6 +49,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             long id = transaction.nextId(entity.getColumnFamily());
 
             T domainObject = buildDomainObject(DomainObject.getConstructor(clazz), id, Collections.emptyList());
+            domainObject._setAsJustCreated();
 
             //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
             for (Field field: entity.getFields()) {
@@ -76,7 +77,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (HashIndex index: object.getStructEntity().getHashIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
+                updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
 
@@ -84,7 +85,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (PrefixIndex index: object.getStructEntity().getPrefixIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
+                updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
 
@@ -92,7 +93,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (IntervalIndex index: object.getStructEntity().getIntervalIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
+                updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
 
@@ -100,7 +101,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         for (RangeIndex index: object.getStructEntity().getRangeIndexes()) {
             if (anyChanged(index.sortedFields, newValues)) {
                 tryLoadFields(columnFamily, object.getId(), index.sortedFields, loadedValues);
-                updateIndexedValue(index, object.getId(), loadedValues, newValues, transaction);
+                updateIndexedValue(index, object, loadedValues, newValues, transaction);
             }
         }
 
@@ -116,7 +117,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             if (value != null) {
                 byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getConverter());
                 transaction.put(columnFamily, key, bValue);
-            } else {
+            } else if (!object._isJustCreated()) {
                 transaction.delete(columnFamily, key);
             }
         }
@@ -216,35 +217,39 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getConverter()));
     }
 
-    static void updateIndexedValue(HashIndex index, long id, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
-        final IndexKey indexKey = new IndexKey(id, new long[index.sortedFields.size()]);
+    private static void updateIndexedValue(HashIndex index, DomainObject obj, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
+        final IndexKey indexKey = new IndexKey(obj.getId(), new long[index.sortedFields.size()]);
 
-        // Remove old value-index
-        HashIndexUtils.setHashValues(index.sortedFields, prevValues, indexKey.getFieldValues());
-        transaction.delete(index.columnFamily, indexKey.pack());
+        if (!obj._isJustCreated()) {
+            // Remove old value-index
+            HashIndexUtils.setHashValues(index.sortedFields, prevValues, indexKey.getFieldValues());
+            transaction.delete(index.columnFamily, indexKey.pack());
+        }
 
         // Add new value-index
         setHashValues(index.sortedFields, prevValues, newValues, indexKey.getFieldValues());
         transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
-    static void removeIndexedValue(HashIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
+    private static void removeIndexedValue(HashIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
         final IndexKey indexKey = new IndexKey(id, new long[index.sortedFields.size()]);
 
         HashIndexUtils.setHashValues(index.sortedFields, values, indexKey.getFieldValues());
         transaction.delete(index.columnFamily, indexKey.pack());
     }
 
-    private void updateIndexedValue(PrefixIndex index, long id, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
+    private static void updateIndexedValue(PrefixIndex index, DomainObject obj, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
         List<String> deletingLexemes = new ArrayList<>();
         List<String> insertingLexemes = new ArrayList<>();
         PrefixIndexUtils.diffIndexedLexemes(index.sortedFields, prevValues, newValues, deletingLexemes, insertingLexemes);
 
-        PrefixIndexUtils.removeIndexedLexemes(index, id, deletingLexemes, transaction);
-        PrefixIndexUtils.insertIndexedLexemes(index, id, insertingLexemes, transaction);
+        if (!obj._isJustCreated()) {
+            PrefixIndexUtils.removeIndexedLexemes(index, obj.getId(), deletingLexemes, transaction);
+        }
+        PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), insertingLexemes, transaction);
     }
 
-    private void removeIndexedValue(PrefixIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
+    private static void removeIndexedValue(PrefixIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         for (Field field : index.sortedFields) {
             PrefixIndexUtils.splitIndexingTextIntoLexemes((String) values.get(field), lexemes);
@@ -253,15 +258,17 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         PrefixIndexUtils.removeIndexedLexemes(index, id, lexemes, transaction);
     }
 
-    static void updateIndexedValue(IntervalIndex index, long id, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
+    private static void updateIndexedValue(IntervalIndex index, DomainObject obj, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
         final Field indexedField = index.getIndexedField();
-        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
+        final IntervalIndexKey indexKey = new IntervalIndexKey(obj.getId(), new long[hashedFields.size()]);
 
-        // Remove old value-index
-        HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
-        indexKey.setIndexedValue(prevValues.get(indexedField));
-        transaction.delete(index.columnFamily, indexKey.pack());
+        if (!obj._isJustCreated()) {
+            // Remove old value-index
+            HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
+            indexKey.setIndexedValue(prevValues.get(indexedField));
+            transaction.delete(index.columnFamily, indexKey.pack());
+        }
 
         // Add new value-index
         setHashValues(hashedFields, prevValues, newValues, indexKey.getHashedValues());
@@ -269,7 +276,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
-    static void removeIndexedValue(IntervalIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
+    private static void removeIndexedValue(IntervalIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
         final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
 
@@ -279,16 +286,18 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         transaction.delete(index.columnFamily, indexKey.pack());
     }
 
-    static void updateIndexedValue(RangeIndex index, long id, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
+    private static void updateIndexedValue(RangeIndex index, DomainObject obj, Map<Field, Serializable> prevValues, Map<Field, Serializable> newValues, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
-        final RangeIndexKey indexKey = new RangeIndexKey(id, new long[hashedFields.size()]);
+        final RangeIndexKey indexKey = new RangeIndexKey(obj.getId(), new long[hashedFields.size()]);
 
-        // Remove old value-index
-        HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
-        RangeIndexUtils.removeIndexedRange(index, indexKey,
-                prevValues.get(index.getBeginIndexedField()),
-                prevValues.get(index.getEndIndexedField()),
-                transaction);
+        if (!obj._isJustCreated()) {
+            // Remove old value-index
+            HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
+            RangeIndexUtils.removeIndexedRange(index, indexKey,
+                    prevValues.get(index.getBeginIndexedField()),
+                    prevValues.get(index.getEndIndexedField()),
+                    transaction);
+        }
 
         // Add new value-index
         setHashValues(hashedFields, prevValues, newValues, indexKey.getHashedValues());
@@ -298,7 +307,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
                 transaction);
     }
 
-    static void removeIndexedValue(RangeIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
+    private static void removeIndexedValue(RangeIndex index, long id, Map<Field, Serializable> values, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
         final RangeIndexKey indexKey = new RangeIndexKey(id, new long[hashedFields.size()]);
 

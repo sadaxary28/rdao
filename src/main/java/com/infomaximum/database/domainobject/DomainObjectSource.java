@@ -17,7 +17,7 @@ public class DomainObjectSource extends DataEnumerable {
          * @param transaction Контекст, в котором выполняется операция.
          * @throws Exception Если во время выполнения операции возникла ошибка.
          */
-        public void action(final Transaction transaction) throws Exception;
+        void action(final Transaction transaction) throws Exception;
     }
 
     public DomainObjectSource(DBProvider dbProvider) {

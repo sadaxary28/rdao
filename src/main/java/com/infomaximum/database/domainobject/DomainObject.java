@@ -17,6 +17,7 @@ import java.util.Optional;
 public abstract class DomainObject implements Serializable {
 
     private final long id;
+    private boolean isJustCreated = false;
     private HashMap<String, Optional<Serializable>> loadedFieldValues;
     private HashMap<String, Serializable> newFieldValues = null;
 
@@ -71,7 +72,22 @@ public abstract class DomainObject implements Serializable {
     /**
      * Unsafe method. Do not use in external packages!
      */
+    boolean _isJustCreated() {
+        return isJustCreated;
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
+     */
+    void _setAsJustCreated() {
+        isJustCreated = true;
+    }
+
+    /**
+     * Unsafe method. Do not use in external packages!
+     */
     void _flushNewValues() {
+        isJustCreated = false;
         if (newFieldValues == null) {
             return;
         }
