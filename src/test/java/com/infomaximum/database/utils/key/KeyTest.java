@@ -1,5 +1,6 @@
 package com.infomaximum.database.utils.key;
 
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,9 +21,8 @@ public class KeyTest {
 
             byte[] sKey = key.pack();
 
-            FieldKey checkKey = FieldKey.unpack(sKey);
-            Assert.assertEquals(id, checkKey.getId());
-            Assert.assertTrue(checkKey.isBeginningObject());
+            Assert.assertEquals(id, FieldKey.unpackId(sKey));
+            Assert.assertTrue(FieldKey.unpackBeginningObject(sKey));
         }
     }
 
@@ -31,15 +31,15 @@ public class KeyTest {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
             String fieldName = UUID.randomUUID().toString().toLowerCase().replace("-", "");
+            byte[] fieldNameBytes = TypeConvert.pack(fieldName);
 
-            FieldKey key = new FieldKey(id, fieldName);
+            FieldKey key = new FieldKey(id, fieldNameBytes);
 
             byte[] sKey = key.pack();
 
-            FieldKey checkKey = FieldKey.unpack(sKey);
-            Assert.assertEquals(id, checkKey.getId());
-            Assert.assertEquals(fieldName, checkKey.getFieldName());
-            Assert.assertFalse(checkKey.isBeginningObject());
+            Assert.assertEquals(id, FieldKey.unpackId(sKey));
+            Assert.assertEquals(fieldName, FieldKey.unpackFieldName(sKey));
+            Assert.assertFalse(FieldKey.unpackBeginningObject(sKey));
         }
     }
 

@@ -113,7 +113,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             validateUpdatingValue(object, field, value);
 
-            byte[] key = new FieldKey(object.getId(), field.getName()).pack();
+            byte[] key = new FieldKey(object.getId(), field.getNameBytes()).pack();
             if (value != null) {
                 byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getConverter());
                 transaction.put(columnFamily, key, bValue);
@@ -165,7 +165,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     public <T, U extends DomainObject> T getValue(final Field field, U obj) throws DatabaseException {
         ensureTransaction();
 
-        byte[] value = transaction.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getName()).pack());
+        byte[] value = transaction.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getNameBytes()).pack());
         return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
     }
 
@@ -212,7 +212,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        final byte[] key = new FieldKey(id, field.getName()).pack();
+        final byte[] key = new FieldKey(id, field.getNameBytes()).pack();
         final byte[] value = transaction.getValue(columnFamily, key);
         loadedValues.put(field, TypeConvert.unpack(field.getType(), value, field.getConverter()));
     }

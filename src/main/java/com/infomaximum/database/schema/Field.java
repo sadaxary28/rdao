@@ -2,18 +2,21 @@ package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.io.Serializable;
 
 public class Field {
 
     private final String name;
+    private final byte[] nameBytes;
     private final Class<? extends Serializable> type;
     private final TypeConverter converter;
     private final StructEntity foreignDependency;
 
     Field(com.infomaximum.database.anotation.Field field, StructEntity parent) {
         this.name = field.name();
+        this.nameBytes = TypeConvert.pack(field.name());
         this.type = field.type();
         this.converter = buildPacker(field.packerType());
         if (field.foreignDependency() != Class.class) {
@@ -33,6 +36,10 @@ public class Field {
 
     public String getName() {
         return name;
+    }
+
+    public byte[] getNameBytes() {
+        return nameBytes;
     }
 
     public Class<? extends Serializable> getType() {

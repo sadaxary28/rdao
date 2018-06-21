@@ -119,12 +119,11 @@ public abstract class DataEnumerable {
             return null;
         }
 
-        FieldKey key = FieldKey.unpack(keyValue.getKey());
-        if (!key.isBeginningObject()) {
+        if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
             return null;
         }
 
-        T obj = buildDomainObject(constructor, key.getId(), preInitializedFields);
+        T obj = buildDomainObject(constructor, FieldKey.unpackId(keyValue.getKey()), preInitializedFields);
         readObject(obj, iterator);
         return obj;
     }
@@ -135,27 +134,25 @@ public abstract class DataEnumerable {
             return new NextState(-1);
         }
 
-        FieldKey key = FieldKey.unpack(keyValue.getKey());
-        if (!key.isBeginningObject()) {
+        if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
             return new NextState(-1);
         }
 
-        return new NextState(key.getId());
+        return new NextState(FieldKey.unpackId(keyValue.getKey()));
     }
 
     private <T extends DomainObject> long readObject(T obj, DBIterator iterator) throws DatabaseException {
         KeyValue keyValue;
-        FieldKey key;
         while ((keyValue = iterator.next()) != null) {
-            key = FieldKey.unpack(keyValue.getKey());
-            if (key.getId() != obj.getId()) {
-                if (!key.isBeginningObject()) {
-                    throw new UnexpectedEndObjectException(obj.getId(), key);
+            long id = FieldKey.unpackId(keyValue.getKey());
+            if (id != obj.getId()) {
+                if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
+                    throw new UnexpectedEndObjectException(obj.getId(), id, FieldKey.unpackFieldName(keyValue.getKey()));
                 }
-                return key.getId();
+                return id;
             }
-            Field field = obj.getStructEntity().getField(key.getFieldName());
-            obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
+            Field field = obj.getStructEntity().getField(FieldKey.unpackFieldName(keyValue.getKey()));
+            obj._setLoadedField(field.getName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
 
         return -1;
