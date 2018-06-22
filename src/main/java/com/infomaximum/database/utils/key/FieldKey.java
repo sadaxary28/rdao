@@ -1,11 +1,9 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.exception.runtime.KeyCorruptedException;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -31,7 +29,7 @@ public class FieldKey extends Key {
     }
 
     public boolean isBeginningObject() {
-        return fieldName == null;
+        return fieldName.length == 0;
     }
 
     @Override

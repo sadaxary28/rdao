@@ -7,9 +7,9 @@ import java.nio.ByteBuffer;
 
 public class RangeIndexKey extends BaseIntervalIndexKey {
 
-    private static final Byte END_OF_RANGE_VALUE = 0x00;
-    private static final Byte NEGATIVE_VALUE = 0x1F;
-    private static final Byte POSITIVE_VALUE = 0x7F;
+    private static final byte END_OF_RANGE_VALUE = 0x00;
+    private static final byte NEGATIVE_VALUE = 0x1F;
+    private static final byte POSITIVE_VALUE = 0x7F;
 
     private long beginRangeValue;
     private boolean isEndOfRange;

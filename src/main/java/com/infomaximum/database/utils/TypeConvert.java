@@ -89,6 +89,14 @@ public class TypeConvert {
         }
     }
 
+    public static int pack(long[] values, byte[] dst, int offset) {
+        for (int i = 0; i < values.length; ++i) {
+            TypeConvert.pack(values[i], dst, offset);
+            offset += Long.BYTES;
+        }
+        return offset;
+    }
+
     public static byte[] pack(Long value){
         return value != null ? pack(value.longValue()) : EMPTY_BYTE_ARRAY;
     }

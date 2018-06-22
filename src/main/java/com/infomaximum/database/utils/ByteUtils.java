@@ -19,6 +19,19 @@ public class ByteUtils {
         return true;
     }
 
+    public static boolean equals(byte[] left, int lfrom, int lto, byte[] right, int rfrom, int rto) {
+        if ((lto - lfrom) != (rto - rfrom)) {
+            return false;
+        }
+
+        for (; lfrom < lto; ++lfrom, ++rfrom) {
+            if (left[lfrom] != right[rfrom]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean endsWith(byte[] suffix, byte[] source) {
         if (suffix.length > source.length) {
             return false;

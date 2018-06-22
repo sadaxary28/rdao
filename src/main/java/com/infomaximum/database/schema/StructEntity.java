@@ -5,6 +5,8 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.runtime.FieldNotFoundException;
 import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
+import com.infomaximum.database.utils.ByteUtils;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.*;
 
@@ -28,6 +30,7 @@ public class StructEntity {
     private final String columnFamily;
     private final Set<Field> fields;
     private final Map<String, Field> nameFields;
+    private final Map<ByteArray, Field> nameBytesFields;
     private final List<HashIndex> hashIndexes;
     private final List<PrefixIndex> prefixIndexes;
     private final List<IntervalIndex> intervalIndexes;
@@ -62,6 +65,8 @@ public class StructEntity {
 
         this.nameFields = Collections.unmodifiableMap(modifiableNameToFields);
         this.fields = Collections.unmodifiableSet(modifiableFields);
+        this.nameBytesFields = new HashMap<>(this.fields.size());
+        this.fields.forEach(field -> nameBytesFields.put(new ByteArray(field.getNameBytes()), field));
         this.hashIndexes = buildHashIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
         this.intervalIndexes = buildIntervalIndexes(annotationEntity);
@@ -88,6 +93,14 @@ public class StructEntity {
         Field field = nameFields.get(name);
         if (field == null) {
             throw new FieldNotFoundException(clazz, name);
+        }
+        return field;
+    }
+
+    public Field getField(ByteArray name) {
+        Field field = nameBytesFields.get(name);
+        if (field == null) {
+            throw new FieldNotFoundException(clazz, name.convertToString());
         }
         return field;
     }
@@ -259,6 +272,51 @@ public class StructEntity {
         }
 
         return Collections.unmodifiableList(result);
+    }
+
+    public static class ByteArray {
+
+        private final byte[] array;
+        private final int from, to;
+        private final int hashCode;
+
+        public ByteArray(byte[] array) {
+            this(array, 0, array.length);
+        }
+
+        public ByteArray(byte[] array, int from, int to) {
+            this.array = array;
+            this.from = from;
+            this.to = to;
+            this.hashCode = hashCode(array, from, to);
+        }
+
+        private String convertToString() {
+            return TypeConvert.unpackString(array, from, to - from);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ByteArray)) return false;
+
+            ByteArray byteArray = (ByteArray) o;
+
+            return ByteUtils.equals(array, from, to, byteArray.array, byteArray.from, byteArray.to);
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+
+        private static int hashCode(byte[] array, int from, int to) {
+            int result = 1;
+            for (int i = from; i < to; ++i) {
+                result = 31 * result + array[i];
+            }
+            return result;
+        }
     }
 }
 
