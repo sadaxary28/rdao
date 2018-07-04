@@ -33,6 +33,14 @@ public abstract class DataEnumerable {
         public boolean isEmpty() {
             return nextId == -1;
         }
+
+        public long getNextId() {
+            return nextId;
+        }
+
+        public void reset() {
+            nextId = -1;
+        }
     }
 
     protected final DBProvider dbProvider;
@@ -71,6 +79,8 @@ public abstract class DataEnumerable {
             return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
         } else if (filter instanceof RangeFilter) {
             return new RangeIndexIterator<>(this, clazz, loadingFields, (RangeFilter) filter);
+        } else if (filter instanceof IdFilter) {
+            return new IdIterator<>(this, clazz, loadingFields, (IdFilter) filter);
         }
 
         throw new IllegalArgumentException("Unknown filter type " + filter.getClass());

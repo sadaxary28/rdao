@@ -40,21 +40,8 @@ public class AllIteratorTest extends StoreFileDataTest {
 
     @Test
     public void orderingIterate() throws Exception {
-        try (IteratorEntity iteratorEmpty = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
-            Assert.assertFalse(iteratorEmpty.hasNext());
-            try {
-                iteratorEmpty.next();
-                Assert.fail();
-            } catch (NoSuchElementException e) {
-            }
-        }
-
         final int insertedRecordCount = 10;
-        domainObjectSource.executeTransactional(transaction -> {
-            for (int i = 0; i < insertedRecordCount; i++) {
-                transaction.save(transaction.create(StoreFileEditable.class));
-            }
-        });
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
         try (IteratorEntity<StoreFileReadable> iStoreFileReadable = domainObjectSource.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
             int iteratedRecordCount = 0;

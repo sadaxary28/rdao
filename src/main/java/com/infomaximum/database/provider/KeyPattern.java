@@ -32,16 +32,18 @@ public class KeyPattern implements Serializable {
     private final Postfix[] orPatterns;
     private boolean forBackward = false;
 
-    public KeyPattern(byte[] prefix, Postfix[] orPatterns) {
+    public KeyPattern(byte[] prefix, int strictMatchingLen, Postfix[] orPatterns) {
         this.prefix = prefix;
-        this.strictMatchingLen = prefix != null ? prefix.length : 0;
+        this.strictMatchingLen = strictMatchingLen;
         this.orPatterns = orPatterns;
     }
 
+    public KeyPattern(byte[] prefix, Postfix[] orPatterns) {
+        this(prefix, prefix != null ? prefix.length : 0, orPatterns);
+    }
+
     public KeyPattern(byte[] prefix, int strictMatchingLen) {
-        this.prefix = prefix;
-        this.strictMatchingLen = strictMatchingLen;
-        this.orPatterns = null;
+        this(prefix, strictMatchingLen, null);
     }
 
     public KeyPattern(byte[] prefix) {

@@ -67,7 +67,7 @@ public class FieldKey extends Key {
         return new KeyPattern(buildKeyPrefix(id), buildInnerPatterns(fields));
     }
 
-    private static KeyPattern.Postfix[] buildInnerPatterns(final Set<String> fields) {
+    public static KeyPattern.Postfix[] buildInnerPatterns(final Set<String> fields) {
         KeyPattern.Postfix[] patterns = new KeyPattern.Postfix[fields.size() + 1];
 
         patterns[0] = new KeyPattern.Postfix(ID_BYTE_SIZE, TypeConvert.EMPTY_BYTE_ARRAY);
