@@ -1,18 +1,19 @@
 package com.infomaximum.database.domainobject.iterator;
 
+import com.infomaximum.database.domainobject.DataEnumerable;
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.filter.IdFilter;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.utils.key.FieldKey;
-import com.infomaximum.database.exception.DatabaseException;
 
 import java.lang.reflect.Constructor;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
+public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
     private final Constructor<E> constructor;
@@ -20,17 +21,25 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     private final DBIterator dataIterator;
 
     private final DataEnumerable.NextState state;
+    private final long endId;
 
-    public AllIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
+    public IdIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IdFilter filter) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
+        this.endId = filter.getToId();
         String columnFamily = Schema.getEntity(clazz).getColumnFamily();
         this.dataIterator = dataEnumerable.createIterator(columnFamily);
 
-        KeyPattern dataKeyPattern = loadingFields != null ? FieldKey.buildKeyPattern(loadingFields) : null;
+        KeyPattern dataKeyPattern;
+        if (loadingFields != null) {
+            dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0, FieldKey.buildInnerPatterns(loadingFields));
+        } else {
+            dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0);
+        }
         this.state = dataEnumerable.seek(dataIterator, dataKeyPattern);
-        if (this.state.isEmpty()) {
+        if (endReached()) {
+            state.reset();
             close();
         }
     }
@@ -46,11 +55,21 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
             throw new NoSuchElementException();
         }
 
-        return dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
+        E result = dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
+        if (endReached()) {
+            state.reset();
+            close();
+        }
+
+        return result;
     }
 
     @Override
     public void close() throws DatabaseException {
         dataIterator.close();
+    }
+
+    private boolean endReached() {
+        return state.isEmpty() || state.getNextId() > endId;
     }
 }

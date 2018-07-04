@@ -26,6 +26,7 @@ public class PerfomanceTest {
         long durationMs = durationMillis % TimeUnit.SECONDS.toMillis(1);
         String duration;
         if (durationMin != 0) {
+            durationSec -= (durationMin * TimeUnit.MINUTES.toSeconds(1));
             duration = String.format("%d m %d s %d ms", durationMin, durationSec, durationMs);
         } else if (durationSec != 0) {
             duration = String.format("%d s %d ms", durationSec, durationMs);

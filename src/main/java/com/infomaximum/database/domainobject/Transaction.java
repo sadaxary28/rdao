@@ -106,7 +106,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         // update self-object
-        transaction.put(columnFamily, new FieldKey(object.getId()).pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+        if (object._isJustCreated()) {
+            transaction.put(columnFamily, new FieldKey(object.getId()).pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+        }
         for (Map.Entry<Field, Serializable> newValue : newValues.entrySet()) {
             Field field = newValue.getKey();
             Object value = newValue.getValue();

@@ -24,7 +24,7 @@ public class ReadTest extends DomainDataTest {
 
     @Test
     public void iterateRecords() throws Exception {
-        final int recordCount = 50 * 1000;
+        final int recordCount = 500 * 1000;
 
         createDomain(RecordReadable.class);
 

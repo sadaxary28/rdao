@@ -26,11 +26,7 @@ public class IndexKey extends Key {
     @Override
     public byte[] pack() {
         byte[] buffer = new byte[ID_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length];
-        int offset = 0;
-        for (int i = 0; i < fieldValues.length; ++i) {
-            TypeConvert.pack(fieldValues[i], buffer, offset);
-            offset += ID_BYTE_SIZE;
-        }
+        int offset = TypeConvert.pack(fieldValues, buffer, 0);
         TypeConvert.pack(getId(), buffer, offset);
         return buffer;
     }
@@ -52,11 +48,9 @@ public class IndexKey extends Key {
     }
 
     public static KeyPattern buildKeyPattern(final long[] fieldValues) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * fieldValues.length);
-        for (int i = 0; i < fieldValues.length; ++i) {
-            buffer.putLong(fieldValues[i]);
-        }
-        return new KeyPattern(buffer.array());
+        byte[] buffer = new byte[ID_BYTE_SIZE * fieldValues.length];
+        TypeConvert.pack(fieldValues, buffer, 0);
+        return new KeyPattern(buffer);
     }
 
     public static KeyPattern buildKeyPattern(final long fieldValue) {

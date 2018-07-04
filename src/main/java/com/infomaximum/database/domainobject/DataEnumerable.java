@@ -8,6 +8,7 @@ import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.FieldKey;
 
 import com.infomaximum.database.exception.DatabaseException;
@@ -31,6 +32,14 @@ public abstract class DataEnumerable {
 
         public boolean isEmpty() {
             return nextId == -1;
+        }
+
+        public long getNextId() {
+            return nextId;
+        }
+
+        public void reset() {
+            nextId = -1;
         }
     }
 
@@ -70,6 +79,8 @@ public abstract class DataEnumerable {
             return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
         } else if (filter instanceof RangeFilter) {
             return new RangeIndexIterator<>(this, clazz, loadingFields, (RangeFilter) filter);
+        } else if (filter instanceof IdFilter) {
+            return new IdIterator<>(this, clazz, loadingFields, (IdFilter) filter);
         }
 
         throw new IllegalArgumentException("Unknown filter type " + filter.getClass());
@@ -151,7 +162,7 @@ public abstract class DataEnumerable {
                 }
                 return id;
             }
-            Field field = obj.getStructEntity().getField(FieldKey.unpackFieldName(keyValue.getKey()));
+            Field field = obj.getStructEntity().getField(new StructEntity.ByteArray(keyValue.getKey(), FieldKey.ID_BYTE_SIZE, keyValue.getKey().length));
             obj._setLoadedField(field.getName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
 

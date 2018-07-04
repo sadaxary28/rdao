@@ -7,8 +7,8 @@ import java.nio.ByteBuffer;
 
 public abstract class BaseIntervalIndexKey extends Key {
 
-    private static final Byte NEGATIVE_VALUE = 0;
-    private static final Byte POSITIVE_VALUE = 1;
+    private static final byte NEGATIVE_VALUE = 0;
+    private static final byte POSITIVE_VALUE = 1;
 
     final long[] hashedValues;
     long indexedValue;
