@@ -12,7 +12,7 @@ public @interface IntervalIndex {
     /**
      * Supported Long, Double, Instant types only.
      */
-    String indexedField();
+    int indexedField();
 
-    String[] hashedFields() default {};
+    int[] hashedFields() default {};
 }

@@ -322,15 +322,15 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         }*/
     }
 
-    protected void assertValueEquals(List<Double> expected, String fieldName, Double begin, Double end) throws DatabaseException {
+    protected void assertValueEquals(List<Double> expected, Integer fieldName, Double begin, Double end) throws DatabaseException {
         assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
-    protected void assertValueEquals(List<Long> expected, String fieldName, Long begin, Long end) throws DatabaseException {
+    protected void assertValueEquals(List<Long> expected, Integer fieldName, Long begin, Long end) throws DatabaseException {
         assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
-    protected void assertValueEquals(List<Instant> expected, String fieldName, Instant begin, Instant end) throws DatabaseException {
+    protected void assertValueEquals(List<Instant> expected, Integer fieldName, Instant begin, Instant end) throws DatabaseException {
         assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }
 
@@ -362,7 +362,7 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
             while (iterator.hasNext()) {
                 StoreFileReadable storeFile = iterator.next();
 
-                result.add((T) storeFile.get(filter.getIndexedFieldName()));
+                result.add((T) storeFile.get(filter.getIndexedFieldNumber()));
             }
             return result;
         }

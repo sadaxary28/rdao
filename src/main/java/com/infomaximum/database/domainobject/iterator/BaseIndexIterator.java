@@ -5,6 +5,7 @@ import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.exception.DatabaseException;
 
@@ -15,14 +16,14 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     private final DataEnumerable dataEnumerable;
     private final Constructor<E> constructor;
-    private final Set<String> loadingFields;
+    private final Set<Integer> loadingFields;
 
     DBIterator indexIterator = null;
     KeyPattern dataKeyPattern = null;
     DBIterator dataIterator = null;
     E nextElement;
 
-    BaseIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields) throws DatabaseException {
+    BaseIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
@@ -54,19 +55,19 @@ public abstract class BaseIndexIterator<E extends DomainObject> implements Itera
 
     abstract void nextImpl() throws DatabaseException;
 
-    static KeyPattern buildDataKeyPattern(List<Field> fields1, Set<String> loadingFields) {
+    static KeyPattern buildDataKeyPattern(List<Field> fields1, Set<Integer> loadingFields, StructEntity entity) {
         if (loadingFields == null) {
             return FieldKey.buildKeyPattern(0, null);
         }
 
         if (fields1 == null || fields1.isEmpty()) {
-            return loadingFields.isEmpty() ? null : FieldKey.buildKeyPattern(loadingFields);
+            return loadingFields.isEmpty() ? null : FieldKey.buildKeyPattern(entity.getFieldNames(loadingFields));
         }
 
-        Set<String> fields = new HashSet<>(fields1.size() + loadingFields.size());
-        fields1.forEach(field -> fields.add(field.getName()));
+        Set<Integer> fields = new HashSet<>(fields1.size() + loadingFields.size());
+        fields1.forEach(field -> fields.add(field.getNumber()));
         fields.addAll(loadingFields);
-        return FieldKey.buildKeyPattern(fields);
+        return FieldKey.buildKeyPattern(entity.getFieldNames(fields));
     }
 
     E findObject(long id) throws DatabaseException {

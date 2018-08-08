@@ -56,11 +56,11 @@ public abstract class DataEnumerable {
     public abstract <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException;
     public abstract DBIterator createIterator(String columnFamily) throws DatabaseException;
 
-    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DatabaseException {
-        final String columnFamily = Schema.getEntity(clazz).getColumnFamily();
+    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<Integer> loadingFields) throws DatabaseException {
+        StructEntity entity = Schema.getEntity(clazz);
 
-        try (DBIterator iterator = createIterator(columnFamily)) {
-            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, loadingFields));
+        try (DBIterator iterator = createIterator(entity.getColumnFamily())) {
+            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, entity.getFieldNames(loadingFields)));
         }
     }
 
@@ -68,7 +68,7 @@ public abstract class DataEnumerable {
         return get(clazz, id, null);
     }
 
-    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<String> loadingFields) throws DatabaseException {
+    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<Integer> loadingFields) throws DatabaseException {
         if (filter instanceof EmptyFilter) {
             return new AllIterator<>(this, clazz, loadingFields);
         } else if (filter instanceof HashFilter) {
@@ -90,14 +90,14 @@ public abstract class DataEnumerable {
         return find(clazz, filter, null);
     }
 
-    public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<String> preInitializedFields) {
+    public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<Integer> preInitializedFields) {
         T obj = buildDomainObject(constructor, id);
         if (preInitializedFields == null) {
             for (Field field : obj.getStructEntity().getFields()) {
-                obj._setLoadedField(field.getName(), null);
+                obj._setLoadedField(field.getNumber(), null);
             }
         } else {
-            for (String field : preInitializedFields) {
+            for (Integer field : preInitializedFields) {
                 obj._setLoadedField(field, null);
             }
         }
@@ -112,7 +112,7 @@ public abstract class DataEnumerable {
         }
     }
 
-    public <T extends DomainObject> T nextObject(final Constructor<T> constructor, Collection<String> preInitializedFields,
+    public <T extends DomainObject> T nextObject(final Constructor<T> constructor, Collection<Integer> preInitializedFields,
                                                  DBIterator iterator, NextState state) throws DatabaseException {
         if (state.isEmpty()) {
             return null;
@@ -123,7 +123,7 @@ public abstract class DataEnumerable {
         return obj;
     }
 
-    public <T extends DomainObject> T seekObject(final Constructor<T> constructor, Collection<String> preInitializedFields,
+    public <T extends DomainObject> T seekObject(final Constructor<T> constructor, Collection<Integer> preInitializedFields,
                                                  DBIterator iterator, KeyPattern pattern) throws DatabaseException {
         KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
@@ -163,7 +163,7 @@ public abstract class DataEnumerable {
                 return id;
             }
             Field field = obj.getStructEntity().getField(new StructEntity.ByteArray(keyValue.getKey(), FieldKey.ID_BYTE_SIZE, keyValue.getKey().length));
-            obj._setLoadedField(field.getName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
+            obj._setLoadedField(field.getNumber(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
         }
 
         return -1;

@@ -2,6 +2,7 @@ package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
@@ -10,6 +11,19 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class IndexTest extends StoreFileDataTest {
+
+    @Test
+    public void notFoundIndex() throws Exception {
+        try {
+            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_DATE, null));
+            Assert.fail();
+        } catch (IndexNotFoundException ignore) {}
+
+        try {
+            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_DATE, null).appendField(StoreFileReadable.FIELD_SIZE, null));
+            Assert.fail();
+        } catch (IndexNotFoundException ignore) {}
+    }
 
     @Test
     public void findByIndex() throws Exception {

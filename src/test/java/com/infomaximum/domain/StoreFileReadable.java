@@ -16,16 +16,16 @@ import java.time.Instant;
         namespace = "com.infomaximum.store",
         name = "StoreFile",
         fields = {
-                @Field(name = StoreFileReadable.FIELD_FILE_NAME, type = String.class),
-                @Field(name = StoreFileReadable.FIELD_CONTENT_TYPE, type = String.class),
-                @Field(name = StoreFileReadable.FIELD_SIZE, type = Long.class),
-                @Field(name = StoreFileReadable.FIELD_SINGLE, type = Boolean.class),
-                @Field(name = StoreFileReadable.FIELD_FORMAT, type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
-                @Field(name = StoreFileReadable.FIELD_FOLDER_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
-                @Field(name = StoreFileReadable.FIELD_DOUBLE, type = Double.class),
-                @Field(name = StoreFileReadable.FIELD_DATE, type = Instant.class),
-                @Field(name = StoreFileReadable.FIELD_BEGIN, type = Long.class),
-                @Field(name = StoreFileReadable.FIELD_END, type = Long.class)
+                @Field(number = StoreFileReadable.FIELD_FILE_NAME, name = "name", type = String.class),
+                @Field(number = StoreFileReadable.FIELD_CONTENT_TYPE, name = "type", type = String.class),
+                @Field(number = StoreFileReadable.FIELD_SIZE, name = "size", type = Long.class),
+                @Field(number = StoreFileReadable.FIELD_SINGLE, name = "single", type = Boolean.class),
+                @Field(number = StoreFileReadable.FIELD_FORMAT, name = "format", type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
+                @Field(number = StoreFileReadable.FIELD_FOLDER_ID, name = "folder_id", type = Long.class, foreignDependency = ExchangeFolderReadable.class),
+                @Field(number = StoreFileReadable.FIELD_DOUBLE, name = "double", type = Double.class),
+                @Field(number = StoreFileReadable.FIELD_DATE, name = "date", type = Instant.class),
+                @Field(number = StoreFileReadable.FIELD_BEGIN, name = "begin", type = Long.class),
+                @Field(number = StoreFileReadable.FIELD_END, name = "end", type = Long.class)
         },
         hashIndexes = {
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE}),
@@ -51,17 +51,17 @@ import java.time.Instant;
 )
 public class StoreFileReadable extends DomainObject {
 
-    public final static String FIELD_FILE_NAME="file_name";
-    public final static String FIELD_CONTENT_TYPE="content_type";
-    public final static String FIELD_SIZE="size";
-    public final static String FIELD_SINGLE="single";
-    public final static String FIELD_FORMAT="format";
-    public final static String FIELD_FOLDER_ID = "folder_id";
-    public final static String FIELD_DOUBLE = "double";
-    public final static String FIELD_DATE = "date";
+    public final static int FIELD_FILE_NAME=0;
+    public final static int FIELD_CONTENT_TYPE=1;
+    public final static int FIELD_SIZE=2;
+    public final static int FIELD_SINGLE=3;
+    public final static int FIELD_FORMAT=4;
+    public final static int FIELD_FOLDER_ID = 5;
+    public final static int FIELD_DOUBLE = 6;
+    public final static int FIELD_DATE = 7;
 
-    public final static String FIELD_BEGIN = "begin";
-    public final static String FIELD_END = "end";
+    public final static int FIELD_BEGIN = 8;
+    public final static int FIELD_END = 9;
 
     public final static RangeFilter.IndexedField RANGE_INDEXED_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
 

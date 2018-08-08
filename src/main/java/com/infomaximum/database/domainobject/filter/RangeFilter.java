@@ -6,10 +6,10 @@ public class RangeFilter extends BaseIntervalFilter {
 
     public static class IndexedField {
 
-        public final String beginField;
-        public final String endField;
+        public final int beginField;
+        public final int endField;
 
-        public IndexedField(String beginField, String endField) {
+        public IndexedField(int beginField, int endField) {
             this.beginField = beginField;
             this.endField = endField;
         }
@@ -36,8 +36,8 @@ public class RangeFilter extends BaseIntervalFilter {
     }
 
     @Override
-    public RangeFilter appendHashedField(String name, Object value) {
-        return (RangeFilter) super.appendHashedField(name, value);
+    public RangeFilter appendHashedField(Integer number, Object value) {
+        return (RangeFilter) super.appendHashedField(number, value);
     }
 
     public IndexedField getIndexedField() {

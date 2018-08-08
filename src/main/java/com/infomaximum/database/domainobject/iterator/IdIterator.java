@@ -7,6 +7,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.FieldKey;
 
 import java.lang.reflect.Constructor;
@@ -17,23 +18,23 @@ public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
 
     private final DataEnumerable dataEnumerable;
     private final Constructor<E> constructor;
-    private final Set<String> loadingFields;
+    private final Set<Integer> loadingFields;
     private final DBIterator dataIterator;
 
     private final DataEnumerable.NextState state;
     private final long endId;
 
-    public IdIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IdFilter filter) throws DatabaseException {
+    public IdIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, IdFilter filter) throws DatabaseException {
         this.dataEnumerable = dataEnumerable;
         this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
         this.endId = filter.getToId();
-        String columnFamily = Schema.getEntity(clazz).getColumnFamily();
-        this.dataIterator = dataEnumerable.createIterator(columnFamily);
+        StructEntity entity = Schema.getEntity(clazz);
+        this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
 
         KeyPattern dataKeyPattern;
         if (loadingFields != null) {
-            dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0, FieldKey.buildInnerPatterns(loadingFields));
+            dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0, FieldKey.buildInnerPatterns(entity.getFieldNames(loadingFields)));
         } else {
             dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0);
         }

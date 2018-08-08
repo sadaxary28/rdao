@@ -28,14 +28,14 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
 
     BaseIntervalIndexIterator(DataEnumerable dataEnumerable,
                               Class<E> clazz,
-                              Set<String> loadingFields,
+                              Set<Integer> loadingFields,
                               SortDirection direction,
                               F filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
         this.direction = direction == SortDirection.ASC ? DBIterator.StepDirection.FORWARD : DBIterator.StepDirection.BACKWARD;
 
         StructEntity structEntity = Schema.getEntity(clazz);
-        Map<String, Object> filters = filter.getHashedValues();
+        Map<Integer, Object> filters = filter.getHashedValues();
         BaseIntervalIndex index = getIndex(filter, structEntity);
 
         List<Field> filterFields = null;
@@ -45,7 +45,7 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
         long[] values = new long[hashedFields.size()];
         for (int i = 0; i < hashedFields.size(); ++i) {
             Field field = hashedFields.get(i);
-            Object value = filters.get(field.getName());
+            Object value = filters.get(field.getNumber());
             if (value != null) {
                 field.throwIfNotMatch(value.getClass());
             }
@@ -70,7 +70,7 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
 
-        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
+        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, structEntity);
         if (this.dataKeyPattern != null) {
             this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
         }
@@ -132,7 +132,7 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
             Field field = checkedFilterFields.get(i);
-            if (!HashIndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getName()))) {
+            if (!HashIndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getNumber()))) {
                 return false;
             }
         }

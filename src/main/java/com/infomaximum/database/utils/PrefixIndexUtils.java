@@ -1,9 +1,11 @@
 package com.infomaximum.database.utils;
 
+import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.PrefixIndex;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
@@ -11,6 +13,7 @@ import com.infomaximum.database.utils.key.PrefixIndexKey;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 
 public class PrefixIndexUtils {
 
@@ -28,8 +31,14 @@ public class PrefixIndexUtils {
         return new TreeSet<>(Comparator.reverseOrder());
     }
 
-    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Serializable> prevValues, Map<T, Serializable> newValues,
-                                              Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
+    public static void diffIndexedLexemes(List<Field> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
+                                          Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
+        diffIndexedLexemes(fields, prevValues, newValues, outDeletingLexemes, outInsertingLexemes, Field::getNumber);
+    }
+
+    public static <T> void diffIndexedLexemes(List<T> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
+                                              Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes,
+                                              Function<T, Integer> numberGetter) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
 
@@ -37,10 +46,13 @@ public class PrefixIndexUtils {
         SortedSet<String> newLexemes = buildSortedSet();
 
         for (T field : fields) {
-            String prevText = (String) prevValues.get(field);
+            int number = numberGetter.apply(field);
+            Value<Serializable> prevValue = prevValues[number];
+            String prevText = prevValue != null ? (String) prevValue.getValue() : null;
             PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
 
-            String newText = newValues.containsKey(field) ? (String) newValues.get(field) : prevText;
+            Value<Serializable> newValue = number < newValues.length ? newValues[number] : prevValue;
+            String newText = newValue != null ? (String) newValue.getValue() : prevText;
             PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
         }
 
@@ -84,14 +96,13 @@ public class PrefixIndexUtils {
     }
 
     /**
-     * @param text
      * @return sorted list by length of word
      */
     public static List<String> splitSearchingTextIntoWords(String text) {
         List<String> result = new ArrayList<>();
         forEachWord(text,
                 (beginIndex, endIndex) -> result.add(text.substring(beginIndex, endIndex).toLowerCase()));
-        Collections.sort(result, searchingWordComparator);
+        result.sort(searchingWordComparator);
         return result;
     }
 

@@ -34,7 +34,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     private List<String> tempList;
 
-    public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, PrefixFilter filter) throws DatabaseException {
+    public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, PrefixFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
         StructEntity structEntity = Schema.getEntity(clazz);
         this.index = structEntity.getPrefixIndex(filter.getFieldNames());
@@ -52,7 +52,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
             this.searchingWords = Collections.emptyList();
         }
 
-        this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields);
+        this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields, structEntity);
         if (this.dataKeyPattern != null) {
             this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
             this.values = new String[index.sortedFields.size()];
@@ -94,7 +94,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
     @Override
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < index.sortedFields.size(); ++i) {
-            values[i] = obj.get(index.sortedFields.get(i).getName());
+            values[i] = obj.get(index.sortedFields.get(i).getNumber());
         }
         return PrefixIndexUtils.contains(searchingWords, values, tempList);
     }

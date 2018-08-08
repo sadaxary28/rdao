@@ -18,7 +18,7 @@ public class RangeIndexIterator<E extends DomainObject> extends BaseIntervalInde
 
     private Set<Long> processedIds/* = null*/; // не нужно инициализировать, т.к. matchKey вызывается из конструктора базового класса
 
-    public RangeIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, RangeFilter filter) throws DatabaseException {
+    public RangeIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, RangeFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields, SortDirection.ASC, filter);
     }
 

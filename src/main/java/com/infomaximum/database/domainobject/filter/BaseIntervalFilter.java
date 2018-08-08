@@ -9,7 +9,7 @@ public abstract class BaseIntervalFilter implements Filter {
 
     private final Object beginValue;
     private final Object endValue;
-    private Map<String, Object> values = null;
+    private Map<Integer, Object> values = null;
 
     BaseIntervalFilter(Double beginValue, Double endValue) {
         this.beginValue = beginValue;
@@ -26,15 +26,15 @@ public abstract class BaseIntervalFilter implements Filter {
         this.endValue = endValue;
     }
 
-    public BaseIntervalFilter appendHashedField(String name, Object value) {
+    public BaseIntervalFilter appendHashedField(Integer number, Object value) {
         if (values == null) {
             values = new HashMap<>();
         }
-        values.put(name, value);
+        values.put(number, value);
         return this;
     }
 
-    public Map<String, Object> getHashedValues() {
+    public Map<Integer, Object> getHashedValues() {
         return values != null ? Collections.unmodifiableMap(values) : Collections.emptyMap();
     }
 

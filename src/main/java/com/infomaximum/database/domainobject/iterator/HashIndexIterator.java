@@ -21,11 +21,11 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
 
     private KeyValue indexKeyValue;
 
-    public HashIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, HashFilter filter) throws DatabaseException {
+    public HashIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, HashFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
 
         StructEntity structEntity = Schema.getEntity(clazz);
-        Map<String, Object> filters = filter.getValues();
+        Map<Integer, Object> filters = filter.getValues();
         final HashIndex index = structEntity.getHashIndex(filters.keySet());
 
         List<Field> filterFields = null;
@@ -34,7 +34,7 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
         long[] values = new long[index.sortedFields.size()];
         for (int i = 0; i < index.sortedFields.size(); ++i) {
             Field field = index.sortedFields.get(i);
-            Object value = filters.get(field.getName());
+            Object value = filters.get(field.getNumber());
             if (value != null) {
                 field.throwIfNotMatch(value.getClass());
             }
@@ -56,7 +56,7 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
 
-        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields);
+        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, structEntity);
         if (this.dataKeyPattern != null) {
             this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
         }
@@ -85,7 +85,7 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
     boolean checkFilter(E obj) throws DatabaseException {
         for (int i = 0; i < checkedFilterFields.size(); ++i) {
             Field field = checkedFilterFields.get(i);
-            if (!HashIndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getName()))) {
+            if (!HashIndexUtils.equals(field.getType(), filterValues.get(i), obj.get(field.getNumber()))) {
                 return false;
             }
         }

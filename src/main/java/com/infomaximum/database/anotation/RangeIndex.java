@@ -12,8 +12,8 @@ public @interface RangeIndex {
     /**
      * Supported Long, Instant and Double types only.
      */
-    String beginField();
-    String endField();
+    int beginField();
+    int endField();
 
-    String[] hashedFields() default {};
+    int[] hashedFields() default {};
 }
