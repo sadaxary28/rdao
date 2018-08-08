@@ -1,5 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
+import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.provider.KeyValue;
@@ -31,6 +33,19 @@ public class PrefixIndexTest extends StoreFileDataTest {
         super.init();
 
         indexColumnFamily = Schema.getEntity(StoreFileReadable.class).getPrefixIndexes().get(0).columnFamily;
+    }
+
+    @Test
+    public void notFoundIndex() throws Exception {
+        try {
+            domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_DATE, null));
+            Assert.fail();
+        } catch (IndexNotFoundException ignore) {}
+
+        try {
+            domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE), null), null);
+            Assert.fail();
+        } catch (IndexNotFoundException ignore) {}
     }
 
     @Test

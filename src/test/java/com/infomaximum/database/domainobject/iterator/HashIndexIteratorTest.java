@@ -50,7 +50,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
             transaction.save(obj);
         });
 
-        Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+        Set<Integer> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
         HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, sizeExpected).appendField(StoreFileReadable.FIELD_FILE_NAME, nameExpected);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
@@ -68,7 +68,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
     public void loadTwoFields() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 100);
 
-        Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+        Set<Integer> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
         HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 9L);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
@@ -94,7 +94,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
         Field fieldValuesField = DomainObject.class.getDeclaredField("loadedFieldValues");
         fieldValuesField.setAccessible(true);
 
-        Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+        Set<Integer> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
         HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, null);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;
@@ -114,7 +114,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
     public void loadZeroFields() throws Exception {
         initAndFillStoreFiles(domainObjectSource, 100);
 
-        Set<String> loadingFields = Collections.emptySet();
+        Set<Integer> loadingFields = Collections.emptySet();
         HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 9L);
         try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter, loadingFields)) {
             int iteratedRecordCount = 0;

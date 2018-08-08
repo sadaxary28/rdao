@@ -9,17 +9,13 @@ import com.infomaximum.database.schema.StructEntity;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 public abstract class DomainObject implements Serializable {
 
     private final long id;
     private boolean isJustCreated = false;
-    private HashMap<String, Optional<Serializable>> loadedFieldValues;
-    private HashMap<String, Serializable> newFieldValues = null;
+    private final Value<Serializable>[] loadedFieldValues;
+    private Value<Serializable>[] newFieldValues = null;
 
     private transient StructEntity lazyStructEntity;
 
@@ -28,45 +24,44 @@ public abstract class DomainObject implements Serializable {
             throw new IllegalArgumentException("id = " + Long.toString(id));
         }
         this.id = id;
-        this.loadedFieldValues = new HashMap<>();
+        this.loadedFieldValues = new Value[getStructEntity().getFields().length];
     }
 
     public long getId() {
         return id;
     }
 
-    public <T extends Serializable> T get(String fieldName) {
-        if (newFieldValues != null && newFieldValues.containsKey(fieldName)) {
-            return (T) newFieldValues.get(fieldName);
+    public <T extends Serializable> T get(int fieldNumber) {
+        Value<Serializable> value;
+        if (newFieldValues == null || (value = newFieldValues[fieldNumber]) == null) {
+            value = loadedFieldValues[fieldNumber];
         }
 
-        Optional<Serializable> value = loadedFieldValues.get(fieldName);
         if (value == null) {
-            throw new FieldValueNotFoundException(fieldName);
+            throw new FieldValueNotFoundException(getStructEntity().getField(fieldNumber).getName());
         }
 
-        return (T) value.orElse(null);
+        return (T) value.getValue();
     }
 
-    protected void set(String fieldName, Serializable value) {
+    protected void set(int fieldNumber, Serializable value) {
         if (newFieldValues == null) {
-            newFieldValues = new HashMap<>();
+            newFieldValues = new Value[loadedFieldValues.length];
         }
 
-        Field field = getStructEntity().getField(fieldName);
-
         if (value != null) {
+            Field field = getStructEntity().getField(fieldNumber);
             field.throwIfNotMatch(value.getClass());
         }
 
-        newFieldValues.put(fieldName, value);
+        newFieldValues[fieldNumber] = Value.of(value);
     }
 
     /**
      * Unsafe method. Do not use in external packages!
      */
-    void _setLoadedField(String name, Serializable value) {
-        loadedFieldValues.put(name, Optional.ofNullable(value));
+    void _setLoadedField(int fieldNumber, Serializable value) {
+        loadedFieldValues[fieldNumber] = Value.of(value);
     }
 
     /**
@@ -92,34 +87,33 @@ public abstract class DomainObject implements Serializable {
             return;
         }
 
-        for (Map.Entry<String, Serializable> entry : newFieldValues.entrySet()) {
-            _setLoadedField(entry.getKey(), entry.getValue());
+        for (int i = 0; i < newFieldValues.length; ++i) {
+            Value<Serializable> value = newFieldValues[i];
+            if (value != null) {
+                loadedFieldValues[i] = value;
+            }
         }
-        newFieldValues.clear();
+        newFieldValues = null;
     }
 
-    protected String getString(String fieldName) {
-        return get(fieldName);
+    protected String getString(int fieldNumber) {
+        return get(fieldNumber);
     }
 
-    protected Integer getInteger(String fieldName) {
-        return get(fieldName);
+    protected Integer getInteger(int fieldNumber) {
+        return get(fieldNumber);
     }
 
-    protected Long getLong(String fieldName) {
-        return get(fieldName);
+    protected Long getLong(int fieldNumber) {
+        return get(fieldNumber);
     }
 
-    protected Instant getInstant(String fieldName) {
-        return get(fieldName);
+    protected Instant getInstant(int fieldNumber) {
+        return get(fieldNumber);
     }
 
-    protected Boolean getBoolean(String fieldName) {
-        return get(fieldName);
-    }
-
-    protected byte[] getBytes(String fieldName) {
-        return get(fieldName);
+    protected Boolean getBoolean(int fieldNumber) {
+        return get(fieldNumber);
     }
 
     StructEntity getStructEntity() {
@@ -129,24 +123,12 @@ public abstract class DomainObject implements Serializable {
         return lazyStructEntity;
     }
 
-    protected Map<Field, Serializable> getLoadedValues() {
-        Map<Field, Serializable> values = new HashMap<>(loadedFieldValues.size());
-        for (Map.Entry<String, Optional<Serializable>> entry : loadedFieldValues.entrySet()) {
-            values.put(getStructEntity().getField(entry.getKey()), entry.getValue().orElse(null));
-        }
-        return values;
+    Value<Serializable>[] getLoadedValues() {
+        return loadedFieldValues;
     }
 
-    protected Map<Field, Serializable> getNewValues() {
-        if (newFieldValues == null || newFieldValues.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        Map<Field, Serializable> values = new HashMap<>(newFieldValues.size());
-        for (Map.Entry<String, Serializable> entry : newFieldValues.entrySet()) {
-            values.put(getStructEntity().getField(entry.getKey()), entry.getValue());
-        }
-        return values;
+    Value<Serializable>[] getNewValues() {
+        return newFieldValues;
     }
 
     @Override
@@ -167,10 +149,9 @@ public abstract class DomainObject implements Serializable {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(getClass().getSuperclass().getName()).append('(')
-                .append("id: ").append(id)
-                .append(')').toString();
+        return getClass().getSuperclass().getName() + '(' +
+                "id: " + id +
+                ')';
     }
 
     public static <T extends DomainObject> Constructor<T> getConstructor(Class<T> clazz) {

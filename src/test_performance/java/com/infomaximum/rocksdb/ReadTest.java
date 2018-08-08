@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public class ReadTest extends DomainDataTest {
 
-    private static final Set<String> preloaded = new HashSet<>(Arrays.asList(
+    private static final Set<Integer> preloaded = new HashSet<>(Arrays.asList(
             RecordIndexEditable.FIELD_STRING_1,
             RecordIndexEditable.FIELD_LONG_1,
             RecordIndexEditable.FIELD_BOOLEAN_1,
@@ -41,6 +41,9 @@ public class ReadTest extends DomainDataTest {
             try (IteratorEntity<RecordReadable> i = domainObjectSource.find(RecordReadable.class, EmptyFilter.INSTANCE, preloaded)) {
                 while (i.hasNext()) {
                     RecordReadable rec = i.next();
+
+                    Long l = rec.getLong1();
+                    Integer in = rec.getInt1();
                 }
             }
         });
@@ -69,6 +72,9 @@ public class ReadTest extends DomainDataTest {
             try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
                 while (i.hasNext()) {
                     RecordIndexEditable rec = i.next();
+
+                    Long l = rec.getLong1();
+                    Integer in = rec.getInt1();
                 }
             }
         });
@@ -97,6 +103,9 @@ public class ReadTest extends DomainDataTest {
             try (IteratorEntity<RecordIndexEditable> i = domainObjectSource.find(RecordIndexEditable.class, filter, preloaded)) {
                 while (i.hasNext()) {
                     RecordIndexEditable rec = i.next();
+
+                    Long l = rec.getLong1();
+                    Integer in = rec.getInt1();
                 }
             }
         });

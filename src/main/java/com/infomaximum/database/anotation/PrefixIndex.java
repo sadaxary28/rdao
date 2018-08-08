@@ -9,5 +9,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface PrefixIndex {
 
-    String[] fields();
+    int[] fields();
 }

@@ -4,29 +4,29 @@ import java.time.Instant;
 
 public class IntervalFilter extends BaseIntervalFilter {
 
-    private final String indexedFieldName;
+    private final Integer indexedFieldNumber;
     private SortDirection sortDirection = SortDirection.ASC;
 
-    public IntervalFilter(String indexedFieldName, Double beginValue, Double endValue) {
+    public IntervalFilter(Integer indexedFieldNumber, Double beginValue, Double endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldName = indexedFieldName;
+        this.indexedFieldNumber = indexedFieldNumber;
     }
 
-    public IntervalFilter(String indexedFieldName, Long beginValue, Long endValue) {
+    public IntervalFilter(Integer indexedFieldNumber, Long beginValue, Long endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldName = indexedFieldName;
+        this.indexedFieldNumber = indexedFieldNumber;
     }
 
-    public IntervalFilter(String indexedFieldName, Instant beginValue, Instant endValue) {
+    public IntervalFilter(Integer indexedFieldNumber, Instant beginValue, Instant endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldName = indexedFieldName;
+        this.indexedFieldNumber = indexedFieldNumber;
     }
 
-    public String getIndexedFieldName() {
-        return indexedFieldName;
+    public Integer getIndexedFieldNumber() {
+        return indexedFieldNumber;
     }
 
     public SortDirection getSortDirection() {
@@ -34,8 +34,8 @@ public class IntervalFilter extends BaseIntervalFilter {
     }
 
     @Override
-    public IntervalFilter appendHashedField(String name, Object value) {
-        return (IntervalFilter) super.appendHashedField(name, value);
+    public IntervalFilter appendHashedField(Integer number, Object value) {
+        return (IntervalFilter) super.appendHashedField(number, value);
     }
 
     public IntervalFilter setSortDirection(SortDirection sortDirection) {

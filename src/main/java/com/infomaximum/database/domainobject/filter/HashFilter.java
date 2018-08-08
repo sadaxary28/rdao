@@ -6,18 +6,18 @@ import java.util.Map;
 
 public class HashFilter implements Filter {
 
-    private final Map<String, Object> values = new HashMap<>();
+    private final Map<Integer, Object> values = new HashMap<>();
 
-    public HashFilter(String fieldName, Object fieldValue) {
-        appendField(fieldName, fieldValue);
+    public HashFilter(int fieldNumber, Object fieldValue) {
+        appendField(fieldNumber, fieldValue);
     }
 
-    public HashFilter appendField(String name, Object value) {
-        values.put(name, value);
+    public HashFilter appendField(int number, Object value) {
+        values.put(number, value);
         return this;
     }
 
-    public Map<String, Object> getValues() {
+    public Map<Integer, Object> getValues() {
         return Collections.unmodifiableMap(values);
     }
 }

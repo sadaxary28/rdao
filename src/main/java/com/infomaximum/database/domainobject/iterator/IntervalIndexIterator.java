@@ -14,13 +14,13 @@ import java.util.*;
 
 public class IntervalIndexIterator<E extends DomainObject> extends BaseIntervalIndexIterator<E, IntervalFilter> {
 
-    public IntervalIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<String> loadingFields, IntervalFilter filter) throws DatabaseException {
+    public IntervalIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, IntervalFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields, filter.getSortDirection(), filter);
     }
 
     @Override
     BaseIntervalIndex getIndex(IntervalFilter filter, StructEntity entity) {
-        return entity.getIntervalIndex(filter.getHashedValues().keySet(), filter.getIndexedFieldName());
+        return entity.getIntervalIndex(filter.getHashedValues().keySet(), filter.getIndexedFieldNumber());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.infomaximum.database.domainobject.index;
 
+import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.Key;
@@ -14,61 +15,55 @@ public class PrefixIndexUtilsTest {
 
     @Test
     public void diffIndexedLexemes() {
-        final Set<String> deletingLexemes = new HashSet<>();
-        final Set<String> insertingLexemes = new HashSet<>();
-        final List<Integer> fields = Arrays.asList(1, 2, 3);
-        Map<Integer, Serializable> prevValues = new HashMap<>();
-        Map<Integer, Serializable> newValues = new HashMap<>();
+        assertEquals(
+                buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues(),
+                Collections.emptySet(),
+                Collections.emptySet()
+        );
 
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        assertEquals(buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues("test01 test02 test03", "test12 test12 test13"),
+                Collections.emptySet(),
+                Collections.emptySet()
+        );
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        assertEquals(
+                buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues("test12 test12 test13", "test01 test02 test03"),
+                Collections.emptySet(),
+                Collections.emptySet()
+        );
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        newValues.put(1, "test01 test02 test03");
-        newValues.put(2, "test12 test12 test13");
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        assertEquals(
+                buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues("test01 test02 test", "test13 test"),
+                new HashSet<>(Arrays.asList("test03", "test12")),
+                Collections.emptySet()
+        );
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        newValues.put(1, "test12 test12 test13");
-        newValues.put(2, "test01 test02 test03");
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(Collections.emptySet(), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        assertEquals(
+                buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues(null, null),
+                new HashSet<>(Arrays.asList("test01", "test02", "test03", "test12", "test13")),
+                Collections.emptySet()
+        );
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        newValues.put(1, "test01 test02 test");
-        newValues.put(2, "test13 test");
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(new HashSet<>(Arrays.asList("test03", "test12")), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        assertEquals(buildValues("test01 test02 test03", "test12 test12 test13"),
+                buildValues("test01 test02 test03", null),
+                new HashSet<>(Arrays.asList("test12", "test13")),
+                Collections.emptySet()
+        );
+    }
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        newValues.put(1, null);
-        newValues.put(2, null);
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(new HashSet<>(Arrays.asList("test01", "test02", "test03", "test12", "test13")), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+    private static void assertEquals(Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
+                                     Set<String> expectedDeletingLexemes, Set<String> expectedInsertingLexemes) {
+        final Set<String> actualDeletingLexemes = new HashSet<>();
+        final Set<String> actualInsertingLexemes = new HashSet<>();
 
-        prevValues.put(1, "test01 test02 test03");
-        prevValues.put(2, "test12 test12 test13");
-        newValues.put(1, "test01 test02 test03");
-        newValues.put(2, null);
-        PrefixIndexUtils.diffIndexedLexemes(fields, prevValues, newValues, deletingLexemes, insertingLexemes);
-        Assert.assertEquals(new HashSet<>(Arrays.asList("test12", "test13")), deletingLexemes);
-        Assert.assertEquals(Collections.emptySet(), insertingLexemes);
+        PrefixIndexUtils.diffIndexedLexemes(Arrays.asList(0, 1), prevValues, newValues, actualDeletingLexemes, actualInsertingLexemes, integer -> integer);
+        Assert.assertEquals("Deleting lexemes", expectedDeletingLexemes, actualDeletingLexemes);
+        Assert.assertEquals("Inserting lexemes", expectedInsertingLexemes, actualInsertingLexemes);
     }
 
     @Test
@@ -178,5 +173,13 @@ public class PrefixIndexUtilsTest {
         for (long val : expected) {
             Assert.assertEquals(val, buffer.get());
         }
+    }
+
+    private static Value<Serializable>[] buildValues(String... values) {
+        Value<Serializable>[] result = new Value[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            result[i] = Value.of(values[i]);
+        }
+        return result;
     }
 }

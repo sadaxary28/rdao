@@ -12,6 +12,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface Field {
 
+    int number();
     String name();
     Class type();
     Class packerType() default Class.class;

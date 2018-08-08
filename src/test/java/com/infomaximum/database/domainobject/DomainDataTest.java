@@ -45,17 +45,17 @@ public abstract class DomainDataTest extends RocksDataTest {
                 .execute();
     }
 
-    protected static void checkLoadedState(DomainObject target, Set<String> loadingFields) throws DatabaseException {
-        for (String field : loadingFields) {
+    protected static void checkLoadedState(DomainObject target, Set<Integer> loadingFields) throws DatabaseException {
+        for (Integer field : loadingFields) {
             target.get(field);
         }
 
         for (Field field : target.getStructEntity().getFields()) {
-            if (loadingFields.contains(field.getName())) {
+            if (loadingFields.contains(field.getNumber())) {
                 continue;
             }
             try {
-                target.get(field.getName());
+                target.get(field.getNumber());
                 Assert.fail();
             } catch (FieldValueNotFoundException e) {
                 Assert.assertTrue(true);

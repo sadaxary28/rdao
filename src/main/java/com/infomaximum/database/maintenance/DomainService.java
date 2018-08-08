@@ -155,7 +155,7 @@ public class DomainService {
     }
 
     private void doIndex(HashIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final IndexKey indexKey = new IndexKey(0, new long[index.sortedFields.size()]);
 
         indexData(indexingFields, (obj, transaction) -> {
@@ -167,20 +167,20 @@ public class DomainService {
     }
 
     private void doPrefixIndex(PrefixIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
 
         indexData(indexingFields, (obj, transaction) -> {
             lexemes.clear();
             for (Field field : index.sortedFields) {
-                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getName()), lexemes);
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getNumber()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
         });
     }
 
     private void doIntervalIndex(IntervalIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final List<Field> hashedFields = index.getHashedFields();
         final Field indexedField = index.getIndexedField();
         final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.size()]);
@@ -188,14 +188,14 @@ public class DomainService {
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());
             HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
-            indexKey.setIndexedValue(obj.get(indexedField.getName()));
+            indexKey.setIndexedValue(obj.get(indexedField.getNumber()));
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
     }
 
     private void doIntervalIndex(RangeIndex index) throws DatabaseException {
-        final Set<String> indexingFields = index.sortedFields.stream().map(Field::getName).collect(Collectors.toSet());
+        final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final List<Field> hashedFields = index.getHashedFields();
         final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()]);
 
@@ -203,8 +203,8 @@ public class DomainService {
             indexKey.setId(obj.getId());
             HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
             RangeIndexUtils.insertIndexedRange(index, indexKey,
-                    obj.get(index.getBeginIndexedField().getName()),
-                    obj.get(index.getEndIndexedField().getName()),
+                    obj.get(index.getBeginIndexedField().getNumber()),
+                    obj.get(index.getEndIndexedField().getNumber()),
                     transaction);
         });
     }
@@ -239,7 +239,7 @@ public class DomainService {
         return false;
     }
 
-    private void indexData(Set<String> loadingFields, ModifierCreator recordCreator) throws DatabaseException {
+    private void indexData(Set<Integer> loadingFields, ModifierCreator recordCreator) throws DatabaseException {
         DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
         try (DBTransaction transaction = dbProvider.beginTransaction();
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(domain.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {
@@ -262,8 +262,7 @@ public class DomainService {
             return;
         }
 
-        List<Field> foreignFields = domain.getFields()
-                .stream()
+        List<Field> foreignFields = Arrays.stream(domain.getFields())
                 .filter(Field::isForeign)
                 .collect(Collectors.toList());
 
@@ -271,9 +270,9 @@ public class DomainService {
             return;
         }
 
-        Set<String> fieldNames = foreignFields
+        Set<Integer> fieldNames = foreignFields
                 .stream()
-                .map(Field::getName)
+                .map(Field::getNumber)
                 .collect(Collectors.toSet());
 
         FieldKey fieldKey = new FieldKey(0);
@@ -284,7 +283,7 @@ public class DomainService {
                 DomainObject obj = iter.next();
 
                 for (Field field : foreignFields) {
-                    Long value = obj.get(field.getName());
+                    Long value = obj.get(field.getNumber());
                     if (value == null) {
                         continue;
                     }

@@ -7,20 +7,20 @@ import java.util.Set;
 
 public class PrefixFilter implements Filter {
 
-    private final Set<String> fieldNames;
+    private final Set<Integer> fieldNames;
     private String fieldValue;
 
-    public PrefixFilter(String fieldName, String fieldValue) {
-        this.fieldNames = Collections.singleton(fieldName);
+    public PrefixFilter(int fieldNumber, String fieldValue) {
+        this.fieldNames = Collections.singleton(fieldNumber);
         this.fieldValue = fieldValue;
     }
 
-    public PrefixFilter(Collection<String> fieldNames, String fieldValue) {
+    public PrefixFilter(Collection<Integer> fieldNames, String fieldValue) {
         this.fieldNames = Collections.unmodifiableSet(new HashSet<>(fieldNames));
         this.fieldValue = fieldValue;
     }
 
-    public Set<String> getFieldNames() {
+    public Set<Integer> getFieldNames() {
         return fieldNames;
     }
 

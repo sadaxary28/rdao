@@ -1,8 +1,10 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.domainobject.StoreFileDataTest;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;

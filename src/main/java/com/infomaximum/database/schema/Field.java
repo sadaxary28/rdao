@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 public class Field {
 
+    private final int number;
     private final String name;
     private final byte[] nameBytes;
     private final Class<? extends Serializable> type;
@@ -15,6 +16,7 @@ public class Field {
     private final StructEntity foreignDependency;
 
     Field(com.infomaximum.database.anotation.Field field, StructEntity parent) {
+        this.number = field.number();
         this.name = field.name();
         this.nameBytes = TypeConvert.pack(field.name());
         this.type = field.type();
@@ -32,6 +34,10 @@ public class Field {
         if (isForeign() && this.type != Long.class) {
             throw new StructEntityException("Type of foreign field " + field.name() + " must be " + Long.class + ".");
         }
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     public String getName() {

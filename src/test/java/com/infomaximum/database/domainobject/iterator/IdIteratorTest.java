@@ -46,7 +46,7 @@ public class IdIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        Set<String> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
+        Set<Integer> loadingFields = new HashSet<>(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SIZE));
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IdFilter(0), loadingFields)) {
             int iteratedRecordCount = 0;
             while (i.hasNext()) {
@@ -65,7 +65,7 @@ public class IdIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        Set<String> loadingFields = Collections.emptySet();
+        Set<Integer> loadingFields = Collections.emptySet();
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new IdFilter(0), loadingFields)) {
             int iteratedRecordCount = 0;
             while (i.hasNext()) {

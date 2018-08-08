@@ -12,11 +12,11 @@ import com.infomaximum.domain.type.FormatType;
         namespace = "com.infomaximum.store",
         name = "StoreFile",
         fields = {
-                @Field(name = ProxyStoreFileReadable.FIELD_FILE_NAME, type = String.class),
-                @Field(name = ProxyStoreFileReadable.FIELD_CONTENT_TYPE, type = String.class),
-                @Field(name = ProxyStoreFileReadable.FIELD_SIZE, type = Long.class),
-                @Field(name = ProxyStoreFileReadable.FIELD_SINGLE, type = Boolean.class),
-                @Field(name = ProxyStoreFileReadable.FIELD_FORMAT, type = FormatType.class)
+                @Field(number = ProxyStoreFileReadable.FIELD_FILE_NAME, name = "name", type = String.class),
+                @Field(number = ProxyStoreFileReadable.FIELD_CONTENT_TYPE, name = "type", type = String.class),
+                @Field(number = ProxyStoreFileReadable.FIELD_SIZE, name = "size", type = Long.class),
+                @Field(number = ProxyStoreFileReadable.FIELD_SINGLE, name = "single", type = Boolean.class),
+                @Field(number = ProxyStoreFileReadable.FIELD_FORMAT, name = "format", type = FormatType.class)
         },
         hashIndexes = {
                 @HashIndex(fields = {ProxyStoreFileReadable.FIELD_SIZE}),
@@ -25,11 +25,11 @@ import com.infomaximum.domain.type.FormatType;
 )
 public class ProxyStoreFileReadable extends ProxyDomainObject {
 
-    public final static String FIELD_FILE_NAME = "file_name";
-    public final static String FIELD_CONTENT_TYPE = "content_type";
-    public final static String FIELD_SIZE = "size";
-    public final static String FIELD_SINGLE = "single";
-    public final static String FIELD_FORMAT = "format";
+    public final static int FIELD_FILE_NAME = 0;
+    public final static int FIELD_CONTENT_TYPE = 1;
+    public final static int FIELD_SIZE = 2;
+    public final static int FIELD_SINGLE = 3;
+    public final static int FIELD_FORMAT = 4;
 
 
     public ProxyStoreFileReadable(long id) {
@@ -53,9 +53,7 @@ public class ProxyStoreFileReadable extends ProxyDomainObject {
         return getBoolean(FIELD_SINGLE);
     }
 
-
     public FormatType getFormat() {
         return get(FIELD_FORMAT);
     }
-
 }

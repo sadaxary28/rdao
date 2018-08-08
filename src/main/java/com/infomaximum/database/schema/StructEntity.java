@@ -9,6 +9,7 @@ import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class StructEntity {
 
@@ -28,8 +29,7 @@ public class StructEntity {
     private final Class<? extends DomainObject> clazz;
     private final String name;
     private final String columnFamily;
-    private final Set<Field> fields;
-    private final Map<String, Field> nameFields;
+    private final Field[] fields;
     private final Map<ByteArray, Field> nameBytesFields;
     private final List<HashIndex> hashIndexes;
     private final List<PrefixIndex> prefixIndexes;
@@ -44,18 +44,22 @@ public class StructEntity {
         this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
 
-        Set<Field> modifiableFields = new HashSet<>(annotationEntity.fields().length);
         Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
+        this.fields = new Field[annotationEntity.fields().length];
         for(com.infomaximum.database.anotation.Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
             if (modifiableNameToFields.containsKey(field.name())) {
-                throw new StructEntityException("Field " + field.name() + " already exists into " + clazz.getName() + ".");
+                throw new StructEntityException("Field name=" + field.name() + " already exists into " + clazz.getName() + ".");
+            }
+
+            if (fields[field.number()] != null) {
+                throw new StructEntityException("Field number=" + field.number() + " already exists into " + clazz.getName() + ".");
             }
 
             Field f = new Field(field, this);
+            fields[field.number()] = f;
 
-            modifiableFields.add(f);
             modifiableNameToFields.put(f.getName(), f);
 
             if (f.isForeign()) {
@@ -63,10 +67,8 @@ public class StructEntity {
             }
         }
 
-        this.nameFields = Collections.unmodifiableMap(modifiableNameToFields);
-        this.fields = Collections.unmodifiableSet(modifiableFields);
-        this.nameBytesFields = new HashMap<>(this.fields.size());
-        this.fields.forEach(field -> nameBytesFields.put(new ByteArray(field.getNameBytes()), field));
+        this.nameBytesFields = new HashMap<>(fields.length);
+        Arrays.stream(fields).forEach(field -> nameBytesFields.put(new ByteArray(field.getNameBytes()), field));
         this.hashIndexes = buildHashIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
         this.intervalIndexes = buildIntervalIndexes(annotationEntity);
@@ -89,14 +91,6 @@ public class StructEntity {
         return clazz;
     }
 
-    public Field getField(String name) {
-        Field field = nameFields.get(name);
-        if (field == null) {
-            throw new FieldNotFoundException(clazz, name);
-        }
-        return field;
-    }
-
     public Field getField(ByteArray name) {
         Field field = nameBytesFields.get(name);
         if (field == null) {
@@ -105,72 +99,89 @@ public class StructEntity {
         return field;
     }
 
-    public Set<Field> getFields() {
+    public Field getField(int number) {
+        if (number >= fields.length) {
+            throw new FieldNotFoundException(clazz, "number=" + number);
+        }
+        return fields[number];
+    }
+
+    public Field[] getFields() {
         return fields;
     }
 
-    public HashIndex getHashIndex(Collection<String> indexedFields) {
+    public Set<String> getFieldNames(Collection<Integer> fieldNumbers) {
+        if (fieldNumbers == null) {
+            return null;
+        }
+
+        return fieldNumbers.stream()
+                .map(i -> getField(i).getName())
+                .collect(Collectors.toSet());
+    }
+
+    public HashIndex getHashIndex(Collection<Integer> indexedFields) {
         for (HashIndex index : hashIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
 
-            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getName()))) {
+            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getNumber()))) {
                 return index;
             }
         }
 
-        throw new IndexNotFoundException(HashIndex.toString(indexedFields), clazz);
+        throw new IndexNotFoundException(HashIndex.toString(getFieldNames(indexedFields)), clazz);
     }
 
-    public PrefixIndex getPrefixIndex(Collection<String> indexedFields) {
+    public PrefixIndex getPrefixIndex(Collection<Integer> indexedFields) {
         for (PrefixIndex index : prefixIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
 
-            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getName()))) {
+            if (index.sortedFields.stream().allMatch(f -> indexedFields.contains(f.getNumber()))) {
                 return index;
             }
         }
 
-        throw new IndexNotFoundException(PrefixIndex.toString(indexedFields), clazz);
+        throw new IndexNotFoundException(PrefixIndex.toString(getFieldNames(indexedFields)), clazz);
     }
 
-    public IntervalIndex getIntervalIndex(Collection<String> hashedFields, String indexedField) {
+    public IntervalIndex getIntervalIndex(Collection<Integer> hashedFields, Integer indexedField) {
         for (IntervalIndex index : intervalIndexes) {
             if (index.sortedFields.size() != (hashedFields.size() + 1)) {
                 continue;
             }
 
-            if (!index.getIndexedField().getName().equals(indexedField)) {
+            if (index.getIndexedField().getNumber() != indexedField) {
                 continue;
             }
 
-            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getName()))) {
+            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getNumber()))) {
                 return index;
             }
         }
 
-        throw new IndexNotFoundException(IntervalIndex.toString(hashedFields, indexedField), clazz);
+        throw new IndexNotFoundException(IntervalIndex.toString(getFieldNames(hashedFields), getField(indexedField).getName()), clazz);
     }
 
-    public RangeIndex getRangeIndex(Collection<String> hashedFields, String beginField, String endField) {
+    public RangeIndex getRangeIndex(Collection<Integer> hashedFields, int beginField, int endField) {
         for (RangeIndex index : rangeIndexes) {
             if (index.sortedFields.size() != (hashedFields.size() + 2)) {
                 continue;
             }
 
-            if (!index.getBeginIndexedField().getName().equals(beginField) || !index.getEndIndexedField().getName().equals(endField)) {
+            if (index.getBeginIndexedField().getNumber() != beginField || index.getEndIndexedField().getNumber() != endField) {
                 continue;
             }
 
-            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getName()))) {
+            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getNumber()))) {
                 return index;
             }
         }
 
-        throw new IndexNotFoundException(RangeIndex.toString(hashedFields, beginField, endField), clazz);
+        throw new IndexNotFoundException(RangeIndex.toString(getFieldNames(hashedFields), getField(beginField).getName(), getField(endField).getName()), clazz);
     }
 
     public List<HashIndex> getHashIndexes() {
@@ -204,10 +215,7 @@ public class StructEntity {
     }
 
     private static String buildColumnFamily(Entity entity) {
-        return new StringBuilder(entity.namespace())
-                .append(NAMESPACE_SEPARATOR)
-                .append(entity.name())
-                .toString();
+        return entity.namespace() + NAMESPACE_SEPARATOR + entity.name();
     }
 
     private List<HashIndex> buildHashIndexes(Entity entity) {

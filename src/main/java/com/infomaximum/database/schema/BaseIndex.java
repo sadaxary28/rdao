@@ -15,10 +15,10 @@ public abstract class BaseIndex {
 
     protected abstract String getIndexName();
 
-    protected static List<Field> buildIndexedFields(String[] indexedFields, StructEntity parent) {
+    protected static List<Field> buildIndexedFields(int[] indexedFields, StructEntity parent) {
         return Arrays.stream(indexedFields)
-                .sorted(Comparator.comparing(String::toLowerCase)) //Сортируем, что бы хеш не ломался из-за перестановки местами полей
-                .map(parent::getField)
+                .mapToObj(parent::getField)
+                .sorted(Comparator.comparing(f -> f.getName().toLowerCase())) //Сортируем, что бы хеш не ломался из-за перестановки местами полей
                 .collect(Collectors.toList());
     }
 

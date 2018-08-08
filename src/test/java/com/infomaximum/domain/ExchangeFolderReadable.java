@@ -15,11 +15,11 @@ import java.time.Instant;
         namespace = "com.infomaximum.exchange",
         name = "ExchangeFolder",
         fields = {
-                @Field(name = ExchangeFolderReadable.FIELD_UUID, type = String.class),
-                @Field(name = ExchangeFolderReadable.FIELD_USER_EMAIL, type = String.class),
-                @Field(name = ExchangeFolderReadable.FIELD_SYNC_DATE, type = Instant.class),
-                @Field(name = ExchangeFolderReadable.FIELD_SYNC_STATE, type = String.class),
-                @Field(name = ExchangeFolderReadable.FIELD_PARENT_ID, type = Long.class, foreignDependency = ExchangeFolderReadable.class),
+                @Field(number = ExchangeFolderReadable.FIELD_UUID, name = "uuid", type = String.class),
+                @Field(number = ExchangeFolderReadable.FIELD_USER_EMAIL, name = "email", type = String.class),
+                @Field(number = ExchangeFolderReadable.FIELD_SYNC_DATE, name = "date", type = Instant.class),
+                @Field(number = ExchangeFolderReadable.FIELD_SYNC_STATE, name = "state", type = String.class),
+                @Field(number = ExchangeFolderReadable.FIELD_PARENT_ID, name = "parent_id", type = Long.class, foreignDependency = ExchangeFolderReadable.class),
         },
         hashIndexes = {
                 @HashIndex(fields = {ExchangeFolderReadable.FIELD_USER_EMAIL, ExchangeFolderReadable.FIELD_UUID})
@@ -27,11 +27,11 @@ import java.time.Instant;
 )
 public class ExchangeFolderReadable extends DomainObject {
 
-    public final static String FIELD_UUID="uuid";
-    public final static String FIELD_USER_EMAIL="user_email";
-    public final static String FIELD_SYNC_DATE="sync_date";
-    public final static String FIELD_SYNC_STATE="sync_state";
-    public final static String FIELD_PARENT_ID = "parent_id";
+    public final static int FIELD_UUID = 0;
+    public final static int FIELD_USER_EMAIL = 1;
+    public final static int FIELD_SYNC_DATE = 2;
+    public final static int FIELD_SYNC_STATE = 3;
+    public final static int FIELD_PARENT_ID = 4;
 
     public ExchangeFolderReadable(long id){
         super(id);
