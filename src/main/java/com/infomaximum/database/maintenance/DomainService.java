@@ -1,5 +1,8 @@
 package com.infomaximum.database.maintenance;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
@@ -277,14 +280,26 @@ public class DomainService {
 
         FieldKey fieldKey = new FieldKey(0);
 
+        RangeSet<Long>[] processedIds = new RangeSet[domain.getFields().length];
+        for (int i = 0; i < foreignFields.size(); ++i) {
+            Field field = foreignFields.get(i);
+            processedIds[field.getNumber()] = TreeRangeSet.create();
+        }
+
         DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
         try (IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(domain.getObjectClass(), EmptyFilter.INSTANCE, fieldNames)) {
             while (iter.hasNext()) {
                 DomainObject obj = iter.next();
 
-                for (Field field : foreignFields) {
+                for (int i = 0; i < foreignFields.size(); ++i) {
+                    Field field = foreignFields.get(i);
                     Long value = obj.get(field.getNumber());
                     if (value == null) {
+                        continue;
+                    }
+
+                    RangeSet<Long> processedId = processedIds[field.getNumber()];
+                    if (processedId.contains(value)) {
                         continue;
                     }
 
@@ -292,6 +307,7 @@ public class DomainService {
                     if (dbProvider.getValue(field.getForeignDependency().getColumnFamily(), fieldKey.pack()) == null) {
                         throw new ForeignDependencyException(obj.getId(), domain.getObjectClass(), field, value);
                     }
+                    processedId.add(Range.closedOpen(value, value + 1));
                 }
             }
         }
