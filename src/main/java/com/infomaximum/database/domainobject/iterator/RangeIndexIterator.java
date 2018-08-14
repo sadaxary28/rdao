@@ -36,18 +36,24 @@ public class RangeIndexIterator<E extends DomainObject> extends BaseIntervalInde
     @Override
     int matchKey(long id, byte[] key) {
         long indexedValue = RangeIndexKey.unpackIndexedValue(key);
-        if (indexedValue >= filterEndValue) {
+        if (indexedValue > filterEndValue) {
             return KeyPattern.MATCH_RESULT_UNSUCCESS;
+        } else if (indexedValue == filterEndValue) {
+            if (filterBeginValue != filterEndValue) {
+                return KeyPattern.MATCH_RESULT_UNSUCCESS;
+            }
+
+            return RangeIndexKey.unpackType(key) == RangeIndexKey.Type.DOT ? KeyPattern.MATCH_RESULT_SUCCESS : KeyPattern.MATCH_RESULT_CONTINUE;
         }
 
         if (processedIds != null && processedIds.contains(id)) {
-            if (RangeIndexKey.unpackEndOfRange(key)) {
+            if (RangeIndexKey.unpackType(key) == RangeIndexKey.Type.END) {
                 processedIds.remove(id);
             }
             return KeyPattern.MATCH_RESULT_CONTINUE;
         }
 
-        if (!RangeIndexKey.unpackEndOfRange(key)) {
+        if (RangeIndexKey.unpackType(key) == RangeIndexKey.Type.BEGIN) {
             if (processedIds == null) {
                 processedIds = new HashSet<>();
             }

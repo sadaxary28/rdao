@@ -158,7 +158,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);
         }
 
-        // delete interval-indexed values
+        // delete range-indexed values
         for (RangeIndex index: obj.getStructEntity().getRangeIndexes()) {
             tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
             removeIndexedValue(index, obj.getId(), loadedValues, transaction);

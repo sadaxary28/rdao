@@ -30,7 +30,7 @@ public class RangeIndexUtils {
             for (; keyValue != null; keyValue = stepForward(iterator, pattern)) {
                 long begin = RangeIndexKey.unpackIndexedValue(keyValue.getKey());
                 if (begin < totalBegin) {
-                    if (!RangeIndexKey.unpackEndOfRange(keyValue.getKey())) {
+                    if (RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.BEGIN) {
                         RangeIndexKey.setIndexedValue(totalBegin, keyValue.getKey());
                         transaction.put(index.columnFamily, keyValue.getKey(), TypeConvert.EMPTY_BYTE_ARRAY);
                     }
@@ -41,7 +41,7 @@ public class RangeIndexUtils {
 
             // вставим начало вставляемого интервала
             key.setIndexedValue(totalBegin);
-            key.setEndOfRange(false);
+            key.setType(totalBegin != totalEnd ? RangeIndexKey.Type.BEGIN : RangeIndexKey.Type.DOT);
             transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
 
             ArrayList<byte[]> prevBeginKeys = new ArrayList<>();
@@ -62,14 +62,14 @@ public class RangeIndexUtils {
                     }
 
                     key.setIndexedValue(begin);
-                    key.setEndOfRange(false);
+                    key.setType(RangeIndexKey.Type.BEGIN);
                     transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
 
                     prevBegin = begin;
                     prevBeginKeys.clear();
                 }
 
-                if (!RangeIndexKey.unpackEndOfRange(keyValue.getKey())) {
+                if (RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.BEGIN) {
                     prevBeginKeys.add(keyValue.getKey());
                 }
             }
@@ -80,10 +80,12 @@ public class RangeIndexUtils {
                 transaction.put(index.columnFamily, beginKey, TypeConvert.EMPTY_BYTE_ARRAY);
             }
 
-            // вставим конец вставляемого интервала
-            key.setIndexedValue(totalEnd);
-            key.setEndOfRange(true);
-            transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+            // добавим конец вставляемого интервала
+            if (totalBegin != totalEnd) {
+                key.setIndexedValue(totalEnd);
+                key.setType(RangeIndexKey.Type.END);
+                transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+            }
         }
     }
 
@@ -102,7 +104,7 @@ public class RangeIndexUtils {
                 if (RangeIndexKey.unpackId(keyValue.getKey()) == key.getId()) {
                     transaction.delete(index.columnFamily, keyValue.getKey());
 
-                    if (RangeIndexKey.unpackEndOfRange(keyValue.getKey())) {
+                    if (RangeIndexKey.unpackType(keyValue.getKey()) != RangeIndexKey.Type.BEGIN) {
                         break;
                     }
                 } else if (RangeIndexKey.unpackIndexedValue(keyValue.getKey()) > end) {
@@ -144,7 +146,7 @@ public class RangeIndexUtils {
 
         do {
             if (pattern.match(res.getKey()) != KeyPattern.MATCH_RESULT_SUCCESS ||
-                    RangeIndexKey.unpackEndOfRange(res.getKey()) ||
+                    RangeIndexKey.unpackType(res.getKey()) == RangeIndexKey.Type.END ||
                     begin != RangeIndexKey.unpackIndexedValue(res.getKey())) {
                 return indexIterator.step(DBIterator.StepDirection.FORWARD);
             }

@@ -112,4 +112,8 @@ public class StoreFileReadable extends DomainObject {
     public Long getBegin() {
         return getLong(FIELD_BEGIN);
     }
+
+    public Long getEnd() {
+        return getLong(FIELD_END);
+    }
 }
