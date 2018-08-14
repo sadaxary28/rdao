@@ -7,12 +7,17 @@ import java.nio.ByteBuffer;
 
 public class RangeIndexKey extends BaseIntervalIndexKey {
 
+    public enum Type {
+        BEGIN, END, DOT
+    }
+
     private static final byte END_OF_RANGE_VALUE = 0x00;
     private static final byte NEGATIVE_VALUE = 0x1F;
     private static final byte POSITIVE_VALUE = 0x7F;
+    private static final byte DOT_VALUE = (byte) 0xEF;
 
     private long beginRangeValue;
-    private boolean isEndOfRange;
+    private Type type;
 
     public RangeIndexKey(long id, long[] hashedValues) {
         super(id, hashedValues);
@@ -26,8 +31,8 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         beginRangeValue = value;
     }
 
-    public void setEndOfRange(boolean endOfRange) {
-        isEndOfRange = endOfRange;
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override
@@ -35,7 +40,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         ByteBuffer buffer = TypeConvert.allocateBuffer((hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
         fillBuffer(hashedValues, indexedValue, buffer);
         // for segment sorting
-        putBeginRange(beginRangeValue, isEndOfRange, buffer);
+        putBeginRange(beginRangeValue, type, buffer);
         buffer.putLong(getId());
         return buffer.array();
     }
@@ -44,8 +49,15 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         return TypeConvert.unpackLong(src, src.length - ID_BYTE_SIZE - 2 * Long.BYTES - Byte.BYTES);
     }
 
-    public static boolean unpackEndOfRange(byte[] src) {
-        return src[src.length - ID_BYTE_SIZE - Long.BYTES - Byte.BYTES] == END_OF_RANGE_VALUE;
+    public static Type unpackType(byte[] src) {
+        switch (src[src.length - ID_BYTE_SIZE - Long.BYTES - Byte.BYTES]) {
+            case END_OF_RANGE_VALUE:
+                return Type.END;
+            case DOT_VALUE:
+                return Type.DOT;
+            default:
+                return Type.BEGIN;
+        }
     }
 
     public static void setIndexedValue(long indexedValue, byte[] dstKey) {
@@ -55,17 +67,24 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
         fillBuffer(hashedValues, beginRangeValue, buffer);
-        putBeginRange(beginRangeValue, false, buffer);
+        putBeginRange(beginRangeValue, Type.BEGIN, buffer);
         return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
     }
 
-    private static void putBeginRange(long beginRangeValue, boolean isEndOfRange, ByteBuffer destination) {
-        if (isEndOfRange) {
-            destination.put(END_OF_RANGE_VALUE);
-            destination.putLong(0);
-        } else {
-            destination.put(beginRangeValue < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE);
-            destination.putLong(beginRangeValue);
+    private static void putBeginRange(long beginRangeValue, Type type, ByteBuffer destination) {
+        switch (type) {
+            case BEGIN:
+                destination.put(beginRangeValue < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE);
+                destination.putLong(beginRangeValue);
+                break;
+            case END:
+                destination.put(END_OF_RANGE_VALUE);
+                destination.putLong(0);
+                break;
+            case DOT:
+                destination.put(DOT_VALUE);
+                destination.putLong(0);
+                break;
         }
     }
 }

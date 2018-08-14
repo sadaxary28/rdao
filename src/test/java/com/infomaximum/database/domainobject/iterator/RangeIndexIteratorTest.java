@@ -1,18 +1,72 @@
 package com.infomaximum.database.domainobject.iterator;
 
+import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
-import com.infomaximum.database.domainobject.filter.PrefixFilter;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.runtime.IndexNotFoundException;
+import com.infomaximum.database.maintenance.ChangeMode;
+import com.infomaximum.database.maintenance.DomainService;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RangeIndexIteratorTest extends StoreFileDataTest {
+
+    @Test
+    public void insertAndFindZeroLengthRange() throws Exception {
+        final Long value = 10L;
+        final Long folderId = 20L;
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.setForeignFieldEnabled(false);
+
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(value);
+            s.setEnd(value);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(value - 1);
+            s.setEnd(value + 1);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setFolderId(folderId);
+            s.setBegin(value);
+            s.setEnd(value);
+            transaction.save(s);
+        });
+
+        assertEquals(Collections.singletonList(3L), findAll(new Interval(value, value, true, folderId)));
+        assertEquals(Arrays.asList(1L, 3L), findAll(new Interval(value, value)));
+        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value, value + 1)));
+        assertEquals(Collections.singletonList(2L), findAll(new Interval(value - 1, value)));
+        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value - 1, value + 1)));
+
+        domainObjectSource.executeTransactional(transaction -> {
+            try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class, EmptyFilter.INSTANCE)) {
+                while (i.hasNext()) {
+                    transaction.remove(i.next());
+                }
+            }
+        });
+
+        new DomainService(rocksDBProvider)
+                .setChangeMode(ChangeMode.NONE)
+                .setValidationMode(true)
+                .setDomain(Schema.getEntity(StoreFileEditable.class))
+                .execute();
+    }
+
+    private void assertEquals(List<Long> expectedIds, List<StoreFileReadable> actual) {
+        Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).sorted().collect(Collectors.toList()));
+    }
 
     @Test
     public void insertAndFind() throws Exception {
@@ -169,25 +223,40 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     @Test
     public void deleteAndFind() throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
+            transaction.setForeignFieldEnabled(false);
+
             StoreFileEditable s = transaction.create(StoreFileEditable.class);
             s.setBegin(10L);
             s.setEnd(20L);
-            transaction.save(s);
-
-            s = transaction.create(StoreFileEditable.class);
-            s.setBegin(20L);
-            s.setEnd(25L);
+            s.setFolderId(1);
             transaction.save(s);
 
             s = transaction.create(StoreFileEditable.class);
             s.setBegin(15L);
-            s.setEnd(23L);
+            s.setEnd(25L);
+            s.setFolderId(2);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(16L);
+            s.setEnd(28L);
+            s.setFolderId(2);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(15L);
+            s.setEnd(18L);
+            s.setFolderId(2);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(35L);
+            s.setEnd(35L);
+            s.setFolderId(2);
             transaction.save(s);
         });
 
         domainObjectSource.executeTransactional(transaction -> {
-            try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class,
-                    new RangeFilter(StoreFileEditable.RANGE_INDEXED_FIELD, 0L, 50L))) {
+            try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class, EmptyFilter.INSTANCE)) {
                 while (i.hasNext()) {
                     transaction.remove(i.next());
                 }
