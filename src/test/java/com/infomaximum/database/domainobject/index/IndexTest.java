@@ -15,12 +15,12 @@ public class IndexTest extends StoreFileDataTest {
     @Test
     public void notFoundIndex() throws Exception {
         try {
-            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_DATE, null));
+            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_BEGIN_TIME, null));
             Assert.fail();
         } catch (IndexNotFoundException ignore) {}
 
         try {
-            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_DATE, null).appendField(StoreFileReadable.FIELD_SIZE, null));
+            domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_BEGIN_TIME, null).appendField(StoreFileReadable.FIELD_SIZE, null));
             Assert.fail();
         } catch (IndexNotFoundException ignore) {}
     }

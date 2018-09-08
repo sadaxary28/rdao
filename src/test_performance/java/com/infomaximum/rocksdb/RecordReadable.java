@@ -3,7 +3,6 @@ package com.infomaximum.rocksdb;
 import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.DatabaseException;
 
 @Entity(
         namespace = "com.infomaximum.store",
@@ -26,19 +25,19 @@ public class RecordReadable  extends DomainObject {
         super(id);
     }
 
-    public String getString1() throws DatabaseException {
+    public String getString1() {
         return getString(FIELD_STRING_1);
     }
 
-    public Long getLong1() throws DatabaseException {
+    public Long getLong1() {
         return getLong(FIELD_LONG_1);
     }
 
-    public Boolean getBoolean1() throws DatabaseException {
+    public Boolean getBoolean1() {
         return getBoolean(FIELD_BOOLEAN_1);
     }
 
-    public Integer getInt1() throws DatabaseException {
+    public Integer getInt1() {
         return getInteger(FIELD_INT_1);
     }
 }

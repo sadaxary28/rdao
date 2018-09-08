@@ -60,20 +60,20 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-            obj.setInstant(Instant.ofEpochMilli(currentTime));
+            obj.setBeginTime(Instant.ofEpochMilli(currentTime));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setInstant(Instant.ofEpochMilli(currentTime + 1000));
+            obj.setBeginTime(Instant.ofEpochMilli(currentTime + 1000));
             transaction.save(obj);
 
             obj = transaction.create(StoreFileEditable.class);
-            obj.setInstant(Instant.ofEpochMilli(currentTime + 5 * 1000));
+            obj.setBeginTime(Instant.ofEpochMilli(currentTime + 5 * 1000));
             transaction.save(obj);
         });
 
-        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000));
-        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime + 1000), Instant.ofEpochMilli(currentTime + 5 * 1000)), StoreFileReadable.FIELD_DATE, Instant.ofEpochMilli(currentTime + 500), Instant.ofEpochMilli(currentTime + 6 * 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000)), StoreFileReadable.FIELD_BEGIN_TIME, Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000));
+        assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime + 1000), Instant.ofEpochMilli(currentTime + 5 * 1000)), StoreFileReadable.FIELD_BEGIN_TIME, Instant.ofEpochMilli(currentTime + 500), Instant.ofEpochMilli(currentTime + 6 * 1000));
     }
 
     @Test

@@ -4,7 +4,6 @@ import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;
 import com.infomaximum.database.anotation.HashIndex;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.DatabaseException;
 
 import java.time.Instant;
 
@@ -37,23 +36,23 @@ public class ExchangeFolderReadable extends DomainObject {
         super(id);
     }
 
-    public String getUuid() throws DatabaseException {
+    public String getUuid() {
         return getString(FIELD_UUID);
     }
 
-    public String getUserEmail() throws DatabaseException {
+    public String getUserEmail() {
         return getString(FIELD_USER_EMAIL);
     }
 
-    public Instant getSyncDate() throws DatabaseException {
+    public Instant getSyncDate() {
         return getInstant(FIELD_SYNC_DATE);
     }
 
-    public String getSyncState() throws DatabaseException {
+    public String getSyncState() {
         return getString(FIELD_SYNC_STATE);
     }
 
-    public Long getParentId() throws DatabaseException {
+    public Long getParentId() {
         return getLong(FIELD_PARENT_ID);
     }
 }

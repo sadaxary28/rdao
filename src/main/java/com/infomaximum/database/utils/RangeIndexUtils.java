@@ -44,10 +44,9 @@ public class RangeIndexUtils {
             key.setType(totalBegin != totalEnd ? RangeIndexKey.Type.BEGIN : RangeIndexKey.Type.DOT);
             transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
 
-            ArrayList<byte[]> prevBeginKeys = new ArrayList<>();
+            ArrayList<byte[]> prevKeys = new ArrayList<>();
             // разобьем вставляемый интервал по уже существующим
-            long prevBegin = totalBegin;
-            for (; keyValue != null; keyValue = stepForward(iterator, pattern)) {
+            for (long prevBegin = totalBegin; keyValue != null; keyValue = stepForward(iterator, pattern)) {
                 if (key.getId() == RangeIndexKey.unpackId(keyValue.getKey())) {
                     continue;
                 }
@@ -55,9 +54,12 @@ public class RangeIndexUtils {
                 long begin = RangeIndexKey.unpackIndexedValue(keyValue.getKey());
                 if (prevBegin != begin) {
                     if (begin == totalEnd) {
-                        prevBeginKeys.clear();
+                        prevKeys.clear();
                         break;
                     } else if (begin > totalEnd) {
+                        for (; isEnd(keyValue); keyValue = stepForward(iterator, pattern)) {
+                            prevKeys.add(keyValue.getKey());
+                        }
                         break;
                     }
 
@@ -66,18 +68,21 @@ public class RangeIndexUtils {
                     transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
 
                     prevBegin = begin;
-                    prevBeginKeys.clear();
+                    prevKeys.clear();
                 }
 
                 if (RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.BEGIN) {
-                    prevBeginKeys.add(keyValue.getKey());
+                    prevKeys.add(keyValue.getKey());
                 }
             }
 
             // разобьем уже существующие интервалы по концу вставляемого
-            for (byte[] beginKey : prevBeginKeys) {
-                RangeIndexKey.setIndexedValue(totalEnd, beginKey);
-                transaction.put(index.columnFamily, beginKey, TypeConvert.EMPTY_BYTE_ARRAY);
+            for (byte[] prevKey : prevKeys) {
+                if (RangeIndexKey.unpackType(prevKey) == RangeIndexKey.Type.END) {
+                    RangeIndexKey.setType(RangeIndexKey.Type.BEGIN, prevKey);
+                }
+                RangeIndexKey.setIndexedValue(totalEnd, prevKey);
+                transaction.put(index.columnFamily, prevKey, TypeConvert.EMPTY_BYTE_ARRAY);
             }
 
             // добавим конец вставляемого интервала
@@ -87,6 +92,10 @@ public class RangeIndexUtils {
                 transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
             }
         }
+    }
+
+    private static boolean isEnd(KeyValue keyValue) {
+        return keyValue != null && RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.END;
     }
 
     public static void removeIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {

@@ -64,6 +64,23 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         TypeConvert.pack(indexedValue, dstKey, dstKey.length - ID_BYTE_SIZE - 2 * Long.BYTES - Byte.BYTES);
     }
 
+    public static void setType(Type type, byte[] dstKey) {
+        int beginPos = dstKey.length - ID_BYTE_SIZE - Long.BYTES - Byte.BYTES;
+        switch (type) {
+            case BEGIN:
+                long beginRangeValue = TypeConvert.unpackLong(dstKey, beginPos + 1);
+                dstKey[beginPos] = beginRangeValue < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE;
+                break;
+            case END:
+                dstKey[beginPos] = END_OF_RANGE_VALUE;
+                break;
+            case DOT:
+                dstKey[beginPos] = DOT_VALUE;
+                TypeConvert.pack(0, dstKey, beginPos + 1);
+                break;
+        }
+    }
+
     public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
         fillBuffer(hashedValues, beginRangeValue, buffer);
@@ -79,7 +96,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
                 break;
             case END:
                 destination.put(END_OF_RANGE_VALUE);
-                destination.putLong(0);
+                destination.putLong(beginRangeValue);
                 break;
             case DOT:
                 destination.put(DOT_VALUE);
