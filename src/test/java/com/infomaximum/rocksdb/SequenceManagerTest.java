@@ -1,10 +1,6 @@
-package com.infomaximum.database.domainobject.sequence;
+package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.exception.SequenceAlreadyExistsException;
-import com.infomaximum.rocksdb.SequenceManager;
-import com.infomaximum.rocksdb.RocksDataTest;
-import com.infomaximum.rocksdb.RocksDataBaseBuilder;
-import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,7 +8,7 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SequenceTest extends RocksDataTest {
+public class SequenceManagerTest extends RocksDataTest {
 
     @Test
     public void createNew() throws Exception {
