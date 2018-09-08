@@ -8,11 +8,13 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -69,6 +71,40 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
     private void assertEquals(List<Long> expectedIds, List<StoreFileReadable> actual) {
         Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).sorted().collect(Collectors.toList()));
+    }
+
+    @Test
+    public void insertAndFindLargeInstant() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(InstantUtils.MIN);
+            s.setEndTime(InstantUtils.ZERO);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(InstantUtils.ZERO.plus(Duration.ofSeconds(1)));
+            s.setEndTime(InstantUtils.MAX);
+            transaction.save(s);
+        });
+
+        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.MIN, InstantUtils.ZERO.minus(Duration.ofMillis(1)));
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+        }
+
+        rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.ZERO.plus(Duration.ofMillis(1)), InstantUtils.MAX);
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+        }
+
+        try {
+            rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.ZERO.plus(Duration.ofMillis(1)), InstantUtils.MAX.plus(Duration.ofMillis(1)));
+            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+                Assert.assertTrue(i.hasNext());
+            }
+            Assert.fail();
+        } catch (ArithmeticException ignore) {
+        }
     }
 
     @Test
