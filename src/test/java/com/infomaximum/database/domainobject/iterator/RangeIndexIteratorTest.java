@@ -50,9 +50,9 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
         assertEquals(Collections.singletonList(3L), findAll(new Interval(value, value, true, folderId)));
         assertEquals(Arrays.asList(1L, 3L), findAll(new Interval(value, value)));
-        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value, value + 1)));
+        assertEquals(Arrays.asList(2L, 1L, 3L), findAll(new Interval(value, value + 1)));
         assertEquals(Collections.singletonList(2L), findAll(new Interval(value - 1, value)));
-        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value - 1, value + 1)));
+        assertEquals(Arrays.asList(2L, 1L, 3L), findAll(new Interval(value - 1, value + 1)));
 
         domainObjectSource.executeTransactional(transaction -> {
             try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class, EmptyFilter.INSTANCE)) {
@@ -70,7 +70,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     }
 
     private void assertEquals(List<Long> expectedIds, List<StoreFileReadable> actual) {
-        Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).sorted().collect(Collectors.toList()));
+        Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).collect(Collectors.toList()));
     }
 
     @Test
@@ -105,6 +105,45 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             Assert.fail();
         } catch (ArithmeticException ignore) {
         }
+    }
+
+    @Test
+    public void checkOrder() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(100L);s.setEnd(200L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(150L);s.setEnd(200L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(50L);s.setEnd(180L);
+            transaction.save(s);
+        });
+
+        assertEquals(Arrays.asList(3L, 1L, 2L), findAll(new Interval(150, 200)));
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-10L);s.setEnd(10L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(5L);s.setEnd(15L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-15L);s.setEnd(15L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-20L);s.setEnd(5L);
+            transaction.save(s);
+        });
+
+        assertEquals(Arrays.asList(7L, 6L, 4L, 5L), findAll(new Interval(4, 6)));
     }
 
     @Test
@@ -244,6 +283,8 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
                 "           |_|","",
                    "        |V____|",
                    "        |V__|",
+                   "              |__|",
+                   "     |__|",
                    "        |_| "
         );
     }
@@ -420,7 +461,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     /**
      * @param f filter
      */
-    private void test(int intervalShift, String f, String... insertingIntervals) throws Exception {
+    private void test(long intervalShift, String f, String... insertingIntervals) throws Exception {
         List<StoreFileReadable> expected = new ArrayList<>(insertingIntervals.length);
         Assert.assertEquals("", insertingIntervals[0]);
 

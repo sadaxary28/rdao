@@ -38,7 +38,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     @Override
     public byte[] pack() {
         ByteBuffer buffer = TypeConvert.allocateBuffer((hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
-        fillBuffer(hashedValues, indexedValue, buffer);
+        BaseIntervalIndexKey.fillBuffer(hashedValues, indexedValue, buffer);
         // for segment sorting
         putBeginRange(beginRangeValue, type, buffer);
         buffer.putLong(getId());
@@ -61,7 +61,9 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     }
 
     public static void setIndexedValue(long indexedValue, byte[] dstKey) {
-        TypeConvert.pack(indexedValue, dstKey, dstKey.length - ID_BYTE_SIZE - 2 * Long.BYTES - Byte.BYTES);
+        int offset = dstKey.length - ID_BYTE_SIZE - 2 * Long.BYTES - Byte.BYTES;
+        dstKey[offset - 1] = BaseIntervalIndexKey.getSignByte(indexedValue);
+        TypeConvert.pack(indexedValue, dstKey, offset);
     }
 
     public static void setType(Type type, byte[] dstKey) {
@@ -83,7 +85,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
 
     public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
-        fillBuffer(hashedValues, beginRangeValue, buffer);
+        BaseIntervalIndexKey.fillBuffer(hashedValues, beginRangeValue, buffer);
         putBeginRange(beginRangeValue, Type.BEGIN, buffer);
         return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
     }

@@ -52,7 +52,7 @@ public abstract class BaseIntervalIndexKey extends Key {
         destination.putLong(indexedValue);
     }
 
-    private static Byte getSignByte(long value) {
+    static Byte getSignByte(long value) {
         return value < 0 ? NEGATIVE_VALUE : POSITIVE_VALUE;
     }
 }
