@@ -3,7 +3,6 @@ package com.infomaximum.domain;
 import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
-import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.domain.type.FormatType;
 
@@ -23,7 +22,8 @@ import java.time.Instant;
                 @Field(number = StoreFileReadable.FIELD_FORMAT, name = "format", type = FormatType.class, packerType = StoreFileReadable.FormatConverter.class),
                 @Field(number = StoreFileReadable.FIELD_FOLDER_ID, name = "folder_id", type = Long.class, foreignDependency = ExchangeFolderReadable.class),
                 @Field(number = StoreFileReadable.FIELD_DOUBLE, name = "double", type = Double.class),
-                @Field(number = StoreFileReadable.FIELD_DATE, name = "date", type = Instant.class),
+                @Field(number = StoreFileReadable.FIELD_BEGIN_TIME, name = "begin_time", type = Instant.class),
+                @Field(number = StoreFileReadable.FIELD_END_TIME, name = "end_time", type = Instant.class),
                 @Field(number = StoreFileReadable.FIELD_BEGIN, name = "begin", type = Long.class),
                 @Field(number = StoreFileReadable.FIELD_END, name = "end", type = Long.class)
         },
@@ -40,13 +40,15 @@ import java.time.Instant;
         intervalIndexes = {
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DOUBLE),
-                @IntervalIndex(indexedField = StoreFileReadable.FIELD_DATE),
+                @IntervalIndex(indexedField = StoreFileReadable.FIELD_BEGIN_TIME),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
         },
         rangeIndexes = {
                 @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END),
-                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID}),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
         }
 )
 public class StoreFileReadable extends DomainObject {
@@ -58,12 +60,14 @@ public class StoreFileReadable extends DomainObject {
     public final static int FIELD_FORMAT=4;
     public final static int FIELD_FOLDER_ID = 5;
     public final static int FIELD_DOUBLE = 6;
-    public final static int FIELD_DATE = 7;
+    public final static int FIELD_BEGIN_TIME = 7;
+    public final static int FIELD_END_TIME = 8;
 
-    public final static int FIELD_BEGIN = 8;
-    public final static int FIELD_END = 9;
+    public final static int FIELD_BEGIN = 9;
+    public final static int FIELD_END = 10;
 
-    public final static RangeFilter.IndexedField RANGE_INDEXED_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
+    public final static RangeFilter.IndexedField RANGE_LONG_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
+    public final static RangeFilter.IndexedField RANGE_INSTANT_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN_TIME, FIELD_END_TIME);
 
     public static class FormatConverter extends EnumConverter<FormatType> {
 
@@ -76,37 +80,40 @@ public class StoreFileReadable extends DomainObject {
         super(id);
     }
 
-
-    public String getFileName() throws DatabaseException {
+    public String getFileName() {
         return getString(FIELD_FILE_NAME);
     }
 
-    public String getContentType() throws DatabaseException {
+    public String getContentType() {
         return getString(FIELD_CONTENT_TYPE);
     }
 
-    public long getSize() throws DatabaseException {
+    public long getSize() {
         return getLong(FIELD_SIZE);
     }
 
-    public boolean isSingle() throws DatabaseException {
+    public boolean isSingle() {
         return getBoolean(FIELD_SINGLE);
     }
 
-    public FormatType getFormat() throws DatabaseException {
+    public FormatType getFormat() {
         return get(FIELD_FORMAT);
     }
 
-    public Long getFolderId() throws DatabaseException {
+    public Long getFolderId() {
         return getLong(FIELD_FOLDER_ID);
     }
 
-    public Double getDouble() throws DatabaseException {
+    public Double getDouble() {
         return get(FIELD_DOUBLE);
     }
 
-    public Instant getInstant() throws DatabaseException {
-        return getInstant(FIELD_DATE);
+    public Instant getBeginTime() {
+        return getInstant(FIELD_BEGIN_TIME);
+    }
+
+    public Instant getEndTime() {
+        return getInstant(FIELD_END_TIME);
     }
 
     public Long getBegin() {

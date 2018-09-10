@@ -49,7 +49,7 @@ public class HashIndexUtils {
         } else if (type == Boolean.class) {
             return ((Boolean) value) ? 1 : 0;
         } else if (type == Instant.class) {
-            return ((Instant) value).toEpochMilli();
+            return InstantUtils.toLong((Instant) value);
         } else if (type == Integer.class) {
             return UnsignedInts.toLong((Integer) value);
         }

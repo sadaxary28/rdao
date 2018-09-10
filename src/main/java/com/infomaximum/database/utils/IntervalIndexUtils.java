@@ -16,7 +16,7 @@ public class IntervalIndexUtils {
     }
 
     public static long castToLong(Instant value) {
-        return value.toEpochMilli();
+        return InstantUtils.toLong(value);
     }
 
     public static long castToLong(Object value) {

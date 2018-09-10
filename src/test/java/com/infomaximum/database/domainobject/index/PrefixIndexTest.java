@@ -38,7 +38,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
     @Test
     public void notFoundIndex() throws Exception {
         try {
-            domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_DATE, null));
+            domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_BEGIN_TIME, null));
             Assert.fail();
         } catch (IndexNotFoundException ignore) {}
 

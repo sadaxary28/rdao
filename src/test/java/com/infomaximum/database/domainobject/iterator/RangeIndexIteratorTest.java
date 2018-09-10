@@ -8,11 +8,16 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,9 +50,9 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
         assertEquals(Collections.singletonList(3L), findAll(new Interval(value, value, true, folderId)));
         assertEquals(Arrays.asList(1L, 3L), findAll(new Interval(value, value)));
-        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value, value + 1)));
+        assertEquals(Arrays.asList(2L, 1L, 3L), findAll(new Interval(value, value + 1)));
         assertEquals(Collections.singletonList(2L), findAll(new Interval(value - 1, value)));
-        assertEquals(Arrays.asList(1L, 2L, 3L), findAll(new Interval(value - 1, value + 1)));
+        assertEquals(Arrays.asList(2L, 1L, 3L), findAll(new Interval(value - 1, value + 1)));
 
         domainObjectSource.executeTransactional(transaction -> {
             try (IteratorEntity<StoreFileEditable> i = domainObjectSource.find(StoreFileEditable.class, EmptyFilter.INSTANCE)) {
@@ -65,7 +70,80 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     }
 
     private void assertEquals(List<Long> expectedIds, List<StoreFileReadable> actual) {
-        Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).sorted().collect(Collectors.toList()));
+        Assert.assertEquals(expectedIds, actual.stream().map(DomainObject::getId).collect(Collectors.toList()));
+    }
+
+    @Test
+    public void insertAndFindLargeInstant() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(InstantUtils.MIN);
+            s.setEndTime(InstantUtils.ZERO);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(InstantUtils.ZERO.plus(Duration.ofSeconds(1)));
+            s.setEndTime(InstantUtils.MAX);
+            transaction.save(s);
+        });
+
+        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.MIN, InstantUtils.ZERO.minus(Duration.ofMillis(1)));
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+        }
+
+        rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.ZERO.plus(Duration.ofMillis(1)), InstantUtils.MAX);
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+        }
+
+        try {
+            rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INSTANT_FIELD, InstantUtils.ZERO.plus(Duration.ofMillis(1)), InstantUtils.MAX.plus(Duration.ofMillis(1)));
+            try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+                Assert.assertTrue(i.hasNext());
+            }
+            Assert.fail();
+        } catch (ArithmeticException ignore) {
+        }
+    }
+
+    @Test
+    public void checkOrder() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(100L);s.setEnd(200L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(150L);s.setEnd(200L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(50L);s.setEnd(180L);
+            transaction.save(s);
+        });
+
+        assertEquals(Arrays.asList(3L, 1L, 2L), findAll(new Interval(150, 200)));
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-10L);s.setEnd(10L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(5L);s.setEnd(15L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-15L);s.setEnd(15L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBegin(-20L);s.setEnd(5L);
+            transaction.save(s);
+        });
+
+        assertEquals(Arrays.asList(7L, 6L, 4L, 5L), findAll(new Interval(4, 6)));
     }
 
     @Test
@@ -87,100 +165,214 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             transaction.save(s);
         });
 
-        assertEquals("  |___|", Collections.emptyList());
+        assertEquals(Collections.emptyList(), findAll(new Interval(0, 5)));
 
-        test("    |___|", "",
-                "|V____|"
+        test(0,
+                "    |___|", "",
+                   "|V____|");
+        test(100,
+                " |___|","",
+                   "   |V____|"
         );
-        test(" |___|","",
-                "   |V____|"
+        test(200,
+                "    |____|","",
+                   "   |V____|",
+                   "|__|"
         );
-        test("    |____|","",
-                "   |V____|",
-                "|__|"
+        test(300,
+                "    |____|","",
+                   "   |V______|",
+                   "           |__|"
         );
-        test("    |____|","",
-                "   |V______|",
-                "           |__|"
+        test(400,
+                "      |_____|","",
+                   "       |V____|",
+                   "        |V____|",
+                   "|___|",
+                   "|___|"
         );
-        test("      |_____|","",
-                "       |V____|",
-                "        |V____|",
-                "|___|",
-                "|___|"
+        test(500,
+                "    |____|","",
+                   "        |V____|",
+                   "|V____|"
         );
-        test("    |____|","",
-                "        |V____|",
-                "|V____|"
+        test(600,
+                "       |_____|","",
+                   "       |V____|",
+                   "       |V____|",
+                   "|____|"
         );
-        test("       |_____|","",
-                "       |V____|",
-                "       |V____|",
-                "|____|"
+        test(700,
+                "|___|", "",
+                   "    |_____|"
         );
-        test("|___|", "",
-                "    |_____|"
+        test(800,
+                "      |___|","",
+                   "|_____|"
         );
-        test("      |___|","",
-                "|_____|"
+        test(900,
+                "       |___|","",
+                   "|____|"
         );
-        test("       |___|","",
-                "|____|"
+        test(1000,
+                " |___|","",
+                   "       |____|"
         );
-        test(" |___|","",
-                "       |____|"
+        test(1100,
+                " |___|","",
+                   "|V________|",
+                   "   |V__|"
         );
-        test(" |___|","",
-                "|V________|",
-                "   |V__|"
+        test(1200,
+                " |___|","",
+                   "   |V__|",
+                   "|V________|"
         );
-        test(" |___|","",
-                "   |V__|",
-                "|V________|"
+        test(1300,
+                " |____________|","",
+                   "   |V__|",
+                   "|V________|",
+                   "      |V_____|",
+                   "                |_____|"
         );
-        test(" |____________|","",
-                "   |V__|",
-                "|V________|",
-                "      |V_____|",
-                "                |_____|"
+        test(1400,
+                " |____________|", "",
+                   "   |V__|",
+                   "|V________|",
+                   "   |V_____|",
+                   "                |_____|"
         );
-        test(" |____________|", "",
-                "   |V__|",
-                "|V________|",
-                "   |V_____|",
-                "                |_____|"
+        test(1500,
+                "      |____|","",
+                   "      |V__|",
+                   "    |V________|",
+                   "      |V_____|",
+                   "|_|",
+                   " |_|",
+                   " |V_______________|"
         );
-        test("      |____|","",
-                "      |V__|",
-                "    |V________|",
-                "      |V_____|",
-                "|_|",
-                " |_|",
-                " |V_______________|"
+
+        test(1600,
+                "            |_|","",
+                   "        |V_____|",
+                   "         |_|"
+        );
+        test(1700,
+                "            |_|","",
+                   "        |V_____|",
+                   "        |V_____|",
+                   "        |V_____|",
+                   "         |_|"
+        );
+        test(1800,
+                "           |_|","",
+                  "        |V____|",
+                  "        |_|"
+        );
+        test(1900,
+                "          |_|","",
+                   "        |V____|",
+                   "        |_|"
+        );
+        test(2000,
+                "           |__|","",
+                   "        |V____|",
+                   "        |_|"
+        );
+        test(2100,
+                "           |_|","",
+                   "        |V____|",
+                   "        |V__|",
+                   "              |__|",
+                   "     |__|",
+                   "        |_| "
         );
     }
 
     @Test
     public void groupedInsertAndFind() throws Exception {
-        test(" |___________2|", "",
-                "   |__1|",
-                "|________1|"
+        test(0,
+                " |___________2|", "",
+                   "   |__1|",
+                   "|________1|"
         );
-        test(" |___________1|","",
-                "   |V__1|",
-                "|________2|"
+        test(100,
+                " |___________1|","",
+                   "   |V__1|",
+                   "|________2|"
         );
-        test(" |___________1|","",
-                "   |V__1|",
-                "|________2|",
-                "       |V________1|"
+        test(200,
+                " |___________1|","",
+                   "   |V__1|",
+                   "|________2|",
+                   "       |V________1|"
         );
-        test("      |____1|","",
-                "   |V__1|",
-                "|________2|",
-                "     |V________1|",
-                " |__1|"
+        test(300,
+                "      |____1|","",
+                   "   |V__1|",
+                   "|________2|",
+                   "     |V________1|",
+                   " |__1|"
         );
+        test(400,
+                "            |1|","",
+                   "        |V____1|",
+                   "         |1|"
+        );
+        test(500,
+                "           |1|","",
+                   "        |V___1|",
+                   "        |V___1|",
+                   "        |____2|",
+                   "        |1|"
+        );
+        test(600,
+                "          |1|","",
+                   "        |V___1|",
+                   "        |1|"
+        );
+        test(700,
+                "           |-1|","",
+                   "        |V___1|",
+                   "        |1|"
+        );
+
+        List<Long> expectedIds = new ArrayList<>();
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.setForeignFieldEnabled(false);
+
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(toInstant(9, 1, 2018));
+            s.setEndTime(toInstant(14, 1, 2018));
+            s.setFolderId(1);
+            transaction.save(s);
+            expectedIds.add(s.getId());
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setBeginTime(toInstant(9, 1, 2018));
+            s.setEndTime(toInstant(11, 1, 2018));
+            s.setFolderId(1);
+            transaction.save(s);
+        });
+
+        RangeFilter filter = new RangeFilter(
+                StoreFileReadable.RANGE_INSTANT_FIELD,
+                toInstant(12, 1, 2018),
+                toInstant(13, 1, 2018)
+        ).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L);
+
+        List<Long> ids = new ArrayList<>();
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, filter)) {
+            while (i.hasNext()) {
+                ids.add(i.next().getId());
+            }
+        }
+        Assert.assertEquals(expectedIds, ids);
+    }
+
+    private static Instant toInstant(int day, int month, int year) {
+        return ZonedDateTime.of(
+                year, month, day, 0, 0, 0, 0, ZoneId.of("Europe/Moscow")).toInstant();
     }
 
     @Test
@@ -269,7 +461,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
     /**
      * @param f filter
      */
-    private void test(String f, String... insertingIntervals) throws Exception {
+    private void test(long intervalShift, String f, String... insertingIntervals) throws Exception {
         List<StoreFileReadable> expected = new ArrayList<>(insertingIntervals.length);
         Assert.assertEquals("", insertingIntervals[0]);
 
@@ -281,8 +473,8 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
                 Interval interval = parseInterval(insertingIntervals[i]);
 
                 StoreFileEditable s = transaction.create(StoreFileEditable.class);
-                s.setBegin(interval.begin);
-                s.setEnd(interval.end);
+                s.setBegin(interval.begin + intervalShift);
+                s.setEnd(interval.end + intervalShift);
                 s.setFolderId(interval.folderId);
                 transaction.save(s);
 
@@ -292,24 +484,21 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             }
         });
 
-        assertEquals(f, expected);
-
-        destroy();
-        init();
-    }
-
-    private void assertEquals(String filter, List<StoreFileReadable> expected) throws DatabaseException {
-        Interval interval = parseInterval(filter);
+        Interval interval = parseInterval(f);
+        interval.plus(intervalShift);
         List<StoreFileReadable> actual = findAll(interval);
 
-        expected.sort(Comparator.comparingLong(StoreFileReadable::getBegin));
+        Comparator<StoreFileReadable> comparator = Comparator.comparingLong(StoreFileReadable::getBegin)
+                .thenComparing(Comparator.comparingLong(StoreFileReadable::getId));
+        expected.sort(comparator);
+        actual.sort(comparator);
         Assert.assertEquals(expected, actual);
     }
 
     private List<StoreFileReadable> findAll(Interval interval) throws DatabaseException {
         List<StoreFileReadable> result = new ArrayList<>();
 
-        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_INDEXED_FIELD, interval.begin, interval.end);
+        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, interval.begin, interval.end);
         if (interval.folderId != null) {
             rangeFilter.appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, interval.folderId);
         }
@@ -332,8 +521,8 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
     private static class Interval {
 
-        final long begin;
-        final long end;
+        long begin;
+        long end;
         final boolean isMatched;
         final Long folderId;
 
@@ -346,6 +535,11 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
         Interval(long begin, long end) {
             this(begin, end, false, null);
+        }
+
+        void plus(long value) {
+            begin += value;
+            end += value;
         }
     }
 }

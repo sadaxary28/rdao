@@ -5,9 +5,6 @@ import com.infomaximum.domain.type.FormatType;
 
 import java.time.Instant;
 
-/**
- * Created by user on 19.04.2017.
- */
 public class StoreFileEditable extends StoreFileReadable implements DomainObjectEditable {
 
     public StoreFileEditable(long id) {
@@ -46,8 +43,12 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
         set(FIELD_DOUBLE, value);
     }
 
-    public void setInstant(Instant value) {
-        set(FIELD_DATE, value);
+    public void setBeginTime(Instant value) {
+        set(FIELD_BEGIN_TIME, value);
+    }
+
+    public void setEndTime(Instant value) {
+        set(FIELD_END_TIME, value);
     }
 
     public void setBegin(Long value) {

@@ -63,7 +63,7 @@ public class TypeConvert {
     }
 
     public static Instant unpackInstant(byte[] value) {
-        return !ByteUtils.isNullOrEmpty(value) ? Instant.ofEpochMilli(Longs.fromByteArray(value)) : null;
+        return !ByteUtils.isNullOrEmpty(value) ? InstantUtils.fromLong(Longs.fromByteArray(value)) : null;
     }
 
     public static byte[] pack(String value){
@@ -118,7 +118,7 @@ public class TypeConvert {
     }
 
     public static byte[] pack(Instant value) {
-        return value != null ? pack(value.toEpochMilli()) : EMPTY_BYTE_ARRAY;
+        return value != null ? pack(InstantUtils.toLong(value)) : EMPTY_BYTE_ARRAY;
     }
 
     @SuppressWarnings("unchecked")
