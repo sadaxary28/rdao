@@ -337,6 +337,25 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
                    "        |1|"
         );
 
+        test(800,
+                "     |-----------1|","",
+                   "  |_1|",
+                   "             |2|"
+        );
+        test(850,
+                "      |-----------------1|","",
+                   " |-1|",
+                   "        |V1|      ",
+                   "             |V-1|",
+                   "                    |2|",
+                "                  |V------1|"
+        );
+        test(900,
+                "    |---------1|","",
+                   " |V___1|",
+                   "            |2|"
+        );
+
         List<Long> expectedIds = new ArrayList<>();
         domainObjectSource.executeTransactional(transaction -> {
             transaction.setForeignFieldEnabled(false);

@@ -7,7 +7,6 @@ import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.domain.type.FormatType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -218,9 +217,7 @@ public class TransactionTest extends StoreFileDataTest {
         Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
 
         //Удяляем 2-й объект
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 2L));
-        });
+        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, 2L)));
 
         //Проверяем, корректность удаления
         Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
@@ -242,9 +239,7 @@ public class TransactionTest extends StoreFileDataTest {
         });
 
         try {
-            domainObjectSource.executeTransactional(transaction -> {
-                transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
-            });
+            domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(ExchangeFolderEditable.class, 1)));
             Assert.fail();
         } catch (ForeignDependencyException ex) {
             Assert.assertTrue(true);
