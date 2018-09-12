@@ -1,21 +1,70 @@
-package com.infomaximum.database.domainobject.edit;
+package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.domainobject.Transaction;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
+import com.infomaximum.domain.type.FormatType;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by kris on 22.04.17.
- */
-public class EditDomainObjectTest extends StoreFileDataTest {
+public class TransactionTest extends StoreFileDataTest {
 
     @Test
-    public void main() throws Exception {
+    public void optimisticTransactionLazyTest() throws Exception {
+        String fileName = "aaa.txt";
+        long size = 15L;
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable storeFile1 = transaction.create(StoreFileEditable.class);
+            storeFile1.setFileName(fileName);
+            storeFile1.setSize(size);
+            transaction.save(storeFile1);
+
+            try (IteratorEntity<StoreFileReadable> ie = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
+                StoreFileReadable storeFile2 = ie.next();
+
+                Assert.assertEquals(fileName, storeFile2.getFileName());
+                Assert.assertEquals(size, storeFile2.getSize());
+            }
+        });
+    }
+
+    @Test
+    public void create() throws Exception {
+        //Проверяем, что такого объекта нет в базе
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+
+        String fileName="application/json";
+        String contentType="info.json";
+        long size=1000L;
+        FormatType format = FormatType.B;
+
+        //Добавляем объект
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
+            storeFile.setContentType(contentType);
+            storeFile.setFileName(fileName);
+            storeFile.setSize(size);
+            storeFile.setFormat(format);
+            transaction.save(storeFile);
+        });
+
+        //Загружаем сохраненый объект
+        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
+        Assert.assertNotNull(storeFileCheckSave);
+        Assert.assertEquals(fileName, storeFileCheckSave.getFileName());
+        Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
+        Assert.assertEquals(size, storeFileCheckSave.getSize());
+        Assert.assertEquals(format, storeFileCheckSave.getFormat());
+    }
+
+    @Test
+    public void save() throws Exception {
         //Проверяем, что такого объекта нет в базе
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
 
@@ -94,7 +143,7 @@ public class EditDomainObjectTest extends StoreFileDataTest {
     }
 
     @Test
-    public void valueStringEmptyThenNull() throws Exception {
+    public void updateValueStringEmptyThenNull() throws Exception {
         final long objectId = 1;
         final String emptyFileName = "";
         final String contentType = "info.json";
@@ -128,7 +177,7 @@ public class EditDomainObjectTest extends StoreFileDataTest {
     }
 
     @Test
-    public void emptySaveDomainObject() throws Exception {
+    public void saveEmptyDomainObject() throws Exception {
         final long objectId = 1;
         final String emptyFileName = "";
         final String contentType = "info.json";
@@ -146,6 +195,78 @@ public class EditDomainObjectTest extends StoreFileDataTest {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable obj = transaction.get(StoreFileEditable.class, objectId);
             transaction.save(obj);
+        });
+    }
+
+    @Test
+    public void removeOneObject() throws Exception {
+        //Проверяем, что таких объектов нет в базе
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 3L));
+
+        //Добавляем объект
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.save(transaction.create(StoreFileEditable.class));
+            transaction.save(transaction.create(StoreFileEditable.class));
+            transaction.save(transaction.create(StoreFileEditable.class));
+        });
+
+        //Проверяем что файлы сохранены
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
+
+        //Удяляем 2-й объект
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 2L));
+        });
+
+        //Проверяем, корректность удаления
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
+        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
+    }
+
+    @Test
+    public void removeReferencedObject() throws Exception {
+        createDomain(ExchangeFolderReadable.class);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
+            transaction.save(folder);
+
+            StoreFileEditable file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+        });
+
+        try {
+            domainObjectSource.executeTransactional(transaction -> {
+                transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
+            });
+            Assert.fail();
+        } catch (ForeignDependencyException ex) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
+    public void removeReferencingObjects() throws Exception {
+        createDomain(ExchangeFolderReadable.class);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
+            transaction.save(folder);
+
+            StoreFileEditable file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
         });
     }
 }
