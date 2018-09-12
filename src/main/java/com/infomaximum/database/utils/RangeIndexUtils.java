@@ -157,7 +157,8 @@ public class RangeIndexUtils {
             if (pattern.match(res.getKey()) != KeyPattern.MATCH_RESULT_SUCCESS ||
                     RangeIndexKey.unpackType(res.getKey()) == RangeIndexKey.Type.END ||
                     begin != RangeIndexKey.unpackIndexedValue(res.getKey())) {
-                return indexIterator.step(DBIterator.StepDirection.FORWARD);
+                res = indexIterator.step(DBIterator.StepDirection.FORWARD);
+                return res != null && pattern.match(res.getKey()) != KeyPattern.MATCH_RESULT_UNSUCCESS ? res  : null;
             }
 
             res = indexIterator.step(DBIterator.StepDirection.BACKWARD);
