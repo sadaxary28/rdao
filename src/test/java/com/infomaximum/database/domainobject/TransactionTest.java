@@ -3,6 +3,9 @@ package com.infomaximum.database.domainobject;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.database.maintenance.ChangeMode;
+import com.infomaximum.database.maintenance.DomainService;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
@@ -242,12 +245,19 @@ public class TransactionTest extends StoreFileDataTest {
             domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(ExchangeFolderEditable.class, 1)));
             Assert.fail();
         } catch (ForeignDependencyException ex) {
-            Assert.assertTrue(true);
+            try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assert.assertTrue(i.hasNext());
+            }
         }
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
+        });
     }
 
     @Test
-    public void removeReferencingObjects() throws Exception {
+    public void clearUnsafe() throws Exception {
         createDomain(ExchangeFolderReadable.class);
 
         domainObjectSource.executeTransactional(transaction -> {
@@ -255,13 +265,53 @@ public class TransactionTest extends StoreFileDataTest {
             transaction.save(folder);
 
             StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
+            file.setFolderId(null);
+            transaction.save(file);
+
+            file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(null);
+            transaction.save(file);
+
+            file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(null);
             transaction.save(file);
         });
 
+        domainObjectSource.executeTransactional(transaction -> transaction.clearUnsafe(ExchangeFolderEditable.class));
+        try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+            Assert.assertFalse(i.hasNext());
+        }
+
+        new DomainService(domainObjectSource.getDbProvider())
+                .setChangeMode(ChangeMode.NONE)
+                .setValidationMode(true)
+                .setDomain(Schema.getEntity(ExchangeFolderEditable.class))
+                .execute();
+
         domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
+            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
+            transaction.save(folder);
+
+            StoreFileEditable file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(null);
+            transaction.save(file);
+
+            file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+
+            file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(null);
+            transaction.save(file);
         });
+
+        try {
+            domainObjectSource.executeTransactional(transaction -> transaction.clearUnsafe(ExchangeFolderEditable.class));
+            Assert.fail();
+        } catch (ForeignDependencyException e) {
+            try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assert.assertTrue(i.hasNext());
+            }
+        }
     }
 }

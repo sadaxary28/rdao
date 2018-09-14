@@ -47,6 +47,10 @@ public class IndexKey extends Key {
         return TypeConvert.unpackLong(src, src.length - ID_BYTE_SIZE);
     }
 
+    public static long unpackFirstIndexedValue(final byte[] src) {
+        return TypeConvert.unpackLong(src, 0);
+    }
+
     public static KeyPattern buildKeyPattern(final long[] fieldValues) {
         byte[] buffer = new byte[ID_BYTE_SIZE * fieldValues.length];
         TypeConvert.pack(fieldValues, buffer, 0);
