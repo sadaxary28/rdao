@@ -135,7 +135,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     public <T extends DomainObject & DomainObjectEditable> void remove(final T obj) throws DatabaseException {
         ensureTransaction();
 
-        validateRemovingObject(obj);
+        validateForeignValues(obj);
 
         final String columnFamily = obj.getStructEntity().getColumnFamily();
         final Value<Serializable>[] loadedValues = new Value[obj.getStructEntity().getFields().length];
@@ -166,6 +166,45 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         // delete self-object
         transaction.deleteRange(columnFamily, FieldKey.buildKeyPrefix(obj.getId()));
+    }
+
+    /**
+     * The method is not transactional
+     */
+    public <T extends DomainObject & DomainObjectEditable> void clearUnsafe(Class<T> objClass) throws DatabaseException {
+        ensureTransaction();
+
+        StructEntity entity = Schema.getEntity(objClass);
+
+        validateForeignValues(entity);
+
+        // delete hash-indexed values
+        for (HashIndex index : entity.getHashIndexes()) {
+            recreateColumnFamily(index.columnFamily);
+        }
+
+        // delete prefix-indexed values
+        for (PrefixIndex index: entity.getPrefixIndexes()) {
+            recreateColumnFamily(index.columnFamily);
+        }
+
+        // delete interval-indexed values
+        for (IntervalIndex index: entity.getIntervalIndexes()) {
+            recreateColumnFamily(index.columnFamily);
+        }
+
+        // delete range-indexed values
+        for (RangeIndex index: entity.getRangeIndexes()) {
+            recreateColumnFamily(index.columnFamily);
+        }
+
+        // delete objects
+        recreateColumnFamily(entity.getColumnFamily());
+    }
+
+    private void recreateColumnFamily(String columnFamily) throws DatabaseException {
+        getDbProvider().dropColumnFamily(columnFamily);
+        getDbProvider().createColumnFamily(columnFamily);
     }
 
     @Override
@@ -369,7 +408,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
     }
 
-    private void validateRemovingObject(DomainObject obj) throws DatabaseException {
+    private void validateForeignValues(DomainObject obj) throws DatabaseException {
         if (!foreignFieldEnabled) {
             return;
         }
@@ -381,11 +420,39 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         KeyPattern keyPattern = IndexKey.buildKeyPattern(obj.getId());
         for (StructEntity.Reference ref : references) {
-            try (DBIterator iterator = transaction.createIterator(ref.fieldIndex.columnFamily)) {
-                KeyValue keyValue = iterator.seek(keyPattern);
+            try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+                KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = IndexKey.unpackId(keyValue.getKey());
                     throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
+                }
+            }
+        }
+    }
+
+    private void validateForeignValues(StructEntity entity) throws DatabaseException {
+        if (!foreignFieldEnabled) {
+            return;
+        }
+
+        List<StructEntity.Reference> references = entity.getReferencingForeignFields();
+        if (references.isEmpty()) {
+            return;
+        }
+
+        KeyPattern keyPattern = new KeyPattern((byte[]) null);
+        keyPattern.setForBackward(true);
+        for (StructEntity.Reference ref : references) {
+            if (ref.objClass.equals(entity.getObjectClass())) {
+                continue;
+            }
+
+            try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+                KeyValue keyValue = i.seek(keyPattern);
+                if (keyValue != null && IndexKey.unpackFirstIndexedValue(keyValue.getKey()) != 0) {
+                    long referencingId = IndexKey.unpackId(keyValue.getKey());
+                    long objId = IndexKey.unpackFirstIndexedValue(keyValue.getKey());
+                    throw new ForeignDependencyException(objId, entity.getObjectClass(), referencingId, ref.objClass);
                 }
             }
         }
