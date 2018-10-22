@@ -11,6 +11,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,6 +75,33 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000)), StoreFileReadable.FIELD_BEGIN_TIME, Instant.ofEpochMilli(currentTime), Instant.ofEpochMilli(currentTime + 1000));
         assertValueEquals(Arrays.asList(Instant.ofEpochMilli(currentTime + 1000), Instant.ofEpochMilli(currentTime + 5 * 1000)), StoreFileReadable.FIELD_BEGIN_TIME, Instant.ofEpochMilli(currentTime + 500), Instant.ofEpochMilli(currentTime + 6 * 1000));
+    }
+
+    @Test
+    public void localDateOrderTest() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 32));
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 33));
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 34));
+            transaction.save(obj);
+        });
+
+        assertValueEquals(Arrays.asList(
+                LocalDateTime.of(2018, 10, 22, 18, 32),
+                LocalDateTime.of(2018, 10, 22, 18, 33),
+                LocalDateTime.of(2018, 10, 22, 18, 34)
+        ), new IntervalFilter(
+                StoreFileReadable.FIELD_LOCAL_BEGIN,
+                LocalDateTime.of(2018, 10, 22, 18, 30),
+                LocalDateTime.of(2018, 10, 22, 18, 35)
+        ));
     }
 
     @Test

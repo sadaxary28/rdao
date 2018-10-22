@@ -3,6 +3,7 @@ package com.infomaximum.database.utils;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class IntervalIndexUtils {
 
@@ -19,6 +20,10 @@ public class IntervalIndexUtils {
         return InstantUtils.toLong(value);
     }
 
+    public static long castToLong(LocalDateTime value) {
+        return LocalDateTimeUtils.toLong(value);
+    }
+
     public static long castToLong(Object value) {
         if (value == null) {
             return 0;
@@ -30,6 +35,8 @@ public class IntervalIndexUtils {
             return castToLong((Instant) value);
         } else if (value.getClass() == Double.class) {
             return castToLong(((Double) value).doubleValue());
+        } else if (value.getClass() == LocalDateTime.class) {
+            return castToLong((LocalDateTime) value);
         }
 
         throw new IllegalTypeException("Unsupported type " + value.getClass());
@@ -38,7 +45,8 @@ public class IntervalIndexUtils {
     public static <T> void checkType(Class<T> indexedClass) {
         if (indexedClass == Long.class ||
                 indexedClass == Instant.class ||
-                indexedClass == Double.class) {
+                indexedClass == Double.class ||
+                indexedClass == LocalDateTime.class) {
             return;
         }
 
