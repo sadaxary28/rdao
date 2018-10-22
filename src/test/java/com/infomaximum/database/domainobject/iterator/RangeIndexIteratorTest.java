@@ -14,10 +14,7 @@ import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -104,6 +101,29 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             }
             Assert.fail();
         } catch (ArithmeticException ignore) {
+        }
+    }
+
+    @Test
+    public void insertAndFindLocalDateTime() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setLocalBegin(LocalDateTime.of(2018, 2, 5, 18, 30, 5));
+            s.setLocalEnd(LocalDateTime.of(2018, 2, 5, 18, 30, 10));
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setLocalBegin(LocalDateTime.of(2018, 2, 5, 17, 30, 5));
+            s.setLocalEnd(LocalDateTime.of(2018, 2, 5, 17, 30, 10));
+            transaction.save(s);
+        });
+
+        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_LOCAL_FIELD,
+                LocalDateTime.of(2018, 2, 5, 18, 30, 0),
+                LocalDateTime.of(2018, 2, 5, 18, 30, 6)
+        );
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
         }
     }
 

@@ -7,6 +7,7 @@ import com.infomaximum.database.utils.EnumConverter;
 import com.infomaximum.domain.type.FormatType;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 /**
  * Created by user on 19.04.2017.
@@ -25,13 +26,16 @@ import java.time.Instant;
                 @Field(number = StoreFileReadable.FIELD_BEGIN_TIME, name = "begin_time", type = Instant.class),
                 @Field(number = StoreFileReadable.FIELD_END_TIME, name = "end_time", type = Instant.class),
                 @Field(number = StoreFileReadable.FIELD_BEGIN, name = "begin", type = Long.class),
-                @Field(number = StoreFileReadable.FIELD_END, name = "end", type = Long.class)
+                @Field(number = StoreFileReadable.FIELD_END, name = "end", type = Long.class),
+                @Field(number = StoreFileReadable.FIELD_LOCAL_BEGIN, name = "local_begin", type = LocalDateTime.class),
+                @Field(number = StoreFileReadable.FIELD_LOCAL_END, name = "local_end", type = LocalDateTime.class)
         },
         hashIndexes = {
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
-                @HashIndex(fields = {StoreFileReadable.FIELD_FORMAT})
+                @HashIndex(fields = {StoreFileReadable.FIELD_FORMAT}),
+                @HashIndex(fields = {StoreFileReadable.FIELD_LOCAL_BEGIN})
         },
         prefixIndexes = {
                 @PrefixIndex(fields = {StoreFileReadable.FIELD_FILE_NAME}),
@@ -41,6 +45,7 @@ import java.time.Instant;
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_DOUBLE),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_BEGIN_TIME),
+                @IntervalIndex(indexedField = StoreFileReadable.FIELD_LOCAL_BEGIN),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
         },
@@ -48,7 +53,8 @@ import java.time.Instant;
                 @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END),
                 @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID}),
                 @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME),
-                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID}),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_LOCAL_BEGIN, endField = StoreFileReadable.FIELD_LOCAL_END)
         }
 )
 public class StoreFileReadable extends DomainObject {
@@ -66,8 +72,12 @@ public class StoreFileReadable extends DomainObject {
     public final static int FIELD_BEGIN = 9;
     public final static int FIELD_END = 10;
 
+    public final static int FIELD_LOCAL_BEGIN = 11;
+    public final static int FIELD_LOCAL_END = 12;
+
     public final static RangeFilter.IndexedField RANGE_LONG_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
     public final static RangeFilter.IndexedField RANGE_INSTANT_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN_TIME, FIELD_END_TIME);
+    public final static RangeFilter.IndexedField RANGE_LOCAL_FIELD = new RangeFilter.IndexedField(FIELD_LOCAL_BEGIN, FIELD_LOCAL_END);
 
     public static class FormatConverter extends EnumConverter<FormatType> {
 
@@ -122,5 +132,13 @@ public class StoreFileReadable extends DomainObject {
 
     public Long getEnd() {
         return getLong(FIELD_END);
+    }
+
+    public LocalDateTime getLocalBegin() {
+        return get(FIELD_LOCAL_BEGIN);
+    }
+
+    public LocalDateTime getLocalEnd() {
+        return get(FIELD_LOCAL_END);
     }
 }

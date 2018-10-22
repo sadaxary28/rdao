@@ -11,6 +11,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class TypeConvert {
 
@@ -64,6 +65,10 @@ public class TypeConvert {
 
     public static Instant unpackInstant(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? InstantUtils.fromLong(Longs.fromByteArray(value)) : null;
+    }
+
+    public static LocalDateTime unpackLocalDateTime(byte[] value) {
+        return !ByteUtils.isNullOrEmpty(value) ? LocalDateTimeUtils.fromLong(Longs.fromByteArray(value)) : null;
     }
 
     public static byte[] pack(String value){
@@ -121,6 +126,10 @@ public class TypeConvert {
         return value != null ? pack(InstantUtils.toLong(value)) : EMPTY_BYTE_ARRAY;
     }
 
+    public static byte[] pack(LocalDateTime value) {
+        return value != null ? pack(LocalDateTimeUtils.toLong(value)) : EMPTY_BYTE_ARRAY;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
@@ -137,6 +146,8 @@ public class TypeConvert {
             return (T) unpackInteger(value);
         } else if (type == Double.class) {
             return (T) unpackDouble(value);
+        } else if (type == LocalDateTime.class) {
+            return (T) unpackLocalDateTime(value);
         } else if (type == byte[].class) {
             return (T) value;
         }
@@ -159,6 +170,8 @@ public class TypeConvert {
             return pack((Integer) value);
         } else if (type == Double.class) {
             return pack((Double) value);
+        } else if (type == LocalDateTime.class) {
+            return pack((LocalDateTime) value);
         } else if (type == byte[].class) {
             return (byte[]) value;
         }

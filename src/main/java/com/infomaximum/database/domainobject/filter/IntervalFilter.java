@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject.filter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class IntervalFilter extends BaseIntervalFilter {
 
@@ -20,6 +21,12 @@ public class IntervalFilter extends BaseIntervalFilter {
     }
 
     public IntervalFilter(Integer indexedFieldNumber, Instant beginValue, Instant endValue) {
+        super(beginValue, endValue);
+
+        this.indexedFieldNumber = indexedFieldNumber;
+    }
+
+    public IntervalFilter(Integer indexedFieldNumber, LocalDateTime beginValue, LocalDateTime endValue) {
         super(beginValue, endValue);
 
         this.indexedFieldNumber = indexedFieldNumber;

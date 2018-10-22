@@ -10,6 +10,7 @@ import com.infomaximum.database.schema.TypeConverter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class HashIndexUtils {
@@ -50,6 +51,8 @@ public class HashIndexUtils {
             return ((Boolean) value) ? 1 : 0;
         } else if (type == Instant.class) {
             return InstantUtils.toLong((Instant) value);
+        } else if (type == LocalDateTime.class) {
+            return LocalDateTimeUtils.toLong((LocalDateTime) value);
         } else if (type == Integer.class) {
             return UnsignedInts.toLong((Integer) value);
         }

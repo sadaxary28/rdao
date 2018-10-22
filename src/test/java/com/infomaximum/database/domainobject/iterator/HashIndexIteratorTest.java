@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class HashIndexIteratorTest extends StoreFileDataTest {
@@ -254,6 +255,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
             obj = transaction.create(StoreFileEditable.class);
             obj.setFileName("ПРИВЕТ ВСЕМ");
             obj.setSize(40);
+            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 32));
             transaction.save(obj);
         });
 
@@ -273,6 +275,11 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
 
                 Assert.assertEquals(Arrays.asList(1L, 2L), ids);
             }
+
+            Assert.assertNotNull(transaction.find(
+                    StoreFileReadable.class,
+                    new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, LocalDateTime.of(2018, 10, 22, 18, 32))
+            ));
         }
     }
 

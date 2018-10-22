@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject.filter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,11 @@ public abstract class BaseIntervalFilter implements Filter {
     }
 
     BaseIntervalFilter(Instant beginValue, Instant endValue) {
+        this.beginValue = beginValue;
+        this.endValue = endValue;
+    }
+
+    BaseIntervalFilter(LocalDateTime beginValue, LocalDateTime endValue) {
         this.beginValue = beginValue;
         this.endValue = endValue;
     }

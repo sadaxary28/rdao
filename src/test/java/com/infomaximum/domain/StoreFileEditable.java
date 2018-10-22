@@ -4,6 +4,7 @@ import com.infomaximum.database.domainobject.DomainObjectEditable;
 import com.infomaximum.domain.type.FormatType;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class StoreFileEditable extends StoreFileReadable implements DomainObjectEditable {
 
@@ -57,5 +58,13 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
 
     public void setEnd(Long value) {
         set(FIELD_END, value);
+    }
+
+    public void setLocalBegin(LocalDateTime value) {
+        set(FIELD_LOCAL_BEGIN, value);
+    }
+
+    public void setLocalEnd(LocalDateTime value) {
+        set(FIELD_LOCAL_END, value);
     }
 }
