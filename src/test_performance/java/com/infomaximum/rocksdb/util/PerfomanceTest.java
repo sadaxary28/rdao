@@ -11,16 +11,35 @@ public class PerfomanceTest {
         void process(int step) throws Exception;
     }
 
+    @FunctionalInterface
+    public interface Consumer {
+
+        void accept() throws Exception;
+    }
+
     public static void test(int executionCount, Action action) throws Exception {
+        test(executionCount, null, action);
+    }
+
+    public static void test(int executionCount, Consumer beforeEach, Action action) throws Exception {
         showMessage("Test on starting.");
 
-        long beginTime = System.currentTimeMillis();
+        long durationMillis = 0;
         for (int i = 0; i < executionCount; ++i) {
+            if (beforeEach != null) {
+                beforeEach.accept();
+            }
+            long beginTime = System.currentTimeMillis();
             action.process(i);
+            long endTime = System.currentTimeMillis();
+            durationMillis += endTime - beginTime;
         }
-        long endTime = System.currentTimeMillis();
+        printResults(executionCount, durationMillis);
 
-        long durationMillis = endTime - beginTime;
+        showMessage("Test on finished.");
+    }
+
+    private static void printResults(int executionCount, long durationMillis) {
         long durationMin = TimeUnit.MILLISECONDS.toSeconds(durationMillis) / TimeUnit.MINUTES.toSeconds(1);
         long durationSec = durationMillis / TimeUnit.SECONDS.toMillis(1);
         long durationMs = durationMillis % TimeUnit.SECONDS.toMillis(1);
@@ -40,8 +59,6 @@ public class PerfomanceTest {
                 (double)(durationMillis) / (double)executionCount
         );
         System.out.println(msg);
-
-        showMessage("Test on finished.");
     }
 
     private static void showMessage(String message) {
