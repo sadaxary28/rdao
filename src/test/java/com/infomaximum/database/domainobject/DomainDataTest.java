@@ -31,12 +31,18 @@ public abstract class DomainDataTest extends RocksDataTest {
 
     @After
     public void destroy() throws Exception {
-        rocksDBProvider.close();
+        if (rocksDBProvider != null) {
+            rocksDBProvider.close();
+        }
 
         super.destroy();
     }
 
     protected void createDomain(Class<? extends DomainObject> clazz) throws DatabaseException {
+        createDomain(clazz, rocksDBProvider);
+    }
+
+    protected void createDomain(Class<? extends DomainObject> clazz, RocksDBProvider rocksDBProvider) throws DatabaseException {
         new Schema.Builder().withDomain(clazz).build();
         new DomainService(rocksDBProvider)
                 .setChangeMode(ChangeMode.CREATION)
