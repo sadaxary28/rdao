@@ -9,6 +9,7 @@ import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.InstantUtils;
+import com.infomaximum.database.utils.LocalDateTimeUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
@@ -124,6 +125,18 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         );
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
             Assert.assertTrue(i.hasNext());
+        }
+
+        rangeFilter = new RangeFilter(StoreFileReadable.RANGE_LOCAL_FIELD,
+                LocalDateTimeUtils.MIN,
+                LocalDateTimeUtils.MAX
+        );
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+            i.next();
+            Assert.assertTrue(i.hasNext());
+            i.next();
+            Assert.assertFalse(i.hasNext());
         }
     }
 
