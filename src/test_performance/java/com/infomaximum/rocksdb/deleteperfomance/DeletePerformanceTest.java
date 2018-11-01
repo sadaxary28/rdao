@@ -17,7 +17,7 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
         final int generalDependenceCount = 100000;
         final int deletingDependentCount = 9000;
         final int readTimes = 100000;
-        final int executionTimes = 1;
+        final int executionTimes = 3;
 
         fillEtalonDB(generalCount, generalDependenceCount);
 
@@ -28,7 +28,7 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
 
         System.out.println("Read after Delete:");
         PerfomanceTest.test(executionTimes,
-                ()-> {
+                () -> {
                     resetBDToEtalon();
                     deleteZebraDependent(generalCount, deletingDependentCount);
                 },
@@ -36,25 +36,25 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
     }
 
     @Test
-    public void writedDeleteTest() throws Exception {
+    public void writeDeleteTest() throws Exception {
         final int generalCount = 500;
         final int generalDependenceCount = 10000;
         final int deletingDependentCount = 9000;
-        final int executionTimes = 1;
+        final int executionTimes = 3;
 
         PerfomanceTest.test(executionTimes,
                 step -> {
                     createGeneralsAndDependents(generalCount, generalDependenceCount, domainObjectSource, rocksDBProvider);
                     deleteZebraDependent(generalCount, deletingDependentCount);
-        });
+                });
     }
 
 
-   private void deleteZebraDependent(int generalCount, int deletingDependent) throws Exception {
+    private void deleteZebraDependent(int generalCount, int deletingDependent) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
-            for (long i = 1; i <= generalCount; i+=2) {
+            for (long i = 1; i <= generalCount; i += 2) {
                 int c = 1;
-                try(IteratorEntity<DependentEditable> depIt = transaction.find(DependentEditable.class, new HashFilter(DependentEditable.FIELD_GENERAL_ID, i))) {
+                try (IteratorEntity<DependentEditable> depIt = transaction.find(DependentEditable.class, new HashFilter(DependentEditable.FIELD_GENERAL_ID, i))) {
                     while (depIt.hasNext() && c < deletingDependent) {
                         transaction.remove(depIt.next());
                         c++;
