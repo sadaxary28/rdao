@@ -10,6 +10,7 @@ public class DomainDataInstanceTestTest extends DomainDataInstanceTest {
     @Test
     public void test() throws Exception {
         fillEtalonBD(this::fillData);
+        resetBDToEtalon();
         domainObjectSource.executeTransactional(transaction -> {
             DataTestEditable dataTestEditable = transaction.get(DataTestEditable.class, 1L);
             Assert.assertNotNull(dataTestEditable);
