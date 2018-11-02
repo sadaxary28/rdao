@@ -9,7 +9,7 @@ import com.infomaximum.database.domainobject.DomainObject;
         namespace = "com.infomaximum.rocksdb",
         name = "general",
         fields = {
-                @Field(number = GeneralReadable.FIELD_VALUE, name = "value", type = String.class),
+                @Field(number = GeneralReadable.FIELD_VALUE, name = "value", type = Long.class),
         },
         hashIndexes = {
                 @HashIndex(fields = {GeneralReadable.FIELD_VALUE})
@@ -23,7 +23,7 @@ public class GeneralReadable extends DomainObject {
         super(id);
     }
 
-    public String getValue() {
-        return getString(FIELD_VALUE);
+    public Long getValue() {
+        return getLong(FIELD_VALUE);
     }
 }

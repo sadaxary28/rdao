@@ -8,7 +8,7 @@ public class GeneralEditable extends GeneralReadable implements DomainObjectEdit
         super(id);
     }
 
-    void setValue(String value) {
+    void setValue(Long value) {
         set(FIELD_VALUE, value);
     }
 }
