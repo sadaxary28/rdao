@@ -7,12 +7,18 @@ import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
-import org.junit.Assert;
 import org.junit.Test;
-
 
 public class DeletePerformanceTest extends DomainDataInstanceTest {
 
+    /**
+     * Чтение вне транзакции до удаления:
+     Total execution count = 3, Total time = 2 s 362 ms, Time spent on one call = 787,333333 ms
+     В одной транзакции удаление, чтение и коммит:
+     Total execution count = 3, Total time = 1 s 778 ms, Time spent on one call = 592,666667 ms
+     Чтение в другой транзакции:
+     Total execution count = 3, Total time = 1 s 432 ms, Time spent on one call = 477,333333 ms
+     */
     @Test
     public void deleteReadTest() throws Exception {
         final long objectsCount = 100_000;
@@ -22,35 +28,26 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
         fillEtalonBD((d, r) -> createObjects(objectsCount, d, r));
         resetBDToEtalon();
 
-        System.out.println("Чтение:");
-        PerfomanceTest.test(executionTimes,
-                step -> read(deletingCount, objectsCount)
-        );
-
-        System.out.println("В одной транзакции удаление и чтение:");
-        resetBDToEtalon();
-        domainObjectSource.executeTransactional(transaction -> {
-            deleteObjects(deletingCount, transaction);
-            PerfomanceTest.test(executionTimes,
-                    step -> read(1, objectsCount, transaction)
-            );
-        });
-
-        System.out.println("Чтение в транзакции:");
-        domainObjectSource.executeTransactional(transaction -> {
-            PerfomanceTest.test(executionTimes,
-                    step -> read(1, objectsCount, transaction)
-            );
-        });
-
-        System.out.println("В разных транзакциях удаление и чтение:");
-        resetBDToEtalon();
-        domainObjectSource.executeTransactional(transaction -> {
-            deleteObjects(deletingCount, transaction);
-        });
+        System.out.println("Чтение вне транзакции до удаления:");
         PerfomanceTest.test(executionTimes,
                 step -> read(1, objectsCount)
         );
+
+        System.out.println("В одной транзакции удаление, чтение и коммит:");
+        resetBDToEtalon();
+        domainObjectSource.executeTransactional(transaction -> {
+            deleteObjects(deletingCount, transaction);
+            PerfomanceTest.test(executionTimes,
+                    step -> read(1, objectsCount, transaction)
+            );
+        });
+
+        System.out.println("Чтение в другой транзакции:");
+        domainObjectSource.executeTransactional(transaction -> {
+            PerfomanceTest.test(executionTimes,
+                    step -> read(1, objectsCount, transaction)
+            );
+        });
     }
 
     private void createObjects(long count, DomainObjectSource domainObjectSource, RocksDBProvider rocksDBProvider) throws Exception {
