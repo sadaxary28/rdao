@@ -43,7 +43,7 @@ public abstract class DataEnumerable {
         }
     }
 
-    protected final DBProvider dbProvider;
+    private final DBProvider dbProvider;
 
     DataEnumerable(DBProvider dbProvider) {
         this.dbProvider = dbProvider;
@@ -53,11 +53,16 @@ public abstract class DataEnumerable {
         return dbProvider;
     }
 
-    public abstract <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException;
     public abstract DBIterator createIterator(String columnFamily) throws DatabaseException;
+
+    public abstract boolean isMarkedForDeletion(StructEntity entity, long objId);
 
     public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<Integer> loadingFields) throws DatabaseException {
         StructEntity entity = Schema.getEntity(clazz);
+
+        if (isMarkedForDeletion(entity, id)) {
+            return null;
+        }
 
         try (DBIterator iterator = createIterator(entity.getColumnFamily())) {
             return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, entity.getFieldNames(loadingFields)));
@@ -113,13 +118,14 @@ public abstract class DataEnumerable {
     }
 
     public <T extends DomainObject> T nextObject(final Constructor<T> constructor, Collection<Integer> preInitializedFields,
-                                                 DBIterator iterator, NextState state) throws DatabaseException {
+                                                 DBIterator iterator, NextState state, StructEntity entity) throws DatabaseException {
         if (state.isEmpty()) {
             return null;
         }
 
         T obj = buildDomainObject(constructor, state.nextId, preInitializedFields);
         state.nextId = readObject(obj, iterator);
+        state.nextId = getNextNotMarkedForDeletion(entity, state.nextId, iterator);
         return obj;
     }
 
@@ -139,7 +145,7 @@ public abstract class DataEnumerable {
         return obj;
     }
 
-    public NextState seek(DBIterator iterator, KeyPattern pattern) throws DatabaseException {
+    public NextState seek(DBIterator iterator, KeyPattern pattern, StructEntity entity) throws DatabaseException {
         KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return new NextState(-1);
@@ -149,7 +155,8 @@ public abstract class DataEnumerable {
             return new NextState(-1);
         }
 
-        return new NextState(FieldKey.unpackId(keyValue.getKey()));
+        long objId = FieldKey.unpackId(keyValue.getKey());
+        return new NextState(getNextNotMarkedForDeletion(entity, objId, iterator));
     }
 
     private <T extends DomainObject> long readObject(T obj, DBIterator iterator) throws DatabaseException {
@@ -167,5 +174,20 @@ public abstract class DataEnumerable {
         }
 
         return -1;
+    }
+
+    private long getNextNotMarkedForDeletion(StructEntity entity, long startObjId, DBIterator iterator) throws DatabaseException {
+        while (startObjId != -1 && isMarkedForDeletion(entity, startObjId)) {
+            KeyValue keyValue;
+            while ((keyValue = iterator.next()) != null) {
+                if (FieldKey.unpackBeginningObject(keyValue.getKey())) {
+                    break;
+                }
+            }
+
+            startObjId = keyValue != null ? FieldKey.unpackId(keyValue.getKey()) : -1;
+        }
+
+        return startObjId;
     }
 }

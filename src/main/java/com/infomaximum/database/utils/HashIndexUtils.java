@@ -4,7 +4,7 @@ import com.google.common.primitives.UnsignedInts;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.TypeConverter;
 
@@ -54,9 +54,9 @@ public class HashIndexUtils {
         } else if (type == LocalDateTime.class) {
             return LocalDateTimeUtils.toLong((LocalDateTime) value);
         } else if (type == Integer.class) {
-            return UnsignedInts.toLong((Integer) value);
+            return (Integer) value;
         }
-        throw new IllegalTypeException("Unsupported type " + type + " for hashing.");
+        throw new UnsupportedTypeException(type);
     }
 
     public static boolean equals(Class<?> clazz, Object left, Object right) {

@@ -74,8 +74,8 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
     }
 
     @Override
-    public boolean containsSequence(String name) {
-        return (sequenceManager.getSequence(name) != null);
+    public boolean containsSequence(String name) throws DatabaseException {
+        return sequenceManager.getSequence(name) != null;
     }
 
     @Override

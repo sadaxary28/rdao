@@ -7,6 +7,7 @@ import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
+import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -24,29 +25,38 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
         System.out.println("Чтение:");
         PerfomanceTest.test(executionTimes,
                 step -> read(deletingCount, objectsCount)
-                );
+        );
 
         System.out.println("В одной транзакции удаление и чтение:");
         resetBDToEtalon();
         domainObjectSource.executeTransactional(transaction -> {
             deleteObjects(deletingCount, transaction);
             PerfomanceTest.test(executionTimes,
-                    step -> read(1L, objectsCount, transaction)
+                    step -> read(1, objectsCount, transaction)
+            );
+        });
+
+        System.out.println("Чтение в транзакции:");
+        domainObjectSource.executeTransactional(transaction -> {
+            PerfomanceTest.test(executionTimes,
+                    step -> read(1, objectsCount, transaction)
             );
         });
 
         System.out.println("В разных транзакциях удаление и чтение:");
         resetBDToEtalon();
-        deleteObjects(deletingCount);
+        domainObjectSource.executeTransactional(transaction -> {
+            deleteObjects(deletingCount, transaction);
+        });
         PerfomanceTest.test(executionTimes,
-                step -> read(1L, objectsCount)
+                step -> read(1, objectsCount)
         );
     }
 
     private void createObjects(long count, DomainObjectSource domainObjectSource, RocksDBProvider rocksDBProvider) throws Exception {
         createDomain(GeneralEditable.class, rocksDBProvider);
         domainObjectSource.executeTransactional(transaction -> {
-            for (Long i = 1L; i <= count; i++) {
+            for (long i = 1; i <= count; i++) {
                 GeneralEditable generalEditable = transaction.create(GeneralEditable.class);
                 generalEditable.setValue(i);
                 transaction.save(generalEditable);
@@ -54,27 +64,21 @@ public class DeletePerformanceTest extends DomainDataInstanceTest {
         });
     }
 
-    private void deleteObjects(long count) throws Exception {
-        domainObjectSource.executeTransactional(transaction -> {
-            deleteObjects(count, transaction);
-        });
-    }
-
     private void deleteObjects(long count, Transaction transaction) throws Exception {
-        for (Long i = 1L; i <= count; i++) {
+        for (long i = 1; i <= count; i++) {
             GeneralEditable generalEditable = transaction.get(GeneralEditable.class, i);
             transaction.remove(generalEditable);
         }
     }
 
-    private void read(Long begin, Long end) throws Exception {
+    private void read(long begin, long end) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             read(begin, end, transaction);
         });
     }
 
-    private void read(Long begin, Long end, Transaction transaction) throws Exception {
-        for (Long i = begin; i <= end; i++) {
+    private void read(long begin, long end, Transaction transaction) throws Exception {
+        for (long i = begin; i <= end; i++) {
             try (IteratorEntity<GeneralEditable> it = transaction.find(GeneralEditable.class, new HashFilter(GeneralEditable.FIELD_VALUE, i))) {
                 it.hasNext();
             }

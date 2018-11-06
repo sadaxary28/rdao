@@ -20,6 +20,7 @@ public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
     private final Constructor<E> constructor;
     private final Set<Integer> loadingFields;
     private final DBIterator dataIterator;
+    private final StructEntity entity;
 
     private final DataEnumerable.NextState state;
     private final long endId;
@@ -29,7 +30,7 @@ public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
         this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
         this.endId = filter.getToId();
-        StructEntity entity = Schema.getEntity(clazz);
+        this.entity = Schema.getEntity(clazz);
         this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
 
         KeyPattern dataKeyPattern;
@@ -38,7 +39,7 @@ public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
         } else {
             dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0);
         }
-        this.state = dataEnumerable.seek(dataIterator, dataKeyPattern);
+        this.state = dataEnumerable.seek(dataIterator, dataKeyPattern, entity);
         if (endReached()) {
             state.reset();
             close();
@@ -56,7 +57,7 @@ public class IdIterator<E extends DomainObject> implements IteratorEntity<E> {
             throw new NoSuchElementException();
         }
 
-        E result = dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
+        E result = dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state, entity);
         if (endReached()) {
             state.reset();
             close();

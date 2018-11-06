@@ -98,7 +98,8 @@ public class RangeIndexUtils {
         return keyValue != null && RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.END;
     }
 
-    public static void removeIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {
+    public static void removeIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue,
+                                          DBTransaction transaction, BiConsumer<String, byte[]> deleteFunc) throws DatabaseException {
         if (!isIndexedRange(beginValue, endValue)) {
             return;
         }
@@ -111,7 +112,7 @@ public class RangeIndexUtils {
             KeyValue keyValue = iterator.seek(RangeIndexKey.buildBeginPattern(key.getHashedValues(), begin));
             while (keyValue != null) {
                 if (RangeIndexKey.unpackId(keyValue.getKey()) == key.getId()) {
-                    transaction.delete(index.columnFamily, keyValue.getKey());
+                    deleteFunc.accept(index.columnFamily, keyValue.getKey());
 
                     if (RangeIndexKey.unpackType(keyValue.getKey()) != RangeIndexKey.Type.BEGIN) {
                         break;
@@ -165,5 +166,11 @@ public class RangeIndexUtils {
         } while (res != null);
 
         return indexIterator.seek(null);
+    }
+
+    @FunctionalInterface
+    public interface BiConsumer<T, U> {
+
+        void accept(T t, U u) throws DatabaseException;
     }
 }

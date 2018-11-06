@@ -15,10 +15,10 @@ public class StructEntity {
 
     public static class Reference {
 
-        public final Class objClass;
+        public final Class<? extends DomainObject> objClass;
         public final HashIndex fieldIndex;
 
-        private Reference(Class objClass, HashIndex fieldIndex) {
+        private Reference(Class<? extends DomainObject> objClass, HashIndex fieldIndex) {
             this.objClass = objClass;
             this.fieldIndex = fieldIndex;
         }

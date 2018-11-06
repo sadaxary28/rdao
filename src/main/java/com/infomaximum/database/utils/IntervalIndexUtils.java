@@ -1,6 +1,6 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -39,7 +39,7 @@ public class IntervalIndexUtils {
             return castToLong((LocalDateTime) value);
         }
 
-        throw new IllegalTypeException("Unsupported type " + value.getClass());
+        throw new UnsupportedTypeException(value.getClass());
     }
 
     public static <T> void checkType(Class<T> indexedClass) {
@@ -50,7 +50,7 @@ public class IntervalIndexUtils {
             return;
         }
 
-        throw new IllegalTypeException("Unsupported type " + indexedClass);
+        throw new UnsupportedTypeException(indexedClass);
     }
 
     public static void checkInterval(long begin, long end) {

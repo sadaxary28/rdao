@@ -2,7 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
 import com.infomaximum.database.schema.TypeConverter;
 
 import java.io.Serializable;
@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class TypeConvert {
 
     public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static byte[] NULL_STRING = new byte[] { (byte) 0xff };
 
     private static final Charset CHARSET = StandardCharsets.UTF_8;
 
@@ -23,32 +24,36 @@ public class TypeConvert {
         return ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
     }
 
-    public static ByteBuffer wrapBuffer(final byte[] src) {
+    public static ByteBuffer wrapBuffer(byte[] src) {
         return ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
     }
 
-    public static String unpackString(byte[] value){
-        return value != null ? new String(value, TypeConvert.CHARSET) : null;
+    public static String unpackString(byte[] value) {
+        return unpackString(value, 0, value != null ? value.length : 0);
     }
 
-    public static String unpackString(byte[] value, int offset, int length){
-        return !ByteUtils.isNullOrEmpty(value) ? new String(value, offset, length, TypeConvert.CHARSET) : null;
+    public static String unpackString(byte[] value, int offset, int length) {
+        if (value == null || (length == 1 && value[offset] == NULL_STRING[0])) {
+            return null;
+        }
+
+        return length != 0 ? new String(value, offset, length, CHARSET) : "";
     }
 
     public static Integer unpackInteger(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? unpackInt(value) : null;
     }
 
-    public static int unpackInt(byte[] value){
+    public static int unpackInt(byte[] value) {
         return Ints.fromByteArray(value);
     }
 
-    public static Long unpackLong(byte[] value){
+    public static Long unpackLong(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? unpackLong(value, 0) : null;
     }
 
     public static long unpackLong(byte[] value, int offset){
-        return Longs.fromBytes(value[0 + offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
+        return Longs.fromBytes(value[offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
     }
 
     public static Double unpackDouble(byte[] value){
@@ -72,7 +77,7 @@ public class TypeConvert {
     }
 
     public static byte[] pack(String value){
-        return value != null ? value.getBytes(TypeConvert.CHARSET) : EMPTY_BYTE_ARRAY;
+        return value != null ? (value.isEmpty() ? EMPTY_BYTE_ARRAY : value.getBytes(CHARSET)) : NULL_STRING;
     }
 
     public static byte[] pack(int value){
@@ -151,7 +156,7 @@ public class TypeConvert {
         } else if (type == byte[].class) {
             return (T) value;
         }
-        throw new IllegalTypeException("Unsupported type " + type);
+        throw new UnsupportedTypeException(type);
     }
 
     @SuppressWarnings("unchecked")
@@ -175,6 +180,6 @@ public class TypeConvert {
         } else if (type == byte[].class) {
             return (byte[]) value;
         }
-        throw new IllegalTypeException("Unsupported type: " + type);
+        throw new UnsupportedTypeException(type);
     }
 }

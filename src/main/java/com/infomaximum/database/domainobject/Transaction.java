@@ -1,5 +1,8 @@
 package com.infomaximum.database.domainobject;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.runtime.ClosedObjectException;
@@ -10,7 +13,7 @@ import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.RangeIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
-import com.infomaximum.database.utils.key.IndexKey;
+import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
@@ -22,6 +25,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     private DBTransaction transaction = null;
     private boolean closed = false;
     private boolean foreignFieldEnabled = true;
+    private final Map<String, Objects> deletingObjects = new HashMap<>();
 
     protected Transaction(DBProvider dbProvider) {
         super(dbProvider);
@@ -43,23 +47,19 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {
         ensureTransaction();
 
-        try {
-            StructEntity entity = Schema.getEntity(clazz);
+        StructEntity entity = Schema.getEntity(clazz);
 
-            long id = transaction.nextId(entity.getColumnFamily());
+        long id = transaction.nextId(entity.getColumnFamily());
 
-            T domainObject = buildDomainObject(DomainObject.getConstructor(clazz), id, Collections.emptyList());
-            domainObject._setAsJustCreated();
+        T domainObject = buildDomainObject(DomainObject.getConstructor(clazz), id, Collections.emptyList());
+        domainObject._setAsJustCreated();
 
-            //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
-            for (Field field: entity.getFields()) {
-                domainObject.set(field.getNumber(), null);
-            }
-
-            return domainObject;
-        } catch (Exception e) {
-            throw new DatabaseException(e);
+        //Принудительно указываем, что все поля отредактированы - иначе для не инициализированных полей не правильно построятся индексы
+        for (Field field: entity.getFields()) {
+            domainObject.set(field.getNumber(), null);
         }
+
+        return domainObject;
     }
 
     public <T extends DomainObject & DomainObjectEditable> void save(final T object) throws DatabaseException {
@@ -119,14 +119,13 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             Object value = newValue.getValue();
 
             validateUpdatingValue(object, field, value);
+            if (object._isJustCreated() && value == null) {
+                continue;
+            }
 
             byte[] key = new FieldKey(object.getId(), field.getNameBytes()).pack();
-            if (value != null) {
-                byte[] bValue = TypeConvert.pack(value.getClass(), value, field.getConverter());
-                transaction.put(columnFamily, key, bValue);
-            } else if (!object._isJustCreated()) {
-                transaction.delete(columnFamily, key);
-            }
+            byte[] bValue = TypeConvert.pack(field.getType(), value, field.getConverter());
+            transaction.put(columnFamily, key, bValue);
         }
 
         object._flushNewValues();
@@ -137,35 +136,58 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
         validateForeignValues(obj);
 
-        final String columnFamily = obj.getStructEntity().getColumnFamily();
-        final Value<Serializable>[] loadedValues = new Value[obj.getStructEntity().getFields().length];
+        String columnFamily = obj.getStructEntity().getColumnFamily();
+        deletingObjects.computeIfAbsent(columnFamily, s -> new Objects(obj.getStructEntity())).add(obj);
+    }
 
-        // delete hash-indexed values
-        for (HashIndex index : obj.getStructEntity().getHashIndexes()) {
-            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
+    private void deleteObjects() throws DatabaseException {
+        for (Map.Entry<String, Objects> entry : deletingObjects.entrySet()) {
+            String columnFamily = entry.getKey();
+            StructEntity entity = entry.getValue().entity;
+            Value<Serializable>[] loadedValues = new Value[entity.getFields().length];
+
+            for (Range<Long> range : entry.getValue().ids.asRanges()) {
+                for (long objId = range.lowerEndpoint(); objId < range.upperEndpoint(); ++objId) {
+                    Arrays.fill(loadedValues, null);
+
+                    // delete hash-indexed values
+                    for (HashIndex index : entity.getHashIndexes()) {
+                        tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
+                        removeIndexedValue(index, objId, loadedValues, transaction);
+                    }
+
+                    // delete prefix-indexed values
+                    for (PrefixIndex index : entity.getPrefixIndexes()) {
+                        tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
+                        removeIndexedValue(index, objId, loadedValues, transaction);
+                    }
+
+                    // delete interval-indexed values
+                    for (IntervalIndex index : entity.getIntervalIndexes()) {
+                        tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
+                        removeIndexedValue(index, objId, loadedValues, transaction);
+                    }
+
+                    // delete range-indexed values
+                    for (RangeIndex index : entity.getRangeIndexes()) {
+                        tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
+                        removeIndexedValue(index, objId, loadedValues, transaction);
+                    }
+                }
+
+                // delete self-object
+                transaction.singleDeleteRange(columnFamily,
+                        FieldKey.buildKeyPrefix(range.lowerEndpoint()),
+                        FieldKey.buildKeyPrefix(range.upperEndpoint())
+                );
+            }
         }
+    }
 
-        // delete prefix-indexed values
-        for (PrefixIndex index: obj.getStructEntity().getPrefixIndexes()) {
-            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
-        }
-
-        // delete interval-indexed values
-        for (IntervalIndex index: obj.getStructEntity().getIntervalIndexes()) {
-            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
-        }
-
-        // delete range-indexed values
-        for (RangeIndex index: obj.getStructEntity().getRangeIndexes()) {
-            tryLoadFields(columnFamily, obj, index.sortedFields, loadedValues);
-            removeIndexedValue(index, obj.getId(), loadedValues, transaction);
-        }
-
-        // delete self-object
-        transaction.deleteRange(columnFamily, FieldKey.buildKeyPrefix(obj.getId()));
+    @Override
+    public boolean isMarkedForDeletion(StructEntity entity, long objId) {
+        Objects objs = deletingObjects.get(entity.getColumnFamily());
+        return objs != null && objs.ids.contains(objId);
     }
 
     /**
@@ -208,14 +230,6 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     @Override
-    public <T, U extends DomainObject> T getValue(final Field field, U obj) throws DatabaseException {
-        ensureTransaction();
-
-        byte[] value = transaction.getValue(obj.getStructEntity().getColumnFamily(), new FieldKey(obj.getId(), field.getNameBytes()).pack());
-        return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
-    }
-
-    @Override
     public DBIterator createIterator(String columnFamily) throws DatabaseException {
         ensureTransaction();
 
@@ -224,6 +238,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     public void commit() throws DatabaseException {
         if (transaction != null) {
+            deleteObjects();
             transaction.commit();
         }
         close();
@@ -243,17 +258,19 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         if (transaction == null) {
-            transaction = dbProvider.beginTransaction();
+            transaction = getDbProvider().beginTransaction();
         }
     }
 
     private void tryLoadFields(String columnFamily, DomainObject obj, List<Field> fields, Value<Serializable>[] loadedValues) throws DatabaseException {
-        if (obj._isJustCreated()) {
-            return;
+        if (!obj._isJustCreated()) {
+            tryLoadFields(columnFamily, obj.getId(), fields, loadedValues);
         }
+    }
 
+    private void tryLoadFields(String columnFamily, long objId, List<Field> fields, Value<Serializable>[] loadedValues) throws DatabaseException {
         for (Field field: fields) {
-            tryLoadField(columnFamily, obj.getId(), field, loadedValues);
+            tryLoadField(columnFamily, objId, field, loadedValues);
         }
     }
 
@@ -268,7 +285,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private static void updateIndexedValue(HashIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
-        final IndexKey indexKey = new IndexKey(obj.getId(), new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(obj.getId(), new long[index.sortedFields.size()]);
 
         if (!obj._isJustCreated()) {
             // Remove old value-index
@@ -282,10 +299,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private static void removeIndexedValue(HashIndex index, long id, Value<Serializable>[] values, DBTransaction transaction) throws DatabaseException {
-        final IndexKey indexKey = new IndexKey(id, new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(id, new long[index.sortedFields.size()]);
 
         HashIndexUtils.setHashValues(index.sortedFields, values, indexKey.getFieldValues());
-        transaction.delete(index.columnFamily, indexKey.pack());
+        transaction.singleDelete(index.columnFamily, indexKey.pack());
     }
 
     private static void updateIndexedValue(PrefixIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
@@ -333,7 +350,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         HashIndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
         indexKey.setIndexedValue(values[index.getIndexedField().getNumber()].getValue());
 
-        transaction.delete(index.columnFamily, indexKey.pack());
+        transaction.singleDelete(index.columnFamily, indexKey.pack());
     }
 
     private static void updateIndexedValue(RangeIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
@@ -346,7 +363,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             RangeIndexUtils.removeIndexedRange(index, indexKey,
                     prevValues[index.getBeginIndexedField().getNumber()].getValue(),
                     prevValues[index.getEndIndexedField().getNumber()].getValue(),
-                    transaction);
+                    transaction, transaction::delete);
         }
 
         // Add new value-index
@@ -365,7 +382,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         RangeIndexUtils.removeIndexedRange(index, indexKey,
                 values[index.getBeginIndexedField().getNumber()].getValue(),
                 values[index.getEndIndexedField().getNumber()].getValue(),
-                transaction);
+                transaction, transaction::singleDelete);
     }
 
     private static void setHashValues(List<Field> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, long[] destination) {
@@ -403,7 +420,8 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         long fkeyIdValue = (Long) value;
-        if (transaction.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack()) == null) {
+        if (transaction.getValue(field.getForeignDependency().getColumnFamily(), new FieldKey(fkeyIdValue).pack()) == null ||
+                isMarkedForDeletion(field.getForeignDependency(), fkeyIdValue)) {
             throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), field, fkeyIdValue);
         }
     }
@@ -418,13 +436,15 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        KeyPattern keyPattern = IndexKey.buildKeyPattern(obj.getId());
+        KeyPattern keyPattern = HashIndexKey.buildKeyPattern(obj.getId());
         for (StructEntity.Reference ref : references) {
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
                 KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
-                    long referencingId = IndexKey.unpackId(keyValue.getKey());
-                    throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
+                    long referencingId = HashIndexKey.unpackId(keyValue.getKey());
+                    if (!isMarkedForDeletion(Schema.getEntity(ref.objClass), referencingId)) {
+                        throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
+                    }
                 }
             }
         }
@@ -449,12 +469,26 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
                 KeyValue keyValue = i.seek(keyPattern);
-                if (keyValue != null && IndexKey.unpackFirstIndexedValue(keyValue.getKey()) != 0) {
-                    long referencingId = IndexKey.unpackId(keyValue.getKey());
-                    long objId = IndexKey.unpackFirstIndexedValue(keyValue.getKey());
+                if (keyValue != null && HashIndexKey.unpackFirstIndexedValue(keyValue.getKey()) != 0) {
+                    long referencingId = HashIndexKey.unpackId(keyValue.getKey());
+                    long objId = HashIndexKey.unpackFirstIndexedValue(keyValue.getKey());
                     throw new ForeignDependencyException(objId, entity.getObjectClass(), referencingId, ref.objClass);
                 }
             }
+        }
+    }
+
+    private static class Objects {
+
+        final StructEntity entity;
+        final RangeSet<Long> ids = TreeRangeSet.create();
+
+        Objects(StructEntity entity) {
+            this.entity = entity;
+        }
+
+        void add(DomainObject obj) {
+            ids.add(Range.closedOpen(obj.getId(), obj.getId() + 1));
         }
     }
 }

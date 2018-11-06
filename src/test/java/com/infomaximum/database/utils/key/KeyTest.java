@@ -50,11 +50,11 @@ public class KeyTest {
             long id = Math.abs(RandomUtil.random.nextLong());
             long[] values = { Math.abs(RandomUtil.random.nextLong()), Math.abs(RandomUtil.random.nextLong())};
 
-            IndexKey key = new IndexKey(id, values);
+            HashIndexKey key = new HashIndexKey(id, values);
 
             byte[] sKey = key.pack();
 
-            IndexKey checkKey = IndexKey.unpack(sKey);
+            HashIndexKey checkKey = HashIndexKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
             Assert.assertArrayEquals(values, checkKey.getFieldValues());
         }

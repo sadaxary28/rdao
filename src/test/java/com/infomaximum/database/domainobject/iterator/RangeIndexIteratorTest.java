@@ -510,6 +510,37 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         Assert.assertEquals(Collections.emptyList(), findAll(new Interval(0, 50)));
     }
 
+    @Test
+    public void removeAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setBegin(1L);
+            obj.setEnd(2L);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setBegin(10L);
+            obj.setEnd(20L);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setBegin(1L);
+            obj.setEnd(2L);
+            transaction.save(obj);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(StoreFileEditable.class, 2));
+
+            testFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
+            testFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
+        });
+
+        testFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
+        testFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
+    }
+
     /**
      * @param f filter
      */

@@ -11,8 +11,6 @@ import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.PrefixIndex;
-import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
@@ -36,8 +34,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     public PrefixIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, PrefixFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
-        StructEntity structEntity = Schema.getEntity(clazz);
-        this.index = structEntity.getPrefixIndex(filter.getFieldNames());
+        this.index = entity.getPrefixIndex(filter.getFieldNames());
         this.searchingWords = PrefixIndexUtils.splitSearchingTextIntoWords(filter.getFieldValue());
         if (this.searchingWords.isEmpty()) {
             return;
@@ -52,9 +49,9 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
             this.searchingWords = Collections.emptyList();
         }
 
-        this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields, structEntity);
+        this.dataKeyPattern = buildDataKeyPattern(additionLoadingFields, loadingFields, entity);
         if (this.dataKeyPattern != null) {
-            this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
+            this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
             this.values = new String[index.sortedFields.size()];
             this.tempList = new ArrayList<>();
         }

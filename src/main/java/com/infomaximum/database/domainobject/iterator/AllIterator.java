@@ -19,6 +19,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
     private final Constructor<E> constructor;
     private final Set<Integer> loadingFields;
     private final DBIterator dataIterator;
+    private final StructEntity entity;
 
     private final DataEnumerable.NextState state;
 
@@ -26,11 +27,11 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
         this.dataEnumerable = dataEnumerable;
         this.constructor = DomainObject.getConstructor(clazz);
         this.loadingFields = loadingFields;
-        StructEntity entity = Schema.getEntity(clazz);
+        this.entity = Schema.getEntity(clazz);
         this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
 
         KeyPattern dataKeyPattern = loadingFields != null ? FieldKey.buildKeyPattern(entity.getFieldNames(loadingFields)) : null;
-        this.state = dataEnumerable.seek(dataIterator, dataKeyPattern);
+        this.state = dataEnumerable.seek(dataIterator, dataKeyPattern, entity);
         if (this.state.isEmpty()) {
             close();
         }
@@ -47,7 +48,7 @@ public class AllIterator<E extends DomainObject> implements IteratorEntity<E> {
             throw new NoSuchElementException();
         }
 
-        return dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state);
+        return dataEnumerable.nextObject(constructor, loadingFields, dataIterator, state, entity);
     }
 
     @Override

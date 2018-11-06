@@ -350,6 +350,34 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         }*/
     }
 
+    @Test
+    public void removeAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(20);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(StoreFileEditable.class, 2));
+
+            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+        });
+
+        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+    }
+
     protected void assertValueEquals(List<Double> expected, Integer fieldName, Double begin, Double end) throws DatabaseException {
         assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
     }

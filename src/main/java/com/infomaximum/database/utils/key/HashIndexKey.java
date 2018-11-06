@@ -6,11 +6,11 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
-public class IndexKey extends Key {
+public class HashIndexKey extends Key {
 
     private final long[] fieldValues;
 
-    public IndexKey(long id, final long[] fieldValues) {
+    public HashIndexKey(long id, final long[] fieldValues) {
         super(id);
 
         if (fieldValues == null || fieldValues.length == 0) {
@@ -31,7 +31,7 @@ public class IndexKey extends Key {
         return buffer;
     }
 
-    public static IndexKey unpack(final byte[] src) {
+    public static HashIndexKey unpack(final byte[] src) {
         final int longCount = readLongCount(src);
 
         ByteBuffer buffer = TypeConvert.wrapBuffer(src);
@@ -40,7 +40,7 @@ public class IndexKey extends Key {
             fieldValues[i] = buffer.getLong();
         }
 
-        return new IndexKey(buffer.getLong(), fieldValues);
+        return new HashIndexKey(buffer.getLong(), fieldValues);
     }
 
     public static long unpackId(final byte[] src) {

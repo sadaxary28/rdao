@@ -7,10 +7,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.HashIndex;
-import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.HashIndexUtils;
-import com.infomaximum.database.utils.key.IndexKey;
+import com.infomaximum.database.utils.key.HashIndexKey;
 
 import java.util.*;
 
@@ -24,9 +22,8 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
     public HashIndexIterator(DataEnumerable dataEnumerable, Class<E> clazz, Set<Integer> loadingFields, HashFilter filter) throws DatabaseException {
         super(dataEnumerable, clazz, loadingFields);
 
-        StructEntity structEntity = Schema.getEntity(clazz);
         Map<Integer, Object> filters = filter.getValues();
-        final HashIndex index = structEntity.getHashIndex(filters.keySet());
+        final HashIndex index = entity.getHashIndex(filters.keySet());
 
         List<Field> filterFields = null;
         List<Object> filterValues = null;
@@ -56,13 +53,13 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
 
-        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, structEntity);
+        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, entity);
         if (this.dataKeyPattern != null) {
-            this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
+            this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
         }
 
         this.indexIterator = dataEnumerable.createIterator(index.columnFamily);
-        this.indexKeyValue = indexIterator.seek(IndexKey.buildKeyPattern(values));
+        this.indexKeyValue = indexIterator.seek(HashIndexKey.buildKeyPattern(values));
 
         nextImpl();
     }
@@ -70,7 +67,7 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
     @Override
     void nextImpl() throws DatabaseException {
         while (indexKeyValue != null) {
-            nextElement = findObject(IndexKey.unpackId(indexKeyValue.getKey()));
+            nextElement = findObject(HashIndexKey.unpackId(indexKeyValue.getKey()));
             indexKeyValue = indexIterator.next();
             if (nextElement != null) {
                 return;

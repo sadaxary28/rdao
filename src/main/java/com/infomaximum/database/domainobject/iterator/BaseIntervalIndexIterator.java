@@ -34,9 +34,8 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
         super(dataEnumerable, clazz, loadingFields);
         this.direction = direction == SortDirection.ASC ? DBIterator.StepDirection.FORWARD : DBIterator.StepDirection.BACKWARD;
 
-        StructEntity structEntity = Schema.getEntity(clazz);
         Map<Integer, Object> filters = filter.getHashedValues();
-        BaseIntervalIndex index = getIndex(filter, structEntity);
+        BaseIntervalIndex index = getIndex(filter, entity);
 
         List<Field> filterFields = null;
         List<Object> filterValues = null;
@@ -70,9 +69,9 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
         this.checkedFilterFields = filterFields != null ? filterFields : Collections.emptyList();
         this.filterValues = filterValues;
 
-        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, structEntity);
+        this.dataKeyPattern = buildDataKeyPattern(filterFields, loadingFields, entity);
         if (this.dataKeyPattern != null) {
-            this.dataIterator = dataEnumerable.createIterator(structEntity.getColumnFamily());
+            this.dataIterator = dataEnumerable.createIterator(entity.getColumnFamily());
         }
 
         this.filterBeginValue = IntervalIndexUtils.castToLong(filter.getBeginValue());
