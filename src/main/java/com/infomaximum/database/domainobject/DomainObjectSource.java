@@ -2,11 +2,9 @@ package com.infomaximum.database.domainobject;
 
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.schema.Field;
-import com.infomaximum.database.utils.key.FieldKey;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.schema.StructEntity;
 
 public class DomainObjectSource extends DataEnumerable {
 
@@ -32,17 +30,16 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     public Transaction buildTransaction() {
-        return new Transaction(dbProvider);
-    }
-
-    @Override
-    public <T, U extends DomainObject> T getValue(final Field field, U object) throws DatabaseException {
-        byte[] value = dbProvider.getValue(object.getStructEntity().getColumnFamily(), new FieldKey(object.getId(), field.getNameBytes()).pack());
-        return (T) TypeConvert.unpack(field.getType(), value, field.getConverter());
+        return new Transaction(getDbProvider());
     }
 
     @Override
     public DBIterator createIterator(String columnFamily) throws DatabaseException {
-        return dbProvider.createIterator(columnFamily);
+        return getDbProvider().createIterator(columnFamily);
+    }
+
+    @Override
+    public boolean isMarkedForDeletion(StructEntity entity, long objId) {
+        return false;
     }
 }

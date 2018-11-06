@@ -283,6 +283,34 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
         }
     }
 
+    @Test
+    public void removeAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(20);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(StoreFileEditable.class, 2));
+
+            testFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
+            testFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
+        });
+
+        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
+        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
+    }
+
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; i++) {

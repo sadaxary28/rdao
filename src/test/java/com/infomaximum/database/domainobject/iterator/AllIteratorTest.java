@@ -153,6 +153,23 @@ public class AllIteratorTest extends StoreFileDataTest {
         }
     }
 
+    @Test
+    public void removeAndFind() throws Exception {
+        final int insertedRecordCount = 10;
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(StoreFileEditable.class, 5));
+
+            Assert.assertNull(transaction.get(StoreFileReadable.class, 1));
+            testFind(transaction, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
+        });
+
+        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1));
+        testFind(domainObjectSource, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
+    }
+
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
         domainObjectSource.executeTransactional(transaction -> {
             for (int i = 0; i < recordCount; i++) {

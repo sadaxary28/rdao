@@ -19,7 +19,7 @@ import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.RangeIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
-import com.infomaximum.database.utils.key.IndexKey;
+import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
@@ -159,7 +159,7 @@ public class DomainService {
 
     private void doIndex(HashIndex index) throws DatabaseException {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
-        final IndexKey indexKey = new IndexKey(0, new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(0, new long[index.sortedFields.size()]);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());

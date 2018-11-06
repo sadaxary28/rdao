@@ -2,103 +2,83 @@ package com.infomaximum.rocksdb.deleteperfomance;
 
 import com.infomaximum.database.domainobject.DomainDataInstanceTest;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
 import org.junit.Test;
 
-
 public class DeletePerformanceTest extends DomainDataInstanceTest {
 
+    /**
+     * Чтение вне транзакции до удаления:
+     Total execution count = 3, Total time = 2 s 362 ms, Time spent on one call = 787,333333 ms
+     В одной транзакции удаление, чтение и коммит:
+     Total execution count = 3, Total time = 1 s 778 ms, Time spent on one call = 592,666667 ms
+     Чтение в другой транзакции:
+     Total execution count = 3, Total time = 1 s 432 ms, Time spent on one call = 477,333333 ms
+     */
     @Test
     public void deleteReadTest() throws Exception {
-        final int generalCount = 1;
-        final int generalDependenceCount = 100000;
-        final int deletingDependentCount = 9000;
-        final int readTimes = 100000;
-        final int executionTimes = 1;
+        final long objectsCount = 100_000;
+        final long deletingCount = 70_000;
+        final int executionTimes = 3;
 
-        fillEtalonDB(generalCount, generalDependenceCount);
+        fillEtalonBD((d, r) -> createObjects(objectsCount, d, r));
+        resetBDToEtalon();
 
-        System.out.println("Read:");
+        System.out.println("Чтение вне транзакции до удаления:");
         PerfomanceTest.test(executionTimes,
-                this::resetBDToEtalon,
-                step -> read(generalCount, readTimes));
+                step -> read(1, objectsCount)
+        );
 
-        System.out.println("Read after Delete:");
-        PerfomanceTest.test(executionTimes,
-                ()-> {
-                    resetBDToEtalon();
-                    deleteZebraDependent(generalCount, deletingDependentCount);
-                },
-                step -> read(generalCount, readTimes));
-    }
+        System.out.println("В одной транзакции удаление, чтение и коммит:");
+        resetBDToEtalon();
+        domainObjectSource.executeTransactional(transaction -> {
+            deleteObjects(deletingCount, transaction);
+            PerfomanceTest.test(executionTimes,
+                    step -> read(1, objectsCount, transaction)
+            );
+        });
 
-    @Test
-    public void writedDeleteTest() throws Exception {
-        final int generalCount = 500;
-        final int generalDependenceCount = 10000;
-        final int deletingDependentCount = 9000;
-        final int executionTimes = 1;
-
-        PerfomanceTest.test(executionTimes,
-                step -> {
-                    createGeneralsAndDependents(generalCount, generalDependenceCount, domainObjectSource, rocksDBProvider);
-                    deleteZebraDependent(generalCount, deletingDependentCount);
+        System.out.println("Чтение в другой транзакции:");
+        domainObjectSource.executeTransactional(transaction -> {
+            PerfomanceTest.test(executionTimes,
+                    step -> read(1, objectsCount, transaction)
+            );
         });
     }
 
-
-   private void deleteZebraDependent(int generalCount, int deletingDependent) throws Exception {
+    private void createObjects(long count, DomainObjectSource domainObjectSource, RocksDBProvider rocksDBProvider) throws Exception {
+        createDomain(GeneralEditable.class, rocksDBProvider);
         domainObjectSource.executeTransactional(transaction -> {
-            for (long i = 1; i <= generalCount; i+=2) {
-                int c = 1;
-                try(IteratorEntity<DependentEditable> depIt = transaction.find(DependentEditable.class, new HashFilter(DependentEditable.FIELD_GENERAL_ID, i))) {
-                    while (depIt.hasNext() && c < deletingDependent) {
-                        transaction.remove(depIt.next());
-                        c++;
-                    }
-                }
-            }
-        });
-    }
-
-    private void read(int generalCount, int readTimes) throws Exception {
-        domainObjectSource.executeTransactional(transaction -> {
-            for (int rT = 0; rT < readTimes; rT++) {
-                for (long i = 1; i <= generalCount; i++) {
-                    try (IteratorEntity<DependentEditable> depIt = transaction.find(DependentEditable.class, new HashFilter(DependentEditable.FIELD_GENERAL_ID, i))) {
-                        if (depIt.hasNext()) {
-                            depIt.next();
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    private void fillEtalonDB(int generalCount, int generalDependenceCount) throws Exception {
-        fillEtalonBD((domainObjectSource, rocksDBProvider) ->
-                createGeneralsAndDependents(generalCount, generalDependenceCount, domainObjectSource, rocksDBProvider));
-    }
-
-    private void createGeneralsAndDependents(int generalCount, int generalDependenceCount, DomainObjectSource domainObjectSource, RocksDBProvider provider) throws Exception {
-        createDomain(GeneralEditable.class, provider);
-        createDomain(DependentEditable.class, provider);
-        domainObjectSource.executeTransactional(transaction -> {
-            for (int i = 0; i < generalCount; ++i) {
+            for (long i = 1; i <= count; i++) {
                 GeneralEditable generalEditable = transaction.create(GeneralEditable.class);
-                generalEditable.setValue("value:" + i);
+                generalEditable.setValue(i);
                 transaction.save(generalEditable);
-
-                for (int j = 0; j < generalDependenceCount; j++) {
-                    DependentEditable dependentEditable = transaction.create(DependentEditable.class);
-                    dependentEditable.setName("name:" + j);
-                    dependentEditable.setGeneralId(generalEditable.getId());
-                    transaction.save(dependentEditable);
-                }
             }
         });
+    }
+
+    private void deleteObjects(long count, Transaction transaction) throws Exception {
+        for (long i = 1; i <= count; i++) {
+            GeneralEditable generalEditable = transaction.get(GeneralEditable.class, i);
+            transaction.remove(generalEditable);
+        }
+    }
+
+    private void read(long begin, long end) throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            read(begin, end, transaction);
+        });
+    }
+
+    private void read(long begin, long end, Transaction transaction) throws Exception {
+        for (long i = begin; i <= end; i++) {
+            try (IteratorEntity<GeneralEditable> it = transaction.find(GeneralEditable.class, new HashFilter(GeneralEditable.FIELD_VALUE, i))) {
+                it.hasNext();
+            }
+        }
     }
 }

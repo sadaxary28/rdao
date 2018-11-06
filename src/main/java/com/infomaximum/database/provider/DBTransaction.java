@@ -9,8 +9,20 @@ public interface DBTransaction extends AutoCloseable {
     byte[] getValue(String columnFamily, byte[] key) throws DatabaseException;
 
     void put(String columnFamily, byte[] key, byte[] value) throws DatabaseException;
+
     void delete(String columnFamily, byte[] key) throws DatabaseException;
-    void deleteRange(String columnFamily, byte[] keyPrefix) throws DatabaseException;
+    /**
+     * @param beginKey inclusive
+     * @param endKey exclusive
+     */
+    void deleteRange(String columnFamily, byte[] beginKey, byte[] endKey) throws DatabaseException;
+
+    void singleDelete(String columnFamily, byte[] key) throws DatabaseException;
+    /**
+     * @param beginKey inclusive
+     * @param endKey exclusive
+     */
+    void singleDeleteRange(String columnFamily, byte[] beginKey, byte[] endKey) throws DatabaseException;
 
     void commit() throws DatabaseException;
     void rollback() throws DatabaseException;

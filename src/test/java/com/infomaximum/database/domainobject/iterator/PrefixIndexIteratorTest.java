@@ -1,8 +1,6 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.google.common.primitives.Longs;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
-import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
@@ -194,23 +192,31 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
         testFind(filter, expectedIds);
     }
 
-    private void testFind(PrefixFilter filter, long... expectedIds) throws DatabaseException {
-        testFind(filter, Longs.asList(expectedIds));
-    }
+    @Test
+    public void removeAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("hello");
+            transaction.save(obj);
 
-    private void testFind(PrefixFilter filter, List<Long> expectedIds) throws DatabaseException {
-        List<Long> temp = new ArrayList<>(expectedIds);
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("by");
+            transaction.save(obj);
 
-        List<Long> foundIds = new ArrayList<>(temp.size());
-        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
-            while (iterator.hasNext()) {
-                foundIds.add(iterator.next().getId());
-            }
-        }
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("hello");
+            transaction.save(obj);
+        });
 
-        temp.sort(Long::compareTo);
-        foundIds.sort(Long::compareTo);
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+            transaction.remove(transaction.get(StoreFileEditable.class, 2));
 
-        Assert.assertEquals(temp, foundIds);
+            testFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
+            testFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
+        });
+
+        testFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
+        testFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
     }
 }
