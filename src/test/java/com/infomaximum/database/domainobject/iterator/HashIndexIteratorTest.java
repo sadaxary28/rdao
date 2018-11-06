@@ -4,7 +4,6 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
-import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
