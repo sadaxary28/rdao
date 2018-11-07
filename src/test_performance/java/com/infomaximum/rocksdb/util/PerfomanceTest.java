@@ -1,7 +1,9 @@
 package com.infomaximum.rocksdb.util;
 
+import com.infomaximum.util.DurationUtils;
+
 import javax.swing.*;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class PerfomanceTest {
 
@@ -24,39 +26,25 @@ public class PerfomanceTest {
     public static void test(int executionCount, Consumer beforeEach, Action action) throws Exception {
         showMessage("Test on starting.");
 
-        long durationMillis = 0;
+        long durationNanos = 0;
         for (int i = 0; i < executionCount; ++i) {
             if (beforeEach != null) {
                 beforeEach.accept();
             }
-            long beginTime = System.currentTimeMillis();
+            long beginTime = System.nanoTime();
             action.process(i);
-            long endTime = System.currentTimeMillis();
-            durationMillis += endTime - beginTime;
+            durationNanos += (System.nanoTime() - beginTime);
         }
-        printResults(executionCount, durationMillis);
+        printResults(executionCount, Duration.ofNanos(durationNanos));
 
         showMessage("Test on finished.");
     }
 
-    private static void printResults(int executionCount, long durationMillis) {
-        long durationMin = TimeUnit.MILLISECONDS.toSeconds(durationMillis) / TimeUnit.MINUTES.toSeconds(1);
-        long durationSec = durationMillis / TimeUnit.SECONDS.toMillis(1);
-        long durationMs = durationMillis % TimeUnit.SECONDS.toMillis(1);
-        String duration;
-        if (durationMin != 0) {
-            durationSec -= (durationMin * TimeUnit.MINUTES.toSeconds(1));
-            duration = String.format("%d m %d s %d ms", durationMin, durationSec, durationMs);
-        } else if (durationSec != 0) {
-            duration = String.format("%d s %d ms", durationSec, durationMs);
-        } else {
-            duration = String.format("%d ms", durationMs);
-        }
-
-        String msg = String.format("Total execution count = %d, Total time = %s, Time spent on one call = %f ms",
+    private static void printResults(int executionCount, Duration duration) {
+        String msg = String.format("Total execution count = %d, Total time = %s, Time spent on one call = %s",
                 executionCount,
-                duration,
-                (double)(durationMillis) / (double)executionCount
+                DurationUtils.toString(duration),
+                DurationUtils.toString(duration.dividedBy(executionCount))
         );
         System.out.println(msg);
     }

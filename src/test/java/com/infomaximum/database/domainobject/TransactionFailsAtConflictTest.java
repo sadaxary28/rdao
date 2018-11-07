@@ -1,7 +1,5 @@
-package com.infomaximum.database;
+package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.domainobject.DomainDataTest;
-import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.domain.DataTestEditable;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import org.junit.Test;

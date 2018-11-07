@@ -1,6 +1,7 @@
 package com.infomaximum.rocksdb;
 
 import com.google.common.primitives.UnsignedBytes;
+import com.infomaximum.database.exception.ColumnFamilyNotFoundException;
 import com.infomaximum.database.exception.SequenceNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
@@ -18,7 +19,7 @@ public class RocksDBTransaction implements DBTransaction {
 
     private final Transaction transaction;
     private final RocksDBProvider rocksDBProvider;
-    private final Map<String, RangeKey> singleDeletedKeys = new HashMap<>();
+    private final Map<String, RangeKey> compactingKeys = new HashMap<>();
 
     RocksDBTransaction(Transaction transaction, RocksDBProvider rocksDBProvider) {
         this.transaction = transaction;
@@ -60,37 +61,39 @@ public class RocksDBTransaction implements DBTransaction {
 
     @Override
     public void delete(String columnFamily, byte[] key) throws DatabaseException {
-        ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
-        try {
-            transaction.delete(columnFamilyHandle, key);
-        } catch (RocksDBException e) {
-            throw new DatabaseException(e);
-        }
+        delete(columnFamily, key, transaction::delete);
+
+        compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setKey(key);
     }
 
     @Override
     public void deleteRange(String columnFamily, byte[] beginKey, byte[] endKey) throws DatabaseException {
         deleteRange(columnFamily, beginKey, endKey, transaction::delete);
+
+        compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setRange(beginKey, endKey);
     }
 
     @Override
     public void singleDelete(String columnFamily, byte[] key) throws DatabaseException {
-        ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
-        try {
-            transaction.singleDelete(columnFamilyHandle, key);
-            singleDeletedKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setKey(key);
-        } catch (RocksDBException e) {
-            throw new DatabaseException(e);
-        }
+        delete(columnFamily, key, transaction::delete);
+
+        compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setKey(key);
     }
 
     @Override
     public void singleDeleteRange(String columnFamily, byte[] beginKey, byte[] endKey) throws DatabaseException {
-        deleteRange(columnFamily, beginKey, endKey, transaction::singleDelete);
+        deleteRange(columnFamily, beginKey, endKey, transaction::delete);
 
-        RangeKey range = singleDeletedKeys.computeIfAbsent(columnFamily, s -> new RangeKey());
-        range.setBegin(beginKey);
-        range.setEnd(endKey);
+        compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setRange(beginKey, endKey);
+    }
+
+    private void delete(String columnFamily, byte[] key, BiConsumer<ColumnFamilyHandle, byte[]> deleteFunc) throws DatabaseException {
+        ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
+        try {
+            deleteFunc.accept(columnFamilyHandle, key);
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
+        }
     }
 
     private void deleteRange(String columnFamily, byte[] beginKey, byte[] endKey, BiConsumer<ColumnFamilyHandle, byte[]> deleteFunc) throws DatabaseException {
@@ -116,19 +119,11 @@ public class RocksDBTransaction implements DBTransaction {
     public void commit() throws DatabaseException {
         try {
             transaction.commit();
-
-            for (Map.Entry<String, RangeKey> entry : singleDeletedKeys.entrySet()) {
-                ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(entry.getKey());
-                rocksDBProvider.getRocksDB().compactRange(
-                        columnFamilyHandle,
-                        entry.getValue().begin,
-                        entry.getValue().end,
-                        true, -1, 0);
-            }
+            compact();
         } catch (RocksDBException e) {
             throw new DatabaseException(e);
         } finally {
-            singleDeletedKeys.clear();
+            compactingKeys.clear();
         }
     }
 
@@ -139,7 +134,7 @@ public class RocksDBTransaction implements DBTransaction {
         } catch (RocksDBException e) {
             throw new DatabaseException(e);
         } finally {
-            singleDeletedKeys.clear();
+            compactingKeys.clear();
         }
     }
 
@@ -150,6 +145,17 @@ public class RocksDBTransaction implements DBTransaction {
 
     private RocksDBIterator buildIterator(ColumnFamilyHandle columnFamily) {
         return new RocksDBIterator(transaction.getIterator(rocksDBProvider.getReadOptions(), columnFamily));
+    }
+
+    private void compact() throws ColumnFamilyNotFoundException, RocksDBException {
+        for (Map.Entry<String, RangeKey> entry : compactingKeys.entrySet()) {
+            ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(entry.getKey());
+            rocksDBProvider.getRocksDB().compactRange(
+                    columnFamilyHandle,
+                    entry.getValue().begin,
+                    entry.getValue().end,
+                    true, -1, 0);
+        }
     }
 
     private static class RangeKey {
@@ -167,6 +173,11 @@ public class RocksDBTransaction implements DBTransaction {
             if (end == null || KEY_COMPARATOR.compare(key, end) > 0) {
                 end = key;
             }
+        }
+
+        void setRange(byte[] begin, byte[] end) {
+            setBegin(begin);
+            setEnd(end);
         }
 
         void setKey(byte[] key) {
