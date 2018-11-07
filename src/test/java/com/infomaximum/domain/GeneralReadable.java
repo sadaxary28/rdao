@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.deleteperfomance;
+package com.infomaximum.domain;
 
 import com.infomaximum.database.anotation.Entity;
 import com.infomaximum.database.anotation.Field;

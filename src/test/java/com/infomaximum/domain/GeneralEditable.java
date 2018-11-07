@@ -1,4 +1,4 @@
-package com.infomaximum.rocksdb.deleteperfomance;
+package com.infomaximum.domain;
 
 import com.infomaximum.database.domainobject.DomainObjectEditable;
 
@@ -8,7 +8,7 @@ public class GeneralEditable extends GeneralReadable implements DomainObjectEdit
         super(id);
     }
 
-    void setValue(Long value) {
+    public void setValue(Long value) {
         set(FIELD_VALUE, value);
     }
 }
