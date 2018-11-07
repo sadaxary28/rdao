@@ -309,6 +309,24 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
 
         testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
         testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
+
+        StoreFileEditable[] newObj = {null};
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+
+            try (IteratorEntity<StoreFileEditable> i = transaction.find(StoreFileEditable.class, new HashFilter(StoreFileEditable.FIELD_SIZE, 1L))) {
+                transaction.remove(i.next());
+            }
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(2);
+            transaction.save(obj);
+            newObj[0] = obj;
+        });
+
+        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 2L), newObj[0].getId());
     }
 
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
