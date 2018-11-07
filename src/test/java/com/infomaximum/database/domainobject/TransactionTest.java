@@ -6,6 +6,7 @@ import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
@@ -67,65 +68,74 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void save() throws Exception {
-        //Проверяем, что такого объекта нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
-
-        String fileName1 = "info1.json";
-        String fileName2 = "info2.json";
-        String contentType = "application/json";
-        long size = 1000L;
+        domainObjectSource.executeTransactional(transaction -> transaction.save(transaction.create(StoreFileEditable.class)));
+        StoreFileReadable obj = domainObjectSource.get(StoreFileReadable.class, 1);
+        Assert.assertNotNull(obj);
+        Assert.assertEquals(null, obj.getFileName());
+        Assert.assertEquals(null, obj.getFolderId());
+        Assert.assertEquals(null, obj.getFormat());
+        Assert.assertEquals(null, obj.isSingle());
+        Assert.assertArrayEquals(null, obj.getData());
+        Assert.assertEquals(null, obj.getDouble());
 
         //Добавляем объект
-        try (Transaction transaction = domainObjectSource.buildTransaction()) {
-            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
-            storeFile.setFileName(fileName1);
-            storeFile.setContentType(contentType);
-            storeFile.setSize(size);
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.setForeignFieldEnabled(false);
+
+            StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1);
+            storeFile.setFileName("test");
+            storeFile.setFolderId(1);
+            storeFile.setFormat(FormatType.A);
             storeFile.setSingle(false);
+            storeFile.setData(new byte[]{1,2});
+            storeFile.setDouble(0.1);
             transaction.save(storeFile);
-            transaction.commit();
-        }
+        });
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
-        Assert.assertNotNull(storeFileCheckSave);
-        Assert.assertEquals(fileName1, storeFileCheckSave.getFileName());
-        Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
-        Assert.assertEquals(size, storeFileCheckSave.getSize());
-        Assert.assertEquals(false, storeFileCheckSave.isSingle());
+        obj = domainObjectSource.get(StoreFileReadable.class, 1);
+        Assert.assertNotNull(obj);
+        Assert.assertEquals("test", obj.getFileName());
+        Assert.assertEquals(Long.valueOf(1), obj.getFolderId());
+        Assert.assertEquals(FormatType.A, obj.getFormat());
+        Assert.assertEquals(false, obj.isSingle());
+        Assert.assertArrayEquals(new byte[]{1,2}, obj.getData());
+        Assert.assertEquals(Double.valueOf(0.1), obj.getDouble());
 
         //Редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
-            obj.setFileName(fileName2);
-            obj.setSingle(true);
-            transaction.save(obj);
+            StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1);
+            storeFile.setFileName(null);
+            storeFile.setFolderId(null);
+            storeFile.setFormat(null);
+            storeFile.setSingle(null);
+            storeFile.setData(null);
+            storeFile.setDouble(null);
+            transaction.save(storeFile);
         });
-
-        //Загружаем отредактированный объект
-        StoreFileReadable editFileCheckSave = domainObjectSource.get(StoreFileReadable.class, 1L);
-        Assert.assertNotNull(editFileCheckSave);
-        Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
-        Assert.assertEquals(contentType, editFileCheckSave.getContentType());
-        Assert.assertEquals(size, editFileCheckSave.getSize());
-        Assert.assertEquals(true, editFileCheckSave.isSingle());
+        obj = domainObjectSource.get(StoreFileReadable.class, 1);
+        Assert.assertNotNull(obj);
+        Assert.assertEquals(null, obj.getFileName());
+        Assert.assertEquals(null, obj.getFolderId());
+        Assert.assertEquals(null, obj.getFormat());
+        Assert.assertEquals(null, obj.isSingle());
+        Assert.assertArrayEquals(null, obj.getData());
+        Assert.assertEquals(null, obj.getDouble());
 
 
         //Повторно редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, 1L);
-            obj.setFileName(fileName1);
-            obj.setSingle(false);
-            transaction.save(obj);
+            StoreFileEditable storeFile = domainObjectSource.get(StoreFileEditable.class, 1);
+            storeFile.setFileName("");
+            storeFile.setData(new byte[] {TypeConvert.NULL_BYTE_ARRAY_SCHIELD, 1, 2});
+            transaction.save(storeFile);
         });
 
 
-        StoreFileReadable storeFileCheckSave2 = domainObjectSource.get(StoreFileReadable.class, 1L);
-        Assert.assertNotNull(storeFileCheckSave2);
-        Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
-        Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());
-        Assert.assertEquals(size, storeFileCheckSave2.getSize());
-        Assert.assertEquals(false, storeFileCheckSave2.isSingle());
+        obj = domainObjectSource.get(StoreFileReadable.class, 1);
+        Assert.assertNotNull(obj);
+        Assert.assertEquals("", obj.getFileName());
+        Assert.assertArrayEquals(new byte[] {TypeConvert.NULL_BYTE_ARRAY_SCHIELD, 1, 2}, obj.getData());
     }
 
     @Test

@@ -12,11 +12,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 public class TypeConvert {
 
     public static byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static byte[] NULL_STRING = new byte[] { (byte) 0xff };
+    public static byte NULL_BYTE_ARRAY_SCHIELD = (byte) 0xff;
+    public static byte[] NULL_STRING = new byte[] { (byte) 0xff };
 
     private static final Charset CHARSET = StandardCharsets.UTF_8;
 
@@ -52,11 +54,11 @@ public class TypeConvert {
         return !ByteUtils.isNullOrEmpty(value) ? unpackLong(value, 0) : null;
     }
 
-    public static long unpackLong(byte[] value, int offset){
+    public static long unpackLong(byte[] value, int offset) {
         return Longs.fromBytes(value[offset], value[1 + offset], value[2 + offset], value[3 + offset], value[4 + offset], value[5 + offset], value[6 + offset], value[7 + offset]);
     }
 
-    public static Double unpackDouble(byte[] value){
+    public static Double unpackDouble(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? unpackDoublePrim(value) : null;
     }
 
@@ -64,7 +66,7 @@ public class TypeConvert {
         return Double.longBitsToDouble(unpackLong(value, 0));
     }
 
-    public static Boolean unpackBoolean(byte[] value){
+    public static Boolean unpackBoolean(byte[] value) {
         return !ByteUtils.isNullOrEmpty(value) ? value[0] == (byte) 1 : null;
     }
 
@@ -112,7 +114,7 @@ public class TypeConvert {
     }
 
     public static byte[] pack(boolean value){
-        return new byte[] { value ? (byte)1 :(byte)0 };
+        return new byte[] { value ? (byte)1 : (byte)0 };
     }
 
     public static byte[] pack(Boolean value){
@@ -135,6 +137,25 @@ public class TypeConvert {
         return value != null ? pack(LocalDateTimeUtils.toLong(value)) : EMPTY_BYTE_ARRAY;
     }
 
+    public static byte[] unpackBytes(byte[] value) {
+        if (!ByteUtils.isNullOrEmpty(value) && value[0] == NULL_BYTE_ARRAY_SCHIELD) {
+            value = value.length != 1 ? Arrays.copyOfRange(value, 1, value.length) : null;
+        }
+        return value;
+    }
+
+    public static byte[] pack(byte[] value) {
+        if (value == null) {
+            value = new byte[]{NULL_BYTE_ARRAY_SCHIELD};
+        } else if (value.length != 0 && value[0] == NULL_BYTE_ARRAY_SCHIELD) {
+            byte[] newValue = new byte[value.length + 1];
+            newValue[0] = NULL_BYTE_ARRAY_SCHIELD;
+            System.arraycopy(value, 0, newValue, 1, value.length);
+            value = newValue;
+        }
+        return value;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T unpack(Class<T> type, byte[] value, TypeConverter<T> packer) {
         if (packer != null) {
@@ -154,7 +175,7 @@ public class TypeConvert {
         } else if (type == LocalDateTime.class) {
             return (T) unpackLocalDateTime(value);
         } else if (type == byte[].class) {
-            return (T) value;
+            return (T) unpackBytes(value);
         }
         throw new UnsupportedTypeException(type);
     }
@@ -178,7 +199,7 @@ public class TypeConvert {
         } else if (type == LocalDateTime.class) {
             return pack((LocalDateTime) value);
         } else if (type == byte[].class) {
-            return (byte[]) value;
+            return pack((byte[]) value);
         }
         throw new UnsupportedTypeException(type);
     }

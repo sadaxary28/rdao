@@ -28,7 +28,8 @@ import java.time.LocalDateTime;
                 @Field(number = StoreFileReadable.FIELD_BEGIN, name = "begin", type = Long.class),
                 @Field(number = StoreFileReadable.FIELD_END, name = "end", type = Long.class),
                 @Field(number = StoreFileReadable.FIELD_LOCAL_BEGIN, name = "local_begin", type = LocalDateTime.class),
-                @Field(number = StoreFileReadable.FIELD_LOCAL_END, name = "local_end", type = LocalDateTime.class)
+                @Field(number = StoreFileReadable.FIELD_LOCAL_END, name = "local_end", type = LocalDateTime.class),
+                @Field(number = StoreFileReadable.FIELD_DATA, name = "data", type = byte[].class)
         },
         hashIndexes = {
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE}),
@@ -75,6 +76,8 @@ public class StoreFileReadable extends DomainObject {
     public final static int FIELD_LOCAL_BEGIN = 11;
     public final static int FIELD_LOCAL_END = 12;
 
+    public final static int FIELD_DATA = 13;
+
     public final static RangeFilter.IndexedField RANGE_LONG_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN, FIELD_END);
     public final static RangeFilter.IndexedField RANGE_INSTANT_FIELD = new RangeFilter.IndexedField(FIELD_BEGIN_TIME, FIELD_END_TIME);
     public final static RangeFilter.IndexedField RANGE_LOCAL_FIELD = new RangeFilter.IndexedField(FIELD_LOCAL_BEGIN, FIELD_LOCAL_END);
@@ -102,7 +105,7 @@ public class StoreFileReadable extends DomainObject {
         return getLong(FIELD_SIZE);
     }
 
-    public boolean isSingle() {
+    public Boolean isSingle() {
         return getBoolean(FIELD_SINGLE);
     }
 
@@ -140,5 +143,9 @@ public class StoreFileReadable extends DomainObject {
 
     public LocalDateTime getLocalEnd() {
         return get(FIELD_LOCAL_END);
+    }
+
+    public byte[] getData() {
+        return get(FIELD_DATA);
     }
 }

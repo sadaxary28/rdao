@@ -24,7 +24,7 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
         set(FIELD_SIZE, size);
     }
 
-    public void setSingle(boolean single) {
+    public void setSingle(Boolean single) {
         set(FIELD_SINGLE, single);
     }
 
@@ -66,5 +66,9 @@ public class StoreFileEditable extends StoreFileReadable implements DomainObject
 
     public void setLocalEnd(LocalDateTime value) {
         set(FIELD_LOCAL_END, value);
+    }
+
+    public void setData(byte[] data) {
+        set(FIELD_DATA, data);
     }
 }
