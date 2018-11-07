@@ -19,7 +19,6 @@ public class RocksDBTransaction implements DBTransaction {
     private final Transaction transaction;
     private final RocksDBProvider rocksDBProvider;
     private final Map<String, RangeKey> singleDeletedKeys = new HashMap<>();
-    private ReadOptions optionsForDelete = null;
 
     RocksDBTransaction(Transaction transaction, RocksDBProvider rocksDBProvider) {
         this.transaction = transaction;
@@ -97,15 +96,14 @@ public class RocksDBTransaction implements DBTransaction {
     private void deleteRange(String columnFamily, byte[] beginKey, byte[] endKey, BiConsumer<ColumnFamilyHandle, byte[]> deleteFunc) throws DatabaseException {
         ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
 
-        if (optionsForDelete == null) {
-            optionsForDelete = new ReadOptions();
-        }
-
-        optionsForDelete.setIterateUpperBound(new Slice(endKey));
-
-        try (RocksIterator i = transaction.getIterator(optionsForDelete, columnFamilyHandle)) {
+        try (RocksIterator i = transaction.getIterator(rocksDBProvider.getReadOptions(), columnFamilyHandle)) {
             for (i.seek(beginKey); i.isValid(); i.next()) {
-                deleteFunc.accept(columnFamilyHandle, i.key());
+                byte[] key = i.key();
+                if (key == null || KEY_COMPARATOR.compare(key, endKey) >= 0) {
+                    break;
+                }
+
+                deleteFunc.accept(columnFamilyHandle, key);
             }
 
             i.status();
@@ -148,9 +146,6 @@ public class RocksDBTransaction implements DBTransaction {
     @Override
     public void close() throws DatabaseException {
         transaction.close();
-        if (optionsForDelete != null) {
-            optionsForDelete.close();
-        }
     }
 
     private RocksDBIterator buildIterator(ColumnFamilyHandle columnFamily) {
