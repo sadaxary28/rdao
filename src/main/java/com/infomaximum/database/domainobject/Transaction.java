@@ -3,6 +3,8 @@ package com.infomaximum.database.domainobject;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.runtime.ClosedObjectException;
@@ -190,43 +192,19 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         return objs != null && objs.ids.contains(objId);
     }
 
-    /**
-     * The method is not transactional
-     */
-    public <T extends DomainObject & DomainObjectEditable> void clearUnsafe(Class<T> objClass) throws DatabaseException {
+    public <T extends DomainObject & DomainObjectEditable> void removeAll(Class<T> objClass) throws DatabaseException {
         ensureTransaction();
 
         StructEntity entity = Schema.getEntity(objClass);
 
         validateForeignValues(entity);
 
-        // delete hash-indexed values
-        for (HashIndex index : entity.getHashIndexes()) {
-            recreateColumnFamily(index.columnFamily);
+        Objects objects = deletingObjects.computeIfAbsent(entity.getColumnFamily(), s -> new Objects(entity));
+        try (IteratorEntity<T> i = find(objClass, EmptyFilter.INSTANCE, Collections.emptySet())) {
+            while (i.hasNext()) {
+                objects.add(i.next());
+            }
         }
-
-        // delete prefix-indexed values
-        for (PrefixIndex index: entity.getPrefixIndexes()) {
-            recreateColumnFamily(index.columnFamily);
-        }
-
-        // delete interval-indexed values
-        for (IntervalIndex index: entity.getIntervalIndexes()) {
-            recreateColumnFamily(index.columnFamily);
-        }
-
-        // delete range-indexed values
-        for (RangeIndex index: entity.getRangeIndexes()) {
-            recreateColumnFamily(index.columnFamily);
-        }
-
-        // delete objects
-        recreateColumnFamily(entity.getColumnFamily());
-    }
-
-    private void recreateColumnFamily(String columnFamily) throws DatabaseException {
-        getDbProvider().dropColumnFamily(columnFamily);
-        getDbProvider().createColumnFamily(columnFamily);
     }
 
     @Override
@@ -467,10 +445,18 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
                 continue;
             }
 
+            Objects objs = deletingObjects.get(Schema.getEntity(ref.objClass).getColumnFamily());
+
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
-                KeyValue keyValue = i.seek(keyPattern);
-                if (keyValue != null && HashIndexKey.unpackFirstIndexedValue(keyValue.getKey()) != 0) {
+                for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.BACKWARD)) {
+                    if (HashIndexKey.unpackFirstIndexedValue(keyValue.getKey()) == 0) {
+                        break;
+                    }
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
+                    if (objs != null && objs.ids.contains(referencingId)) {
+                        continue;
+                    }
+
                     long objId = HashIndexKey.unpackFirstIndexedValue(keyValue.getKey());
                     throw new ForeignDependencyException(objId, entity.getObjectClass(), referencingId, ref.objClass);
                 }

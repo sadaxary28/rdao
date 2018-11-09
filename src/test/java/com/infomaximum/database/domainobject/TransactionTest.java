@@ -267,7 +267,7 @@ public class TransactionTest extends StoreFileDataTest {
     }
 
     @Test
-    public void clearUnsafe() throws Exception {
+    public void removeAll() throws Exception {
         createDomain(ExchangeFolderReadable.class);
 
         domainObjectSource.executeTransactional(transaction -> {
@@ -287,7 +287,7 @@ public class TransactionTest extends StoreFileDataTest {
             transaction.save(file);
         });
 
-        domainObjectSource.executeTransactional(transaction -> transaction.clearUnsafe(ExchangeFolderEditable.class));
+        domainObjectSource.executeTransactional(transaction -> transaction.removeAll(ExchangeFolderEditable.class));
         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
             Assert.assertFalse(i.hasNext());
         }
@@ -311,17 +311,26 @@ public class TransactionTest extends StoreFileDataTest {
             transaction.save(file);
 
             file = transaction.create(StoreFileEditable.class);
+            file.setFolderId(folder.getId());
+            transaction.save(file);
+
+            file = transaction.create(StoreFileEditable.class);
             file.setFolderId(null);
             transaction.save(file);
         });
 
         try {
-            domainObjectSource.executeTransactional(transaction -> transaction.clearUnsafe(ExchangeFolderEditable.class));
+            domainObjectSource.executeTransactional(transaction -> transaction.removeAll(ExchangeFolderEditable.class));
             Assert.fail();
         } catch (ForeignDependencyException e) {
             try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
                 Assert.assertTrue(i.hasNext());
             }
         }
+
+        domainObjectSource.executeTransactional(transaction -> {
+            transaction.removeAll(StoreFileEditable.class);
+            transaction.removeAll(ExchangeFolderEditable.class);
+        });
     }
 }
