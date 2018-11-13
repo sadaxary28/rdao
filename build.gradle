@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '1.7.5'
+version '1.8.0'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -33,7 +33,7 @@ repositories {
 
 dependencies {
 
-    compile 'com.infomaximum:rocksdbjni:5.12.2-RC4'
+    compile 'com.infomaximum:rocksdbjni:5.15.10.0'
 
     compile 'com.google.guava:guava:23.0'
 

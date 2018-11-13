@@ -23,7 +23,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
             final WriteOptions writeOptions = new WriteOptions();
             final ReadOptions readOptions = new ReadOptions()) {
 
-            txnDb.getBaseDB().put(writeOptions, key1, value1_old);
+            txnDb.put(writeOptions, key1, value1_old);
 
             try(final Transaction txn = txnDb.beginTransaction(writeOptions)) {
                 txn.put(key1, value1_new);
@@ -31,7 +31,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
                 txn.commit();
             }
 
-            Assert.assertArrayEquals(value1_new, txnDb.getBaseDB().get(readOptions, key1));
+            Assert.assertArrayEquals(value1_new, txnDb.get(readOptions, key1));
         }
     }
 
@@ -42,7 +42,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
             final WriteOptions writeOptions = new WriteOptions();
             final ReadOptions readOptions = new ReadOptions()) {
 
-            txnDb.getBaseDB().put(writeOptions, key1, value1_old);
+            txnDb.put(writeOptions, key1, value1_old);
 
             try(final Transaction txn = txnDb.beginTransaction(writeOptions)) {
                 txn.put(key1, value1_new);
@@ -50,8 +50,8 @@ public class OptimisticTransactionTest extends RocksDataTest {
                 Assert.assertArrayEquals(value1_new, txn.get(readOptions, key1));
             }
 
-            Assert.assertArrayEquals(value1_old, txnDb.getBaseDB().get(readOptions, key1));
-            Assert.assertNull(txnDb.getBaseDB().get(readOptions, key2));
+            Assert.assertArrayEquals(value1_old, txnDb.get(readOptions, key1));
+            Assert.assertNull(txnDb.get(readOptions, key2));
         }
     }
 
@@ -62,7 +62,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
             final WriteOptions writeOptions = new WriteOptions();
             final ReadOptions readOptions = new ReadOptions()) {
 
-            txnDb.getBaseDB().put(writeOptions, key1, value1_old);
+            txnDb.put(writeOptions, key1, value1_old);
 
             try(final Transaction txn = txnDb.beginTransaction(writeOptions)) {
                 txn.put(key1, value1_new);
@@ -70,7 +70,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
                 txn.rollback();
             }
 
-            Assert.assertArrayEquals(value1_old, txnDb.getBaseDB().get(readOptions, key1));
+            Assert.assertArrayEquals(value1_old, txnDb.get(readOptions, key1));
         }
     }
 
@@ -90,13 +90,13 @@ public class OptimisticTransactionTest extends RocksDataTest {
                 txn.put(key1, value1_old);
 
                 // Read a key OUTSIDE this transaction. Does not affect txn.
-                value = txnDb.getBaseDB().get(readOptions, key1);
+                value = txnDb.get(readOptions, key1);
                 Assert.assertNull(value);
 
                 // Write a key OUTSIDE of this transaction.
                 // Does not affect txn since this is an unrelated key.
                 // If we wrote key 'abc' here, the transaction would fail to commit.
-                txnDb.getBaseDB().put(writeOptions, key2, value2_old);
+                txnDb.put(writeOptions, key2, value2_old);
 
                 txn.commit();
             }
@@ -113,7 +113,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
 
                 txn.put(key1, value1_old);
 
-                txnDb.getBaseDB().put(writeOptions, key1, value1_new);
+                txnDb.put(writeOptions, key1, value1_new);
 
                 try {
                     txn.commit();
@@ -133,7 +133,7 @@ public class OptimisticTransactionTest extends RocksDataTest {
             final WriteOptions writeOptions = new WriteOptions()) {
 
             // Put initial value#2
-            txnDb.getBaseDB().put(writeOptions, key2, value2_old);
+            txnDb.put(writeOptions, key2, value2_old);
 
             try(final Transaction txn1 = txnDb.beginTransaction(writeOptions);
                 final ReadOptions readOptions = new ReadOptions()) {
@@ -174,18 +174,18 @@ public class OptimisticTransactionTest extends RocksDataTest {
         try (final Options options = new Options().setCreateIfMissing(true);
              final OptimisticTransactionDB db = OptimisticTransactionDB.open(options, pathDataBase.toString())) {
 
-            db.getBaseDB().put(key1, value1_old);
+            db.put(key1, value1_old);
         }
 
         for (int i = 0; i < reopenCount; ++i) {
             try (final Options options = new Options().setCreateIfMissing(true);
                  final OptimisticTransactionDB db = OptimisticTransactionDB.open(options, pathDataBase.toString())) {
 
-                try (RocksIterator iter = db.getBaseDB().newIterator())
+                try (RocksIterator iter = db.newIterator())
                 {}
 
                 value1_old[0] = (byte) i;
-                db.getBaseDB().put(key1, value1_old);
+                db.put(key1, value1_old);
             }
         }
 
