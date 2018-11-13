@@ -30,6 +30,9 @@ public class NativeTransactionFailsAtConflictTest extends RocksDataTest {
 
             columnFamilyHandles.forEach(ColumnFamilyHandle::close);
             columnFamilyHandles.clear();
+            try (FlushOptions flushOptions = new FlushOptions().setWaitForFlush(true)){
+                db.flush(flushOptions);
+            }
         }
 
         try(DBOptions options = new DBOptions();
