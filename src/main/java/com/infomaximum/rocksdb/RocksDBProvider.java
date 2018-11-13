@@ -28,7 +28,7 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
     }
 
     public RocksDB getRocksDB() {
-        return rocksDB.getBaseDB();
+        return rocksDB;
     }
 
     @Override

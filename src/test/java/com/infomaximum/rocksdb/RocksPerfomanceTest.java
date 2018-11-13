@@ -78,7 +78,7 @@ public class RocksPerfomanceTest {
                         byte[] key = secureRandom.generateSeed(keySize);
                         byte[] value = secureRandom.generateSeed(valueSize);
                         txn.put(key, value);
-                        //txnDb.getBaseDB().put(key, value);
+                        //txnDb.put(key, value);
                         commitedSize += valueSize;
                     }
                     txn.commit();
@@ -111,7 +111,7 @@ public class RocksPerfomanceTest {
                 for (long i = 1; i <= keyCount; i++) {
                     byte[] key = ByteUtils.longToBytes(i);
                     byte[] value = secureRandom.generateSeed(VALUE_SIZE);
-                    txnDb.getBaseDB().put(key, value);
+                    txnDb.put(key, value);
                 }
 
                 int step = keyCount / FINDING_COUNT;
@@ -124,7 +124,7 @@ public class RocksPerfomanceTest {
                 for (int i = 0; i < pointCount; i++) {
                     byte[] key = ByteUtils.longToBytes(i * step + 1);
                     long time = System.nanoTime();
-                    byte[] value = txnDb.getBaseDB().get(key);
+                    byte[] value = txnDb.get(key);
                     times[i] = System.nanoTime() - time;
                     Assert.assertNotNull(value);
                 }

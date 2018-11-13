@@ -41,9 +41,9 @@ public class RocksDBDropColumnTest extends RocksDataTest {
             final OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString());
             final WriteOptions writeOptions = new WriteOptions()) {
 
-            try (ColumnFamilyHandle cf = txnDb.getBaseDB().createColumnFamily(new ColumnFamilyDescriptor(cfName))) {
-                txnDb.getBaseDB().put(cf, writeOptions, "key1".getBytes(), "value1".getBytes());
-                txnDb.getBaseDB().put(cf, writeOptions, "key2".getBytes(), "value2".getBytes());
+            try (ColumnFamilyHandle cf = txnDb.createColumnFamily(new ColumnFamilyDescriptor(cfName))) {
+                txnDb.put(cf, writeOptions, "key1".getBytes(), "value1".getBytes());
+                txnDb.put(cf, writeOptions, "key2".getBytes(), "value2".getBytes());
 
                 try (final Transaction txn = txnDb.beginTransaction(writeOptions)) {
                     txn.put(cf, "key3".getBytes(), "value3".getBytes());
@@ -72,7 +72,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
             List<ColumnFamilyHandle> cfs = new ArrayList<>();
             try (OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString(), desc, cfs)) {
-                txnDb.getBaseDB().dropColumnFamily(cfs.get(cfIndex));
+                txnDb.dropColumnFamily(cfs.get(cfIndex));
                 cfs.forEach(columnFamilyHandle -> columnFamilyHandle.close());
             }
         }
