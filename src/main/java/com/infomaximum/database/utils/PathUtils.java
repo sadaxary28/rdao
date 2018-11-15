@@ -11,9 +11,5 @@ public class PathUtils {
         if (!path.isAbsolute()) {
             throw new DatabaseException("RocksDB-paths is not absolute.");
         }
-
-        if (!CharMatcher.ascii().matchesAllOf(path.toString())) {
-            throw new DatabaseException("RocksDB-paths is not ascii-string.");
-        }
     }
 }
