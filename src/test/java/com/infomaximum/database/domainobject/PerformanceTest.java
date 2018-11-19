@@ -13,9 +13,9 @@ import java.time.Duration;
 public class PerformanceTest extends DomainDataInstanceTest {
 
     /**
-     * Чтение в одной транзакции до удаления: 959 ms
-     * В одной транзакции удаление, чтение и коммит: 634 ms
-     * Чтение в другой транзакции: 483 ms
+     * Чтение в одной транзакции до удаления: 1 s 1 ms
+     * В одной транзакции удаление, чтение и коммит: 680 ms
+     * Чтение в другой транзакции: 568 ms
      */
     @Test
     public void readTest() throws Exception {
