@@ -20,11 +20,5 @@ public class PathUtilsTest {
             Assert.fail();
         } catch (DatabaseException ignored) {
         }
-
-        try {
-            PathUtils.checkPath(Paths.get("c:/привет"));
-            Assert.fail();
-        } catch (DatabaseException ignored) {
-        }
     }
 }
