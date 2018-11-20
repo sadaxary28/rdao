@@ -31,11 +31,6 @@ public class IntervalIndex extends BaseIntervalIndex {
         indexedField.throwIfNotMatch(valueType);
     }
 
-    @Override
-    protected String getIndexName() {
-        return "interval_index";
-    }
-
     private static List<Field> buildIndexedFields(com.infomaximum.database.anotation.IntervalIndex index, StructEntity parent) {
         Field indexedField = parent.getField(index.indexedField());
         IntervalIndexUtils.checkType(indexedField.getType());

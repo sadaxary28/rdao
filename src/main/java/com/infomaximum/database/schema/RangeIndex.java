@@ -38,11 +38,6 @@ public class RangeIndex extends BaseIntervalIndex {
         beginIndexedField.throwIfNotMatch(valueType);
     }
 
-    @Override
-    protected String getIndexName() {
-        return "range_index";
-    }
-
     private static List<Field> buildIndexedFields(com.infomaximum.database.anotation.RangeIndex index, StructEntity parent) {
         Field beginField = parent.getField(index.beginField());
         IntervalIndexUtils.checkType(beginField.getType());

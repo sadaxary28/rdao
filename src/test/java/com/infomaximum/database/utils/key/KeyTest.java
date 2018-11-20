@@ -13,7 +13,7 @@ import java.util.UUID;
 public class KeyTest {
 
     @Test
-    public void testBeginningKey() throws Exception {
+    public void testBeginningKey() {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
 
@@ -27,7 +27,7 @@ public class KeyTest {
     }
 
     @Test
-    public void testFieldKey() throws Exception {
+    public void testFieldKey() {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
             String fieldName = UUID.randomUUID().toString().toLowerCase().replace("-", "");
@@ -45,18 +45,20 @@ public class KeyTest {
 
 
     @Test
-    public void testIndexKey() throws Exception {
+    public void testIndexKey() {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
             long[] values = { Math.abs(RandomUtil.random.nextLong()), Math.abs(RandomUtil.random.nextLong())};
+            byte[] fieldsHash32 = TypeConvert.packCRC32(String.valueOf(RandomUtil.random.nextLong()));
 
-            HashIndexKey key = new HashIndexKey(id, values);
+            HashIndexKey key = new HashIndexKey(id, fieldsHash32, values);
 
             byte[] sKey = key.pack();
 
             HashIndexKey checkKey = HashIndexKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
             Assert.assertArrayEquals(values, checkKey.getFieldValues());
+            Assert.assertArrayEquals(fieldsHash32, checkKey.getFieldsHash());
         }
     }
 }

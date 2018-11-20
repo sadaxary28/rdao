@@ -263,7 +263,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private static void updateIndexedValue(HashIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
-        final HashIndexKey indexKey = new HashIndexKey(obj.getId(), new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(obj.getId(), index);
 
         if (!obj._isJustCreated()) {
             // Remove old value-index
@@ -277,7 +277,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     }
 
     private static void removeIndexedValue(HashIndex index, long id, Value<Serializable>[] values, DBTransaction transaction) throws DatabaseException {
-        final HashIndexKey indexKey = new HashIndexKey(id, new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(id, index);
 
         HashIndexUtils.setHashValues(index.sortedFields, values, indexKey.getFieldValues());
         transaction.singleDelete(index.columnFamily, indexKey.pack());

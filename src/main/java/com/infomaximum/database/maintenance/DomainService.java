@@ -159,7 +159,7 @@ public class DomainService {
 
     private void doIndex(HashIndex index) throws DatabaseException {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
-        final HashIndexKey indexKey = new HashIndexKey(0, new long[index.sortedFields.size()]);
+        final HashIndexKey indexKey = new HashIndexKey(0, index);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());

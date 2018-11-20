@@ -13,11 +13,6 @@ public class HashIndex extends BaseIndex {
         super(Collections.singletonList(field), parent);
     }
 
-    @Override
-    protected String getIndexName() {
-        return "index";
-    }
-
     public static String toString(Collection<String> indexedFields) {
         return HashIndex.class.getSimpleName() + ": " + indexedFields;
     }

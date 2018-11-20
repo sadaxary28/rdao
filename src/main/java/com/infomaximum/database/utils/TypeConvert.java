@@ -2,6 +2,7 @@ package com.infomaximum.database.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import com.google.common.primitives.UnsignedInteger;
 import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
 import com.infomaximum.database.schema.TypeConverter;
 
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.zip.CRC32;
 
 public class TypeConvert {
 
@@ -135,6 +137,13 @@ public class TypeConvert {
 
     public static byte[] pack(LocalDateTime value) {
         return value != null ? pack(LocalDateTimeUtils.toLong(value)) : EMPTY_BYTE_ARRAY;
+    }
+
+    public static byte[] packCRC32(String value) {
+        byte bytes[] = value.getBytes();
+        CRC32 checksum = new CRC32();
+        checksum.update(bytes, 0, bytes.length);
+        return TypeConvert.pack(UnsignedInteger.valueOf(checksum.getValue()).intValue());
     }
 
     public static byte[] unpackBytes(byte[] value) {

@@ -8,11 +8,6 @@ public class PrefixIndex extends BaseIndex {
         super(buildIndexedFields(index.fields(), parent), parent);
     }
 
-    @Override
-    protected String getIndexName() {
-        return "prefixindex";
-    }
-
     public static String toString(Collection<String> indexedFields) {
         return PrefixIndex.class.getSimpleName() + ": " + indexedFields;
     }
