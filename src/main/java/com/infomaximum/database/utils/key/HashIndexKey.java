@@ -73,9 +73,13 @@ public class HashIndexKey extends IndexKey {
         return TypeConvert.unpackLong(src, 0);
     }
 
-    public static KeyPattern buildKeyPattern(final long[] fieldValues) {
-        byte[] buffer = new byte[ID_BYTE_SIZE * fieldValues.length];
-        TypeConvert.pack(fieldValues, buffer, 0);
+    public static KeyPattern buildKeyPattern(final byte[] fieldsHash, final long[] fieldValues) {
+        byte[] buffer = new byte[ID_BYTE_SIZE * fieldValues.length  + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
+        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
+        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, fieldsHash.length);
+        int offset = INDEX_NAME_BYTE_SIZE + fieldsHash.length;
+
+        TypeConvert.pack(fieldValues, buffer, offset);
         return new KeyPattern(buffer);
     }
 
