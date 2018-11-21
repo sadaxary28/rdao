@@ -23,7 +23,7 @@ public class HashIndexKey extends IndexKey {
     public HashIndexKey(long id, final byte[] fieldsHash, final long[] fieldValues) {
         super(id, fieldsHash);
 
-        if (fieldValues == null || fieldValues.length == 0 || fieldsHash == null || fieldsHash.length == 0) {
+        if (fieldValues == null || fieldValues.length == 0) {
             throw new IllegalArgumentException();
         }
         this.fieldValues = fieldValues;
@@ -39,11 +39,8 @@ public class HashIndexKey extends IndexKey {
 
     @Override
     public byte[] pack() {
-        byte[] buffer = new byte[ID_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length  + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
-        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
-        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, fieldsHash.length);
-        int offset = INDEX_NAME_BYTE_SIZE + fieldsHash.length;
-
+        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length + ID_BYTE_SIZE];
+        int offset = putAttendantBytes(buffer, fieldsHash);
         offset = TypeConvert.pack(fieldValues, buffer, offset);
         TypeConvert.pack(getId(), buffer, offset);
         return buffer;
@@ -70,34 +67,27 @@ public class HashIndexKey extends IndexKey {
     }
 
     public static long unpackFirstIndexedValue(final byte[] src) {
-        return TypeConvert.unpackLong(src, FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE);
+        return TypeConvert.unpackLong(src, INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE);
     }
 
-    public static KeyPattern buildKeyPattern(final byte[] fieldsHash, final long[] fieldValues) {
-        byte[] buffer = new byte[ID_BYTE_SIZE * fieldValues.length  + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
-        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
-        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, fieldsHash.length);
-        int offset = INDEX_NAME_BYTE_SIZE + fieldsHash.length;
-
+    public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long[] fieldValues) {
+        final byte[] fieldsHash = hashIndex.fieldsHash;
+        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length];
+        int offset = putAttendantBytes(buffer, fieldsHash);
         TypeConvert.pack(fieldValues, buffer, offset);
         return new KeyPattern(buffer);
     }
 
     public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long fieldValue) {
-        byte[] buffer = new byte[ID_BYTE_SIZE  + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
-        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
-        System.arraycopy(hashIndex.fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, hashIndex.fieldsHash.length);
-        int offset = INDEX_NAME_BYTE_SIZE + hashIndex.fieldsHash.length;
-
+        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE];
+        int offset = putAttendantBytes(buffer, hashIndex.fieldsHash);
         TypeConvert.pack(fieldValue, buffer, offset);
         return new KeyPattern(buffer);
     }
 
-    public static KeyPattern buildKeyPatternForLast(final byte[] fieldsHash) {
-        byte[] buffer = new byte[ID_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
-        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
-        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, fieldsHash.length);
-        int offset = INDEX_NAME_BYTE_SIZE + fieldsHash.length;
+    public static KeyPattern buildKeyPatternForLastKey(final HashIndex hashIndex) {
+        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE];
+        int offset = putAttendantBytes(buffer, hashIndex.fieldsHash);
         TypeConvert.pack(Long.MAX_VALUE, buffer, offset);
         return new KeyPattern(buffer, offset);
     }
@@ -118,5 +108,15 @@ public class HashIndexKey extends IndexKey {
         if (!Arrays.equals(INDEX_NAME_BYTES, indexName)) {
             throw new KeyCorruptedException("Invalid hash index key: key doesn't contains [index_name]: " + INDEX_NAME);
         }
+    }
+
+    /**
+     * Заполняет начало байтового масива названием индекса и хэшем полей индекса: [index_name][fields_hash]
+     * @return offset
+     */
+    private static int putAttendantBytes(byte[] buffer, final byte[] fieldsHash) {
+        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
+        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, FIELDS_HASH_BYTE_SIZE);
+        return INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE;
     }
 }

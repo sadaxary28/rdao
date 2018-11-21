@@ -415,8 +415,8 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         for (StructEntity.Reference ref : references) {
+            KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.fieldIndex, obj.getId());
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
-                KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.fieldIndex, obj.getId());
                 KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
@@ -438,14 +438,13 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        KeyPattern keyPattern = new KeyPattern((byte[]) null);
         for (StructEntity.Reference ref : references) {
             if (ref.objClass.equals(entity.getObjectClass())) {
                 continue;
             }
 
             Objects objs = deletingObjects.get(Schema.getEntity(ref.objClass).getColumnFamily());
-            keyPattern = HashIndexKey.buildKeyPatternForLast(ref.fieldIndex.fieldsHash); //todo V.Bukharkin optimize
+            KeyPattern keyPattern = HashIndexKey.buildKeyPatternForLastKey(ref.fieldIndex);
             keyPattern.setForBackward(true);
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
                 for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.BACKWARD)) {

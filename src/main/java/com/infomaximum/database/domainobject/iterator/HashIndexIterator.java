@@ -59,7 +59,7 @@ public class HashIndexIterator<E extends DomainObject> extends BaseIndexIterator
         }
 
         this.indexIterator = dataEnumerable.createIterator(index.columnFamily);
-        this.indexKeyValue = indexIterator.seek(HashIndexKey.buildKeyPattern(index.fieldsHash, values));
+        this.indexKeyValue = indexIterator.seek(HashIndexKey.buildKeyPattern(index, values));
 
         nextImpl();
     }
