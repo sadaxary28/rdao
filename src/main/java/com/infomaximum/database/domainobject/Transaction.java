@@ -445,11 +445,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             }
 
             Objects objs = deletingObjects.get(Schema.getEntity(ref.objClass).getColumnFamily());
-            keyPattern.setPrefix(HashIndexKey.buildKeyPrefix(ref.fieldIndex.fieldsHash)); //todo V.BUkharkin optimize
+            keyPattern = HashIndexKey.buildKeyPatternForLast(ref.fieldIndex.fieldsHash); //todo V.Bukharkin optimize
+            keyPattern.setForBackward(true);
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
-                for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.FORWARD)) {
+                for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.BACKWARD)) {
                     if (HashIndexKey.unpackFirstIndexedValue(keyValue.getKey()) == 0) {
-                        continue; //todo V.Bukharkin optimize
+                        break;
                     }
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
                     if (objs != null && objs.ids.contains(referencingId)) {
