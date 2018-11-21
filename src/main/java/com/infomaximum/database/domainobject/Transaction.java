@@ -414,9 +414,9 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             return;
         }
 
-        KeyPattern keyPattern = HashIndexKey.buildKeyPattern(obj.getId());
         for (StructEntity.Reference ref : references) {
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+                KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.fieldIndex, obj.getId());
                 KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
@@ -439,18 +439,17 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         }
 
         KeyPattern keyPattern = new KeyPattern((byte[]) null);
-        keyPattern.setForBackward(true);
         for (StructEntity.Reference ref : references) {
             if (ref.objClass.equals(entity.getObjectClass())) {
                 continue;
             }
 
             Objects objs = deletingObjects.get(Schema.getEntity(ref.objClass).getColumnFamily());
-
+            keyPattern.setPrefix(HashIndexKey.buildKeyPrefix(ref.fieldIndex.fieldsHash)); //todo V.BUkharkin optimize
             try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
-                for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.BACKWARD)) {
+                for (KeyValue keyValue = i.seek(keyPattern); keyValue != null; keyValue = i.step(DBIterator.StepDirection.FORWARD)) {
                     if (HashIndexKey.unpackFirstIndexedValue(keyValue.getKey()) == 0) {
-                        break;
+                        continue; //todo V.Bukharkin optimize
                     }
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
                     if (objs != null && objs.ids.contains(referencingId)) {

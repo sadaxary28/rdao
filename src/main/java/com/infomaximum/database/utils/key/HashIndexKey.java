@@ -70,7 +70,7 @@ public class HashIndexKey extends IndexKey {
     }
 
     public static long unpackFirstIndexedValue(final byte[] src) {
-        return TypeConvert.unpackLong(src, 0);
+        return TypeConvert.unpackLong(src, FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE);
     }
 
     public static KeyPattern buildKeyPattern(final byte[] fieldsHash, final long[] fieldValues) {
@@ -83,8 +83,21 @@ public class HashIndexKey extends IndexKey {
         return new KeyPattern(buffer);
     }
 
-    public static KeyPattern buildKeyPattern(final long fieldValue) {
-        return new KeyPattern(TypeConvert.pack(fieldValue));
+    public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long fieldValue) {
+        byte[] buffer = new byte[Long.BYTES  + FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
+        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
+        System.arraycopy(hashIndex.fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, hashIndex.fieldsHash.length);
+        int offset = INDEX_NAME_BYTE_SIZE + hashIndex.fieldsHash.length;
+
+        TypeConvert.pack(fieldValue, buffer, offset);
+        return new KeyPattern(buffer);
+    }
+
+    public static byte[] buildKeyPrefix(final byte[] fieldsHash) {
+        byte[] buffer = new byte[FIELDS_HASH_BYTE_SIZE + INDEX_NAME_BYTE_SIZE];
+        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
+        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, fieldsHash.length);
+        return buffer;
     }
 
     private static int readLongCount(final byte[] src) {
