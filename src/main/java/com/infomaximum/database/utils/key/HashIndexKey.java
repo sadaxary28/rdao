@@ -12,7 +12,6 @@ public class HashIndexKey extends IndexKey {
 
     private final static String INDEX_NAME = "hsh";
     private final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
-    private static final int INDEX_NAME_BYTE_SIZE = INDEX_NAME_BYTES.length;
 
     private final long[] fieldValues;
 
@@ -39,11 +38,10 @@ public class HashIndexKey extends IndexKey {
 
     @Override
     public byte[] pack() {
-        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length + ID_BYTE_SIZE];
-        int offset = putAttendantBytes(buffer, fieldsHash);
-        offset = TypeConvert.pack(fieldValues, buffer, offset);
-        TypeConvert.pack(getId(), buffer, offset);
-        return buffer;
+        byte[] payload = new byte[ID_BYTE_SIZE * fieldValues.length + ID_BYTE_SIZE];
+        int offset = TypeConvert.pack(fieldValues, payload, 0);
+        TypeConvert.pack(getId(), payload, offset);
+        return KeyUtils.buildKey(INDEX_NAME_BYTES, fieldsHash, payload);
     }
 
     public static HashIndexKey unpack(final byte[] src) {
@@ -71,25 +69,22 @@ public class HashIndexKey extends IndexKey {
     }
 
     public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long[] fieldValues) {
-        final byte[] fieldsHash = hashIndex.fieldsHash;
-        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length];
-        int offset = putAttendantBytes(buffer, fieldsHash);
-        TypeConvert.pack(fieldValues, buffer, offset);
-        return new KeyPattern(buffer);
+        byte[] payload = new byte[ID_BYTE_SIZE * fieldValues.length];
+        TypeConvert.pack(fieldValues, payload, 0);
+        return new KeyPattern(KeyUtils.buildKey(INDEX_NAME_BYTES, hashIndex.fieldsHash, payload));
     }
 
     public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long fieldValue) {
-        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE];
-        int offset = putAttendantBytes(buffer, hashIndex.fieldsHash);
-        TypeConvert.pack(fieldValue, buffer, offset);
-        return new KeyPattern(buffer);
+        byte[] payload = new byte[ID_BYTE_SIZE];
+        TypeConvert.pack(fieldValue, payload, 0);
+        return new KeyPattern(KeyUtils.buildKey(INDEX_NAME_BYTES, hashIndex.fieldsHash, payload));
     }
 
     public static KeyPattern buildKeyPatternForLastKey(final HashIndex hashIndex) {
-        byte[] buffer = new byte[INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE + ID_BYTE_SIZE];
-        int offset = putAttendantBytes(buffer, hashIndex.fieldsHash);
-        TypeConvert.pack(Long.MAX_VALUE, buffer, offset);
-        return new KeyPattern(buffer, offset);
+        byte[] payload = new byte[ID_BYTE_SIZE];
+        TypeConvert.pack(Long.MAX_VALUE, payload, 0);
+        byte[] key = KeyUtils.buildKey(INDEX_NAME_BYTES, hashIndex.fieldsHash, payload);
+        return new KeyPattern(key, ATTENDANT_BYTE_SIZE);
     }
 
     private static int readLongCount(final byte[] src) {
@@ -108,15 +103,5 @@ public class HashIndexKey extends IndexKey {
         if (!Arrays.equals(INDEX_NAME_BYTES, indexName)) {
             throw new KeyCorruptedException("Invalid hash index key: key doesn't contains [index_name]: " + INDEX_NAME);
         }
-    }
-
-    /**
-     * Заполняет начало байтового масива названием индекса и хэшем полей индекса: [index_name][fields_hash]
-     * @return offset
-     */
-    private static int putAttendantBytes(byte[] buffer, final byte[] fieldsHash) {
-        System.arraycopy(INDEX_NAME_BYTES, 0, buffer, 0, INDEX_NAME_BYTE_SIZE);
-        System.arraycopy(fieldsHash, 0, buffer, INDEX_NAME_BYTE_SIZE, FIELDS_HASH_BYTE_SIZE);
-        return INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE;
     }
 }
