@@ -37,4 +37,8 @@ public abstract class BaseIndex {
         indexedFields.forEach(field -> stringBuilder.append(field.getName()).append(':').append(field.getType().getName()).append(StructEntity.NAMESPACE_SEPARATOR));
         return TypeConvert.packCRC32(stringBuilder.toString());
     }
+
+    public abstract String getIndexName();
+
+    public abstract byte[] getIndexNameBytes();
 }

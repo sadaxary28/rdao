@@ -25,7 +25,7 @@ public class RangeIndexUtils {
 
         try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             // разобьем уже существующие интервалы по началу вставляемого
-            final KeyPattern pattern = RangeIndexKey.buildLeftBorder(key.getHashedValues(), totalBegin);
+            final KeyPattern pattern = RangeIndexKey.buildLeftBorder(key.getHashedValues(), totalBegin, index);
             KeyValue keyValue = seek(iterator, pattern, totalBegin);
             for (; keyValue != null; keyValue = stepForward(iterator, pattern)) {
                 long begin = RangeIndexKey.unpackIndexedValue(keyValue.getKey());

@@ -144,7 +144,7 @@ public class DomainService {
     }
 
     private <T extends BaseIndex> void ensureIndex(T index, IndexAction indexAction) throws DatabaseException {
-        final boolean existsIndexedValues = ensureColumnFamily(index.columnFamily);
+        final boolean existsIndexedValues = ensureColumnFamily(index.columnFamily); //todo V.Bukharkin
 
         if (existsData) {
             if (existsIndexedValues || changeMode != ChangeMode.CREATION) {
@@ -186,7 +186,7 @@ public class DomainService {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final List<Field> hashedFields = index.getHashedFields();
         final Field indexedField = index.getIndexedField();
-        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.size()]);
+        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.size()], index);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());
@@ -200,7 +200,7 @@ public class DomainService {
     private void doIntervalIndex(RangeIndex index) throws DatabaseException {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final List<Field> hashedFields = index.getHashedFields();
-        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()]);
+        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()], index);
 
         indexData(indexingFields, (obj, transaction) -> {
             indexKey.setId(obj.getId());

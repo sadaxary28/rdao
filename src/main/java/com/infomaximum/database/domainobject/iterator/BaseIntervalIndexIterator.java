@@ -81,10 +81,10 @@ abstract class BaseIntervalIndexIterator<E extends DomainObject, F extends BaseI
 
         switch (this.direction) {
             case FORWARD:
-                this.indexPattern = BaseIntervalIndexKey.buildLeftBorder(values, filterBeginValue);
+                this.indexPattern = BaseIntervalIndexKey.buildLeftBorder(values, filterBeginValue, index);
                 break;
             case BACKWARD:
-                this.indexPattern = BaseIntervalIndexKey.buildRightBorder(values, filterEndValue);
+                this.indexPattern = BaseIntervalIndexKey.buildRightBorder(values, filterEndValue, index);
                 break;
             default:
                 throw new IllegalArgumentException("direction = " + direction);

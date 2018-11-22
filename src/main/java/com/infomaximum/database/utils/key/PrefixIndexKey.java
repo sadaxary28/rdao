@@ -12,8 +12,6 @@ import static com.infomaximum.database.utils.key.IndexKey.ATTENDANT_BYTE_SIZE;
 
 public class PrefixIndexKey {
 
-    private final static String INDEX_NAME = "prf";
-    private final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
     private static final int BLOCK_NUMBER_BYTE_SIZE = Integer.BYTES;
     private static final byte LEXEME_TERMINATOR = 0;
 
@@ -52,7 +50,7 @@ public class PrefixIndexKey {
         byte[] value = TypeConvert.pack(lexeme);
 
         return TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + value.length + 1 + BLOCK_NUMBER_BYTE_SIZE)
-                .put(INDEX_NAME_BYTES)
+                .put(PrefixIndex.INDEX_NAME_BYTES)
                 .put(fieldsHash)
                 .put(value)
                 .put(LEXEME_TERMINATOR)
@@ -73,7 +71,7 @@ public class PrefixIndexKey {
     }
 
     public static KeyPattern buildKeyPatternForFind(final String word, final PrefixIndex index) {
-        byte[] key = KeyUtils.buildKey(INDEX_NAME_BYTES, index.fieldsHash, TypeConvert.pack(word));
+        byte[] key = KeyUtils.buildKey(index.getIndexNameBytes(), index.fieldsHash, TypeConvert.pack(word));
         return new KeyPattern(key);
     }
 
@@ -82,7 +80,7 @@ public class PrefixIndexKey {
         payload = Arrays.copyOf(payload, payload.length + 1);
         payload[payload.length - 1] = LEXEME_TERMINATOR;
 
-        byte[] key = KeyUtils.buildKey(INDEX_NAME_BYTES, index.fieldsHash, payload);
+        byte[] key = KeyUtils.buildKey(index.getIndexNameBytes(), index.fieldsHash, payload);
         return new KeyPattern(key);
     }
 }

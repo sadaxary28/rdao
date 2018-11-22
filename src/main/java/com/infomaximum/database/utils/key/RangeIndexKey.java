@@ -1,6 +1,7 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.schema.BaseIntervalIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -19,8 +20,8 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     private long beginRangeValue;
     private Type type;
 
-    public RangeIndexKey(long id, long[] hashedValues) {
-        super(id, hashedValues);
+    public RangeIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
+        super(id, hashedValues, index);
     }
 
     public void setIndexedValue(long value) {

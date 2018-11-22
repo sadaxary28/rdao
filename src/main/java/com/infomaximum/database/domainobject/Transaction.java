@@ -306,7 +306,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     private static void updateIndexedValue(IntervalIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
         final Field indexedField = index.getIndexedField();
-        final IntervalIndexKey indexKey = new IntervalIndexKey(obj.getId(), new long[hashedFields.size()]);
+        final IntervalIndexKey indexKey = new IntervalIndexKey(obj.getId(), new long[hashedFields.size()], index);
 
         if (!obj._isJustCreated()) {
             // Remove old value-index
@@ -323,7 +323,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private static void removeIndexedValue(IntervalIndex index, long id, Value<Serializable>[] values, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
-        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()]);
+        final IntervalIndexKey indexKey = new IntervalIndexKey(id, new long[hashedFields.size()], index);
 
         HashIndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
         indexKey.setIndexedValue(values[index.getIndexedField().getNumber()].getValue());
@@ -333,7 +333,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private static void updateIndexedValue(RangeIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
-        final RangeIndexKey indexKey = new RangeIndexKey(obj.getId(), new long[hashedFields.size()]);
+        final RangeIndexKey indexKey = new RangeIndexKey(obj.getId(), new long[hashedFields.size()], index);
 
         if (!obj._isJustCreated()) {
             // Remove old value-index
@@ -354,7 +354,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private static void removeIndexedValue(RangeIndex index, long id, Value<Serializable>[] values, DBTransaction transaction) throws DatabaseException {
         final List<Field> hashedFields = index.getHashedFields();
-        final RangeIndexKey indexKey = new RangeIndexKey(id, new long[hashedFields.size()]);
+        final RangeIndexKey indexKey = new RangeIndexKey(id, new long[hashedFields.size()], index);
 
         HashIndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
         RangeIndexUtils.removeIndexedRange(index, indexKey,
