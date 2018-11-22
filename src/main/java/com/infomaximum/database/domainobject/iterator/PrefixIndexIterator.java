@@ -40,7 +40,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
             return;
         }
 
-        KeyPattern indexKeyPattern = PrefixIndexKey.buildKeyPatternForFind(searchingWords.get(searchingWords.size() - 1));
+        KeyPattern indexKeyPattern = PrefixIndexKey.buildKeyPatternForFind(searchingWords.get(searchingWords.size() - 1), index);
         List<Field> additionLoadingFields;
         if (this.searchingWords.size() > 1) {
             additionLoadingFields = index.sortedFields;

@@ -222,7 +222,7 @@ public class PrefixIndexUtils {
 
         try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
                 while (keyValue != null) {
                     byte[] newIds = removeId(id, keyValue.getValue());
                     if (newIds != null) {
@@ -246,7 +246,7 @@ public class PrefixIndexUtils {
 
         try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
                 byte[] key;
                 byte[] idsValue;
                 if (keyValue != null) {
@@ -272,7 +272,7 @@ public class PrefixIndexUtils {
                         }
                     } while (true);
                 } else {
-                    key = new PrefixIndexKey(lexeme).pack();
+                    key = new PrefixIndexKey(lexeme, index).pack();
                     idsValue = TypeConvert.pack(id);
                 }
 

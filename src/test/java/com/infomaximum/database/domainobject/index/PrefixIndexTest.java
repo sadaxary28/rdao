@@ -3,8 +3,10 @@ package com.infomaximum.database.domainobject.index;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.runtime.IndexNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
 import com.infomaximum.database.utils.PrefixIndexUtils;
@@ -19,6 +21,7 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class PrefixIndexTest extends StoreFileDataTest {
@@ -55,7 +58,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
-            KeyValue keyValue = iterator.seek(null);
+            KeyValue keyValue = iterator.seek(buildAttendantPrefixIndex());
             while (keyValue != null) {
                 assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
@@ -76,7 +79,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
-            KeyValue keyValue = iterator.seek(null);
+            KeyValue keyValue = iterator.seek(buildAttendantPrefixIndex());
             while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertEquals(0, key.getBlockNumber());
@@ -124,7 +127,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
-            KeyValue keyValue = iterator.seek(null);
+            KeyValue keyValue = iterator.seek(buildAttendantPrefixIndex());
             while (keyValue != null) {
                 PrefixIndexKey key = PrefixIndexKey.unpack(keyValue.getKey());
                 Assert.assertEquals(0, key.getBlockNumber());
@@ -153,7 +156,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
-            KeyValue keyValue = iterator.seek(null);
+            KeyValue keyValue = iterator.seek(buildAttendantPrefixIndex());
             while (keyValue != null) {
                 assertEquals(0, buffer, currentLexemes, keyValue);
 
@@ -178,7 +181,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
 
         List<String> currentLexemes = new ArrayList<>(Arrays.asList("test", "string", "inform@mail.", "mail."));
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {
-            KeyValue keyValue = iterator.seek(null);
+            KeyValue keyValue = iterator.seek(buildAttendantPrefixIndex());
             while (keyValue != null) {
                 assertEquals(0, buffer.array(), currentLexemes, keyValue);
 
@@ -208,5 +211,10 @@ public class PrefixIndexTest extends StoreFileDataTest {
         });
 
         return idsBuffer;
+    }
+
+    private KeyPattern buildAttendantPrefixIndex() {
+        StructEntity structEntity = Schema.getEntity(StoreFileEditable.class);
+        return PrefixIndexKey.buildKeyPatternForFind("", structEntity.getPrefixIndex(Collections.singleton(0)));
     }
 }

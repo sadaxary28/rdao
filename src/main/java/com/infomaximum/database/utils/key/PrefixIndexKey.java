@@ -1,27 +1,34 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.schema.PrefixIndex;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.infomaximum.database.utils.key.IndexKey.ATTENDANT_BYTE_SIZE;
+
 public class PrefixIndexKey {
 
+    private final static String INDEX_NAME = "prf";
+    private final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
     private static final int BLOCK_NUMBER_BYTE_SIZE = Integer.BYTES;
     private static final byte LEXEME_TERMINATOR = 0;
 
     private final String lexeme;
     private final int blockNumber;
+    private final byte[] fieldsHash;
 
-    private PrefixIndexKey(String lexeme, int blockNumber) {
+    private PrefixIndexKey(String lexeme, int blockNumber, final byte[] fieldsHash) {
         this.lexeme = lexeme;
         this.blockNumber = blockNumber;
+        this.fieldsHash = fieldsHash;
     }
 
-    public PrefixIndexKey(String lexeme) {
-        this(lexeme, 0);
+    public PrefixIndexKey(String lexeme, final PrefixIndex index) {
+        this(lexeme, 0, index.fieldsHash);
     }
 
     public String getLexeme() {
@@ -44,7 +51,9 @@ public class PrefixIndexKey {
     public byte[] pack() {
         byte[] value = TypeConvert.pack(lexeme);
 
-        return TypeConvert.allocateBuffer(value.length + 1 + BLOCK_NUMBER_BYTE_SIZE)
+        return TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + value.length + 1 + BLOCK_NUMBER_BYTE_SIZE)
+                .put(INDEX_NAME_BYTES)
+                .put(fieldsHash)
                 .put(value)
                 .put(LEXEME_TERMINATOR)
                 .putInt(blockNumber)
@@ -52,21 +61,28 @@ public class PrefixIndexKey {
     }
 
     public static PrefixIndexKey unpack(byte[] key) {
-        int endIndex = ByteUtils.indexOf(PrefixIndexKey.LEXEME_TERMINATOR, key);
+        byte[] fieldsHash = KeyUtils.getIndexFieldsHash(key);
+        byte[] payload = new byte[key.length - ATTENDANT_BYTE_SIZE];
+        System.arraycopy(key, ATTENDANT_BYTE_SIZE, payload, 0,key.length - ATTENDANT_BYTE_SIZE);
+        int endIndex = ByteUtils.indexOf(PrefixIndexKey.LEXEME_TERMINATOR, payload);
         return new PrefixIndexKey(
-                TypeConvert.unpackString(key, 0, endIndex),
-                TypeConvert.wrapBuffer(key).getInt(endIndex + 1)
+                TypeConvert.unpackString(payload, 0, endIndex),
+                TypeConvert.wrapBuffer(payload).getInt(endIndex + 1),
+                fieldsHash
         );
     }
 
-    public static KeyPattern buildKeyPatternForFind(final String word) {
-        return new KeyPattern(TypeConvert.pack(word));
+    public static KeyPattern buildKeyPatternForFind(final String word, final PrefixIndex index) {
+        byte[] key = KeyUtils.buildKey(INDEX_NAME_BYTES, index.fieldsHash, TypeConvert.pack(word));
+        return new KeyPattern(key);
     }
 
-    public static KeyPattern buildKeyPatternForEdit(final String lexeme) {
-        byte[] bytes = TypeConvert.pack(lexeme);
-        bytes = Arrays.copyOf(bytes, bytes.length + 1);
-        bytes[bytes.length - 1] = LEXEME_TERMINATOR;
-        return new KeyPattern(bytes);
+    public static KeyPattern buildKeyPatternForEdit(final String lexeme, final PrefixIndex index) {
+        byte[] payload = TypeConvert.pack(lexeme);
+        payload = Arrays.copyOf(payload, payload.length + 1);
+        payload[payload.length - 1] = LEXEME_TERMINATOR;
+
+        byte[] key = KeyUtils.buildKey(INDEX_NAME_BYTES, index.fieldsHash, payload);
+        return new KeyPattern(key);
     }
 }
