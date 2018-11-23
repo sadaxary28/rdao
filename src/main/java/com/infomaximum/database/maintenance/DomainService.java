@@ -90,22 +90,7 @@ public class DomainService {
 
     static void removeDomainColumnFamiliesFrom(Set<String> columnFamilies, final StructEntity domain) {
         columnFamilies.remove(domain.getColumnFamily());
-
-        for (HashIndex index : domain.getHashIndexes()) {
-            columnFamilies.remove(index.columnFamily);
-        }
-
-        for (PrefixIndex index : domain.getPrefixIndexes()) {
-            columnFamilies.remove(index.columnFamily);
-        }
-
-        for (IntervalIndex index : domain.getIntervalIndexes()) {
-            columnFamilies.remove(index.columnFamily);
-        }
-
-        for (RangeIndex index : domain.getRangeIndexes()) {
-            columnFamilies.remove(index.columnFamily);
-        }
+        columnFamilies.remove(domain.getIndexColumnFamily());
     }
 
     private void remove() throws DatabaseException {

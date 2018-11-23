@@ -14,7 +14,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
     @Test
     public void dropColumnFamily() throws Exception {
-        String cfName = "com.infomaximum.store.StoreFile.index.size:java.lang.Long";
+        String cfName = "com.infomaximum.store.StoreFile.index";
 
         try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
             rocksDBProvider.createColumnFamily(cfName);

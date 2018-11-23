@@ -51,7 +51,7 @@ public abstract class DomainDataTest extends RocksDataTest {
                 .execute();
     }
 
-    protected static void checkLoadedState(DomainObject target, Set<Integer> loadingFields) throws DatabaseException {
+    protected static void checkLoadedState(DomainObject target, Set<Integer> loadingFields) {
         for (Integer field : loadingFields) {
             target.get(field);
         }
