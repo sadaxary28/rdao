@@ -75,8 +75,7 @@ public class DomainServiceTest extends DomainDataTest {
             }
         });
 
-        rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.prefixindex.file_name:java.lang.String");
-        rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.index.size:java.lang.Long");
+        rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.index");
 
         new DomainService(rocksDBProvider)
                 .setChangeMode(ChangeMode.CREATION)

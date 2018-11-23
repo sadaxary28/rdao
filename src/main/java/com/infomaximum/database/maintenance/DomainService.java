@@ -13,6 +13,7 @@ import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
@@ -29,17 +30,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+import static com.infomaximum.database.utils.key.IndexKey.INDEX_NAME_BYTE_SIZE;
+
 public class DomainService {
 
     @FunctionalInterface
     private interface ModifierCreator {
 
         void apply(final DomainObject obj, DBTransaction transaction) throws DatabaseException;
-    }
-
-    @FunctionalInterface
-    private interface IndexAction {
-        void apply() throws DatabaseException;
     }
 
     private final DBProvider dbProvider;
@@ -81,22 +79,7 @@ public class DomainService {
         }
 
         existsData = ensureColumnFamily(dataColumnFamily);
-
-        for (HashIndex index : domain.getHashIndexes()) {
-            ensureIndex(index, () -> doIndex(index));
-        }
-
-        for (PrefixIndex index : domain.getPrefixIndexes()) {
-            ensureIndex(index, () -> doPrefixIndex(index));
-        }
-
-        for (IntervalIndex index : domain.getIntervalIndexes()) {
-            ensureIndex(index, () -> doIntervalIndex(index));
-        }
-
-        for (RangeIndex index : domain.getRangeIndexes()) {
-            ensureIndex(index, () -> doIntervalIndex(index));
-        }
+        ensureIndexes();
 
         if (changeMode == ChangeMode.REMOVAL) {
             remove();
@@ -140,20 +123,6 @@ public class DomainService {
 
         if (changeMode != ChangeMode.REMOVAL) {
             validateIntegrity();
-        }
-    }
-
-    private <T extends BaseIndex> void ensureIndex(T index, IndexAction indexAction) throws DatabaseException {
-        final boolean existsIndexedValues = ensureColumnFamily(index.columnFamily); //todo V.Bukharkin
-
-        if (existsData) {
-            if (existsIndexedValues || changeMode != ChangeMode.CREATION) {
-                return;
-            }
-
-            indexAction.apply();
-        } else if (existsIndexedValues && isValidationMode) {
-            throw new InconsistentDatabaseException("Index " + index.columnFamily + " is not empty, but " + domain.getColumnFamily() + " is empty.");
         }
     }
 
@@ -240,6 +209,44 @@ public class DomainService {
             throw new InconsistentDatabaseException("Column family " + columnFamily + " not found.");
         }
         return false;
+    }
+
+    private void ensureIndexes() throws DatabaseException {
+        final boolean existsIndexedValues = ensureColumnFamily(domain.getIndexColumnFamily());
+
+        if (existsData) {
+            if (changeMode != ChangeMode.CREATION) {
+                return;
+            }
+            try (DBIterator i = dbProvider.createIterator(domain.getIndexColumnFamily())) {
+                //HashIndex
+                if (i.seek(new KeyPattern(HashIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
+                    for (HashIndex index : domain.getHashIndexes()) {
+                        doIndex(index);
+                    }
+                }
+                //PrefixIndex
+                if (i.seek(new KeyPattern(PrefixIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
+                    for (PrefixIndex index : domain.getPrefixIndexes()) {
+                        doPrefixIndex(index);
+                    }
+                }
+                //IntervalIndex
+                if (i.seek(new KeyPattern(IntervalIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
+                    for (IntervalIndex index : domain.getIntervalIndexes()) {
+                        doIntervalIndex(index);
+                    }
+                }
+                //RangeIndex
+                if (i.seek(new KeyPattern(RangeIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
+                    for (RangeIndex index : domain.getRangeIndexes()) {
+                        doIntervalIndex(index);
+                    }
+                }
+            }
+        } else if (existsIndexedValues && isValidationMode) {
+            throw new InconsistentDatabaseException(domain.getIndexColumnFamily() + " is not empty, but " + domain.getColumnFamily() + " is empty.");
+        }
     }
 
     private void indexData(Set<Integer> loadingFields, ModifierCreator recordCreator) throws DatabaseException {

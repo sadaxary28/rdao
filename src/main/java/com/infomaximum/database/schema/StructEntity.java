@@ -25,10 +25,12 @@ public class StructEntity {
     }
 
     public final static String NAMESPACE_SEPARATOR = ".";
+    private static final String INDEX_CF_POSTFIX ="index";
 
     private final Class<? extends DomainObject> clazz;
     private final String name;
     private final String columnFamily;
+    private final String indexColumnFamily;
     private final Field[] fields;
     private final Map<ByteArray, Field> nameBytesFields;
     private final List<HashIndex> hashIndexes;
@@ -43,6 +45,7 @@ public class StructEntity {
         this.clazz = clazz;
         this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
+        this.indexColumnFamily = buildIndexColumnFamilyName(this.columnFamily);
 
         Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
@@ -85,6 +88,10 @@ public class StructEntity {
 
     public String getColumnFamily() {
         return columnFamily;
+    }
+
+    public String getIndexColumnFamily() {
+        return indexColumnFamily;
     }
 
     public Class<? extends DomainObject> getObjectClass() {
@@ -267,6 +274,12 @@ public class StructEntity {
         }
 
         return Collections.unmodifiableList(result);
+    }
+
+    private static String buildIndexColumnFamilyName(String parentColumnFamily) {
+        return parentColumnFamily +
+                StructEntity.NAMESPACE_SEPARATOR +
+                INDEX_CF_POSTFIX;
     }
 
     private List<RangeIndex> buildRangeIndexes(Entity entity) {
