@@ -2,6 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.BaseIntervalIndex;
+import com.infomaximum.database.schema.RangeIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -38,12 +39,12 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
 
     @Override
     public byte[] pack() {
-        ByteBuffer buffer = TypeConvert.allocateBuffer((hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
-        BaseIntervalIndexKey.fillBuffer(hashedValues, indexedValue, buffer);
+        ByteBuffer payload = TypeConvert.allocateBuffer((hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
+        BaseIntervalIndexKey.fillBuffer(hashedValues, indexedValue, payload);
         // for segment sorting
-        putBeginRange(beginRangeValue, type, buffer);
-        buffer.putLong(getId());
-        return buffer.array();
+        putBeginRange(beginRangeValue, type, payload);
+        payload.putLong(getId());
+        return KeyUtils.buildKey(RangeIndex.INDEX_NAME_BYTES, fieldsHash, payload.array());
     }
 
     public static long unpackIndexedValue(byte[] src) {
@@ -84,11 +85,12 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         }
     }
 
-    public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
-        BaseIntervalIndexKey.fillBuffer(hashedValues, beginRangeValue, buffer);
-        putBeginRange(beginRangeValue, Type.BEGIN, buffer);
-        return new KeyPattern(buffer.array(), ID_BYTE_SIZE * hashedValues.length);
+    public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue, RangeIndex index) {
+        ByteBuffer payload = TypeConvert.allocateBuffer(ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
+        BaseIntervalIndexKey.fillBuffer(hashedValues, beginRangeValue, payload);
+        putBeginRange(beginRangeValue, Type.BEGIN, payload);
+        byte[] key = KeyUtils.buildKey(RangeIndex.INDEX_NAME_BYTES, index.fieldsHash, payload.array());
+        return new KeyPattern(key, ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
     }
 
     private static void putBeginRange(long beginRangeValue, Type type, ByteBuffer destination) {

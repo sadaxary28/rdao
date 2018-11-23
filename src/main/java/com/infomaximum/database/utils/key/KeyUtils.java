@@ -35,8 +35,17 @@ public class KeyUtils {
         if (src.length < ATTENDANT_BYTE_SIZE) {
             throw new KeyCorruptedException(src);
         }
-        byte[] result = new byte[src.length - ATTENDANT_BYTE_SIZE];
+        byte[] result = new byte[FIELDS_HASH_BYTE_SIZE];
         System.arraycopy(src, INDEX_NAME_BYTE_SIZE, result, 0, FIELDS_HASH_BYTE_SIZE);
         return result;
+    }
+
+    public static byte[] getAttendant(byte[] src) {
+        if (src.length < ATTENDANT_BYTE_SIZE) {
+            throw new KeyCorruptedException(src);
+        }
+        byte[] attendant = new byte[ATTENDANT_BYTE_SIZE];
+        System.arraycopy(src, 0, attendant, 0, ATTENDANT_BYTE_SIZE);
+        return attendant;
     }
 }

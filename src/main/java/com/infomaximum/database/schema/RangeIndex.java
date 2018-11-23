@@ -8,8 +8,8 @@ import java.util.List;
 
 public class RangeIndex extends BaseIntervalIndex {
 
-    private final static String INDEX_NAME = "rng";
-    private final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
+    public final static String INDEX_NAME = "rng";
+    public final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
 
     private final List<Field> hashedFields;
     private final Field beginIndexedField;

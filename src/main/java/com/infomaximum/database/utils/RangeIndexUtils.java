@@ -6,9 +6,12 @@ import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.RangeIndex;
+import com.infomaximum.database.utils.key.KeyUtils;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.util.ArrayList;
+
+import static com.infomaximum.database.utils.key.IndexKey.ATTENDANT_BYTE_SIZE;
 
 public class RangeIndexUtils {
 
@@ -109,7 +112,7 @@ public class RangeIndexUtils {
         IntervalIndexUtils.checkInterval(begin, end);
 
         try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
-            KeyValue keyValue = iterator.seek(RangeIndexKey.buildBeginPattern(key.getHashedValues(), begin));
+            KeyValue keyValue = iterator.seek(RangeIndexKey.buildBeginPattern(key.getHashedValues(), begin, index));
             while (keyValue != null) {
                 if (RangeIndexKey.unpackId(keyValue.getKey()) == key.getId()) {
                     deleteFunc.accept(index.columnFamily, keyValue.getKey());
@@ -148,8 +151,9 @@ public class RangeIndexUtils {
         long begin = RangeIndexKey.unpackIndexedValue(res.getKey());
         if (begin != filterBeginValue) {
             res = indexIterator.step(DBIterator.StepDirection.BACKWARD);
-            if (res == null) {
-                return indexIterator.seek(null);
+            if (res == null || pattern.match(res.getKey()) == KeyPattern.MATCH_RESULT_UNSUCCESS) {
+                byte[] attendant = KeyUtils.getAttendant(pattern.getPrefix());
+                return indexIterator.seek(new KeyPattern(attendant, ATTENDANT_BYTE_SIZE));
             }
             begin = RangeIndexKey.unpackIndexedValue(res.getKey());
         }
