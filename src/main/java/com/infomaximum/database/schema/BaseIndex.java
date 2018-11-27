@@ -1,23 +1,29 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.KeyUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class BaseIndex {
 
-    public final byte[] fieldsHash;
+    public static final int FIELDS_HASH_BYTE_SIZE = 4;
+    public static final int INDEX_NAME_BYTE_SIZE = 3;
+    public static final int ATTENDANT_BYTE_SIZE = INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE;
+
+    public final byte[] attendant;
     public final String columnFamily;
     public final List<Field> sortedFields;
 
     BaseIndex(List<Field> sortedIndexedFields, StructEntity parent) {
         this.sortedFields = Collections.unmodifiableList(sortedIndexedFields);
         this.columnFamily = parent.getIndexColumnFamily();
-        this.fieldsHash = buildFieldsHashCRC32(sortedIndexedFields);
+        this.attendant = new byte[ATTENDANT_BYTE_SIZE];
+        KeyUtils.putAttendantBytes(this.attendant, getIndexNameBytes(), buildFieldsHashCRC32(sortedIndexedFields));
     }
 
-    protected static List<Field> buildIndexedFields(int[] indexedFields, StructEntity parent) {
+    static List<Field> buildIndexedFields(int[] indexedFields, StructEntity parent) {
         return Arrays.stream(indexedFields)
                 .mapToObj(parent::getField)
                 .sorted(Comparator.comparing(f -> f.getName().toLowerCase())) //Сортируем, что бы хеш не ломался из-за перестановки местами полей
@@ -30,7 +36,5 @@ public abstract class BaseIndex {
         return TypeConvert.packCRC32(stringBuilder.toString());
     }
 
-    public abstract String getIndexName();
-
-    public abstract byte[] getIndexNameBytes();
+    protected abstract byte[] getIndexNameBytes();
 }

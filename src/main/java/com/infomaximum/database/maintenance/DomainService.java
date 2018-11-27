@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
-import static com.infomaximum.database.utils.key.IndexKey.INDEX_NAME_BYTE_SIZE;
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 public class DomainService {
 
@@ -205,26 +205,26 @@ public class DomainService {
             }
             try (DBIterator i = dbProvider.createIterator(domain.getIndexColumnFamily())) {
                 //HashIndex
-                if (i.seek(new KeyPattern(HashIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
-                    for (HashIndex index : domain.getHashIndexes()) {
+                for (HashIndex index : domain.getHashIndexes()) {
+                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
                         doIndex(index);
                     }
                 }
                 //PrefixIndex
-                if (i.seek(new KeyPattern(PrefixIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
-                    for (PrefixIndex index : domain.getPrefixIndexes()) {
+                for (PrefixIndex index : domain.getPrefixIndexes()) {
+                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
                         doPrefixIndex(index);
                     }
                 }
                 //IntervalIndex
-                if (i.seek(new KeyPattern(IntervalIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
-                    for (IntervalIndex index : domain.getIntervalIndexes()) {
+                for (IntervalIndex index : domain.getIntervalIndexes()) {
+                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
                         doIntervalIndex(index);
                     }
                 }
                 //RangeIndex
-                if (i.seek(new KeyPattern(RangeIndex.INDEX_NAME_BYTES, INDEX_NAME_BYTE_SIZE)) == null) {
-                    for (RangeIndex index : domain.getRangeIndexes()) {
+                for (RangeIndex index : domain.getRangeIndexes()) {
+                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
                         doIntervalIndex(index);
                     }
                 }

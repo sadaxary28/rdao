@@ -1,8 +1,14 @@
 package com.infomaximum.database.maintenance;
 
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.filter.IntervalFilter;
+import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.schema.StructEntity;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.*;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
@@ -15,7 +21,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+
 public class DomainServiceTest extends DomainDataTest {
+
+    @FunctionalInterface
+    private interface Producer {
+
+        void accept() throws DatabaseException;
+    }
 
     @Before
     public void init() throws Exception {
@@ -58,7 +71,7 @@ public class DomainServiceTest extends DomainDataTest {
     }
 
     @Test
-    public void createIndexAndIndexingData() throws Exception {
+    public void createIndexAndIndexingDataAfterDropIndex() throws Exception {
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
         new DomainService(rocksDBProvider)
                 .setChangeMode(ChangeMode.CREATION)
@@ -67,29 +80,36 @@ public class DomainServiceTest extends DomainDataTest {
                 .execute();
 
         domainObjectSource.executeTransactional(transaction -> {
-            for (long i = 0; i < 100; ++i) {
+            for (long i = 1; i < 100; ++i) {
                 StoreFileEditable obj = transaction.create(StoreFileEditable.class);
                 obj.setFileName("Test");
                 obj.setSize(i);
+                obj.setBegin(i);
+                obj.setEnd(i+10);
                 transaction.save(obj);
             }
         });
 
-        rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.index");
+        checkIndexExist(entity,
+                () -> rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.index"));
 
-        new DomainService(rocksDBProvider)
-                .setChangeMode(ChangeMode.CREATION)
-                .setValidationMode(true)
-                .setDomain(entity)
-                .execute();
+        checkIndexExist(entity,
+                () -> removeIndex(HashIndex.INDEX_NAME_BYTES));
 
-        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
-            Assert.assertNotNull(iter.next());
-        }
+        checkIndexExist(entity,
+                () -> removeIndex(PrefixIndex.INDEX_NAME_BYTES));
 
-        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME,"tes"))) {
-            Assert.assertNotNull(iter.next());
-        }
+        checkIndexExist(entity,
+                () -> removeIndex(IntervalIndex.INDEX_NAME_BYTES));
+
+        checkIndexExist(entity,
+                () -> removeIndex(RangeIndex.INDEX_NAME_BYTES));
+
+        checkIndexExist(entity,
+                () -> {
+            removeIndex(RangeIndex.INDEX_NAME_BYTES);
+            removeIndex(HashIndex.INDEX_NAME_BYTES);
+        });
     }
 
     @Test
@@ -150,5 +170,54 @@ public class DomainServiceTest extends DomainDataTest {
             obj.setContentType("content");
             transaction.save(obj);
         });
+    }
+
+    private void removeIndex(byte[] indexNameBytes) throws DatabaseException {
+        try(DBTransaction transaction = rocksDBProvider.beginTransaction()) {
+            try(DBIterator it = domainObjectSource.createIterator("com.infomaximum.store.StoreFile.index")) {
+                for (KeyValue kv = it.seek(new KeyPattern(indexNameBytes, BaseIndex.INDEX_NAME_BYTE_SIZE)); kv != null ; kv = it.next()) {
+                    transaction.delete("com.infomaximum.store.StoreFile.index", kv.getKey());
+                }
+            }
+            transaction.commit();
+        }
+    }
+
+    private void checkIndexExist(StructEntity entity, Producer before) throws Exception {
+        before.accept();
+        new DomainService(rocksDBProvider)
+                .setChangeMode(ChangeMode.CREATION)
+                .setValidationMode(true)
+                .setDomain(entity)
+                .execute();
+
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, 10L))) {
+            Assert.assertNotNull(iter.next());
+        }
+
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME,"tes"))) {
+            Assert.assertNotNull(iter.next());
+        }
+
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 35L, 50L))) {
+            long expectedId = 35;
+            while (iter.hasNext()) {
+                DomainObject st = iter.next();
+                Assert.assertEquals(expectedId, st.getId());
+                expectedId++;
+            }
+            Assert.assertEquals(50L, expectedId-1);
+        }
+
+        try (IteratorEntity iter = domainObjectSource.find(StoreFileReadable.class,
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 35L, 50L))) {
+            long expectedId = 35-9;
+            while (iter.hasNext()) {
+                DomainObject st = iter.next();
+                Assert.assertEquals(expectedId, st.getId());
+                expectedId++;
+            }
+            Assert.assertEquals(50L, expectedId);
+        }
     }
 }

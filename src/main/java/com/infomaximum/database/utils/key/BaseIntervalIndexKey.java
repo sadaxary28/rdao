@@ -6,6 +6,8 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
+
 public abstract class BaseIntervalIndexKey extends IndexKey {
 
     private static final byte NEGATIVE_VALUE = 0;
@@ -15,7 +17,7 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     long indexedValue;
 
     BaseIntervalIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
-        super(id, index.fieldsHash);
+        super(id, index.attendant);
         if (hashedValues == null) {
             throw new IllegalArgumentException();
         }
@@ -31,25 +33,24 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     }
 
     public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue, final BaseIntervalIndex index) {
-        ByteBuffer payload = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
-        fillBuffer(hashedValues, indexedValue, payload);
-        byte[] key = KeyUtils.buildKey(index.getIndexNameBytes(), index.fieldsHash, payload.array());
-        return new KeyPattern(key, ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
+        fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
+        return new KeyPattern(buffer.array(), ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
     }
 
     public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue, final BaseIntervalIndex index) {
-        ByteBuffer payload = TypeConvert.allocateBuffer(ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
-        fillBuffer(hashedValues, indexedValue, payload);
-        payload.putLong(0xffffffffffffffffL);
-        byte[] key = KeyUtils.buildKey(index.getIndexNameBytes(), index.fieldsHash, payload.array());
-        KeyPattern pattern = new KeyPattern(key, ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
+        fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
+        buffer.putLong(0xffffffffffffffffL);
+        KeyPattern pattern = new KeyPattern(buffer.array(), ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
         pattern.setForBackward(true);
         return pattern;
     }
 
-    static void fillBuffer(long[] hashedValues, long indexedValue, ByteBuffer destination) {
-        for (int i = 0; i < hashedValues.length; ++i) {
-            destination.putLong(hashedValues[i]);
+    static void fillBuffer(byte[] attendant, long[] hashedValues, long indexedValue, ByteBuffer destination) {
+        destination.put(attendant);
+        for (long hashedValue : hashedValues) {
+            destination.putLong(hashedValue);
         }
         destination.put(getSignByte(indexedValue));
         destination.putLong(indexedValue);

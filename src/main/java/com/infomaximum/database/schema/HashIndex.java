@@ -1,12 +1,14 @@
 package com.infomaximum.database.schema;
 
+import com.infomaximum.database.utils.TypeConvert;
+
 import java.util.Collection;
 import java.util.Collections;
 
 public class HashIndex extends BaseIndex {
 
-    public final static String INDEX_NAME = "hsh";
-    public final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
+    private final static String INDEX_NAME = "hsh";
+    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
 
     HashIndex(com.infomaximum.database.anotation.HashIndex index, StructEntity parent) {
         super(buildIndexedFields(index.fields(), parent), parent);
@@ -18,11 +20,6 @@ public class HashIndex extends BaseIndex {
 
     public static String toString(Collection<String> indexedFields) {
         return HashIndex.class.getSimpleName() + ": " + indexedFields;
-    }
-
-    @Override
-    public String getIndexName() {
-        return INDEX_NAME;
     }
 
     @Override

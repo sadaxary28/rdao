@@ -1,14 +1,15 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.utils.IntervalIndexUtils;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Collection;
 import java.util.List;
 
 public class IntervalIndex extends BaseIntervalIndex {
 
-    public final static String INDEX_NAME = "int";
-    public final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
+    private final static String INDEX_NAME = "int";
+    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
 
     private final List<Field> hashedFields;
     private final Field indexedField;
@@ -45,11 +46,6 @@ public class IntervalIndex extends BaseIntervalIndex {
 
     public static String toString(Collection<String> hashedFields, String indexedField) {
         return IntervalIndex.class.getSimpleName() + ": " + hashedFields + ", " + indexedField;
-    }
-
-    @Override
-    public String getIndexName() {
-        return INDEX_NAME;
     }
 
     @Override

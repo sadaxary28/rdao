@@ -1,11 +1,14 @@
 package com.infomaximum.database.utils.key;
 
+import com.infomaximum.database.schema.HashIndex;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.UUID;
+
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 /**
  * Created by kris on 24.05.17.
@@ -49,16 +52,17 @@ public class KeyTest {
         for (int i=0; i<1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
             long[] values = { Math.abs(RandomUtil.random.nextLong()), Math.abs(RandomUtil.random.nextLong())};
-            byte[] fieldsHash32 = TypeConvert.packCRC32(String.valueOf(RandomUtil.random.nextLong()));
+            byte[] attendant = new byte[ATTENDANT_BYTE_SIZE];
+            KeyUtils.putAttendantBytes(attendant, HashIndex.INDEX_NAME_BYTES, TypeConvert.packCRC32(String.valueOf(RandomUtil.random.nextLong())));
 
-            HashIndexKey key = new HashIndexKey(id, fieldsHash32, values);
+            HashIndexKey key = new HashIndexKey(id, attendant, values);
 
             byte[] sKey = key.pack();
 
             HashIndexKey checkKey = HashIndexKey.unpack(sKey);
             Assert.assertEquals(id, checkKey.getId());
             Assert.assertArrayEquals(values, checkKey.getFieldValues());
-            Assert.assertArrayEquals(fieldsHash32, checkKey.getFieldsHash());
+            Assert.assertArrayEquals(attendant, checkKey.getAttendant());
         }
     }
 }

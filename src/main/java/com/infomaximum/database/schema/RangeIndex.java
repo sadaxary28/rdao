@@ -2,14 +2,15 @@ package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.IntervalIndexUtils;
+import com.infomaximum.database.utils.TypeConvert;
 
 import java.util.Collection;
 import java.util.List;
 
 public class RangeIndex extends BaseIntervalIndex {
 
-    public final static String INDEX_NAME = "rng";
-    public final static byte[] INDEX_NAME_BYTES = INDEX_NAME.getBytes();
+    private final static String INDEX_NAME = "rng";
+    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
 
     private final List<Field> hashedFields;
     private final Field beginIndexedField;
@@ -60,11 +61,6 @@ public class RangeIndex extends BaseIntervalIndex {
 
     public static String toString(Collection<String> hashedFields, String beginField, String endField) {
         return RangeIndex.class.getSimpleName() + ": " + hashedFields + ", [" + beginField + " - " + endField + "]";
-    }
-
-    @Override
-    public String getIndexName() {
-        return INDEX_NAME;
     }
 
     @Override

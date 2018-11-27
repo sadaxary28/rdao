@@ -140,7 +140,7 @@ public class TypeConvert {
     }
 
     public static byte[] packCRC32(String value) {
-        byte bytes[] = value.getBytes();
+        byte bytes[] = TypeConvert.pack(value);
         CRC32 checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
         return TypeConvert.pack(UnsignedInteger.valueOf(checksum.getValue()).intValue());

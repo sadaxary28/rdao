@@ -1,21 +1,19 @@
 package com.infomaximum.database.utils.key;
 
-public abstract class IndexKey extends Key{
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
-    public static final int FIELDS_HASH_BYTE_SIZE = 4;
-    public static final int INDEX_NAME_BYTE_SIZE = 3;
-    public static final int ATTENDANT_BYTE_SIZE = INDEX_NAME_BYTE_SIZE + FIELDS_HASH_BYTE_SIZE;
+abstract class IndexKey extends Key{
 
-    final byte[] fieldsHash;
+    final byte[] attendant;
 
-    IndexKey(long id, byte[] fieldsHash) {
+    IndexKey(long id, byte[] attendant) {
         super(id);
-        checkFieldsHash(fieldsHash);
-        this.fieldsHash = fieldsHash;
+        checkAttendant(attendant);
+        this.attendant = attendant;
     }
 
-    private static void checkFieldsHash(final byte[] fieldsHash) {
-        if(fieldsHash == null || fieldsHash.length != FIELDS_HASH_BYTE_SIZE) {
+    private static void checkAttendant(final byte[] attendant) {
+        if(attendant == null || attendant.length != ATTENDANT_BYTE_SIZE) {
             throw new IllegalArgumentException();
         }
     }
