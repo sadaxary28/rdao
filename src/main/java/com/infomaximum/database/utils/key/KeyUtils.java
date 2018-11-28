@@ -9,7 +9,7 @@ public class KeyUtils {
      * Заполняет начало байтового массива названием индекса и хэшем индексируемых полей: [index_name][fields_hash]...
      */
     public static void putAttendantBytes(byte[] destination, final byte[] indexName, final byte[] fieldsHash) {
-        if (destination.length < (indexName.length + fieldsHash.length)) {
+        if (destination.length < BaseIndex.ATTENDANT_BYTE_SIZE) {
             throw new IllegalArgumentException("Attendant size more than buffer size");
         }
         System.arraycopy(indexName, 0, destination, 0, indexName.length);
