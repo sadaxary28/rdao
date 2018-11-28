@@ -2,16 +2,16 @@ package com.infomaximum.database.utils;
 
 public class ByteUtils {
 
-    public static boolean startsWith(final byte[] prefix, final byte[] source) {
-        return startsWith(prefix, 0, source);
+    public static boolean startsWith(byte[] prefix, byte[] source) {
+        return startsWith(prefix, 0, prefix.length, source);
     }
 
-    public static boolean startsWith(final byte[] prefix, int offset, final byte[] source) {
-        if (prefix.length > (source.length - offset)) {
+    public static boolean startsWith(byte[] prefix, int offset, int len, byte[] source) {
+        if (len > (source.length - offset)) {
             return false;
         }
 
-        for (int i = 0; i < prefix.length; ++i, ++offset) {
+        for (int i = 0; i < len; ++i, ++offset) {
             if (source[offset] != prefix[i]) {
                 return false;
             }
@@ -19,7 +19,20 @@ public class ByteUtils {
         return true;
     }
 
-    public static boolean endsWith(final byte[] suffix, final byte[] source) {
+    public static boolean equals(byte[] left, int lfrom, int lto, byte[] right, int rfrom, int rto) {
+        if ((lto - lfrom) != (rto - rfrom)) {
+            return false;
+        }
+
+        for (; lfrom < lto; ++lfrom, ++rfrom) {
+            if (left[lfrom] != right[rfrom]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean endsWith(byte[] suffix, byte[] source) {
         if (suffix.length > source.length) {
             return false;
         }

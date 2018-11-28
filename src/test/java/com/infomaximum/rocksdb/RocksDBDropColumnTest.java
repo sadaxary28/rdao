@@ -1,5 +1,6 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.utils.TypeConvert;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -13,20 +14,19 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
     @Test
     public void dropColumnFamily() throws Exception {
-        String cfName = "com.infomaximum.store.StoreFile.index.size:java.lang.Long";
+        String cfName = "com.infomaximum.store.StoreFile.index";
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            rocksDataBase.createColumnFamily(cfName);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            rocksDBProvider.createColumnFamily(cfName);
 
-            ColumnFamilyHandle cf = rocksDataBase.getColumnFamilyHandle(cfName);
-            try (Transaction transaction = rocksDataBase.beginTransaction()) {
-                transaction.put(cf, "key".getBytes(), "value".getBytes());
+            try (DBTransaction transaction = rocksDBProvider.beginTransaction()) {
+                transaction.put(cfName, "key".getBytes(), "value".getBytes());
                 transaction.commit();
             }
         }
 
-        try (RocksDataBase rocksDataBase = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
-            rocksDataBase.dropColumnFamily(cfName);
+        try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
+            rocksDBProvider.dropColumnFamily(cfName);
         }
 
         FileUtils.deleteDirectory(pathDataBase.toAbsolutePath().toFile());
@@ -41,9 +41,9 @@ public class RocksDBDropColumnTest extends RocksDataTest {
             final OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString());
             final WriteOptions writeOptions = new WriteOptions()) {
 
-            try (ColumnFamilyHandle cf = txnDb.getBaseDB().createColumnFamily(new ColumnFamilyDescriptor(cfName))) {
-                txnDb.getBaseDB().put(cf, writeOptions, "key1".getBytes(), "value1".getBytes());
-                txnDb.getBaseDB().put(cf, writeOptions, "key2".getBytes(), "value2".getBytes());
+            try (ColumnFamilyHandle cf = txnDb.createColumnFamily(new ColumnFamilyDescriptor(cfName))) {
+                txnDb.put(cf, writeOptions, "key1".getBytes(), "value1".getBytes());
+                txnDb.put(cf, writeOptions, "key2".getBytes(), "value2".getBytes());
 
                 try (final Transaction txn = txnDb.beginTransaction(writeOptions)) {
                     txn.put(cf, "key3".getBytes(), "value3".getBytes());
@@ -54,16 +54,17 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
         // drop column family
         List<ColumnFamilyDescriptor> desc = new ArrayList<>();
-        try(final Options options = new Options().setCreateIfMissing(true)) {
+        try(DBOptions options = new DBOptions();
+            Options anotherOptions = new Options()) {
             int cfIndex = -1;
-            for (byte[] columnFamilyName : RocksDB.listColumnFamilies(options, pathDataBase.toString())) {
+            for (byte[] columnFamilyName : RocksDB.listColumnFamilies(anotherOptions, pathDataBase.toString())) {
                 desc.add(new ColumnFamilyDescriptor(columnFamilyName));
             }
             if (desc.isEmpty()) {
-                desc.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDataBase.DEFAULT_COLUMN_FAMILY)));
+                desc.add(new ColumnFamilyDescriptor(TypeConvert.pack(RocksDBProvider.DEFAULT_COLUMN_FAMILY)));
             }
             for (int i = 0; i < desc.size(); ++i) {
-                if(Arrays.equals(desc.get(i).columnFamilyName(), cfName)) {
+                if(Arrays.equals(desc.get(i).getName(), cfName)) {
                     cfIndex = i;
                     break;
                 }
@@ -71,7 +72,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
 
             List<ColumnFamilyHandle> cfs = new ArrayList<>();
             try (OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString(), desc, cfs)) {
-               txnDb.getBaseDB().dropColumnFamily(cfs.get(cfIndex));
+                txnDb.dropColumnFamily(cfs.get(cfIndex));
                 cfs.forEach(columnFamilyHandle -> columnFamilyHandle.close());
             }
         }

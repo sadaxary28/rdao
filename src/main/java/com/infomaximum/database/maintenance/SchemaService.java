@@ -1,10 +1,10 @@
 package com.infomaximum.database.maintenance;
 
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.InconsistentDatabaseException;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.InconsistentDatabaseException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,15 +14,16 @@ import java.util.stream.Collectors;
  */
 public class SchemaService {
 
-    private final DataSource dataSource;
+    private final DBProvider dbProvider;
 
     private ChangeMode changeModeMode = ChangeMode.NONE;
     private boolean isValidationMode = false;
     private String namespace;
     private Schema schema;
+    private Set<String> ignoringNamespaces = new HashSet<>();
 
-    public SchemaService(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public SchemaService(DBProvider dbProvider) {
+        this.dbProvider = dbProvider;
     }
 
     public SchemaService setChangeMode(ChangeMode value) {
@@ -40,6 +41,11 @@ public class SchemaService {
         return this;
     }
 
+    public SchemaService appendIgnoringNamespace(String namespace) {
+        ignoringNamespaces.add(namespace);
+        return this;
+    }
+
     public SchemaService setSchema(Schema schema) {
         this.schema = schema;
         return this;
@@ -53,7 +59,7 @@ public class SchemaService {
         validateConsistentNames();
 
         for (StructEntity domain : schema.getDomains()) {
-            new DomainService(dataSource)
+            new DomainService(dbProvider)
                     .setChangeMode(changeModeMode)
                     .setValidationMode(isValidationMode)
                     .setDomain(domain)
@@ -83,15 +89,26 @@ public class SchemaService {
 
             processedNames.add(domain.getColumnFamily());
         }
+
+        for (String value : ignoringNamespaces) {
+            if (!value.startsWith(namespacePrefix)) {
+                throw new InconsistentDatabaseException("Namespace " + namespace + " is not consistent with " + value);
+            }
+        }
     }
 
-    private void validateUnknownColumnFamilies() throws InconsistentDatabaseException {
+    private void validateUnknownColumnFamilies() throws DatabaseException {
         final String namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
-        Set<String> columnFamilies = Arrays.stream(dataSource.getColumnFamilies())
+        Set<String> columnFamilies = Arrays.stream(dbProvider.getColumnFamilies())
                 .filter(s -> s.startsWith(namespacePrefix))
                 .collect(Collectors.toSet());
         for (StructEntity domain : schema.getDomains()) {
             DomainService.removeDomainColumnFamiliesFrom(columnFamilies, domain);
+        }
+
+        for (String space : ignoringNamespaces) {
+            final String spacePrefix = space + StructEntity.NAMESPACE_SEPARATOR;
+            columnFamilies.removeIf(s -> s.startsWith(spacePrefix));
         }
 
         if (!columnFamilies.isEmpty()) {

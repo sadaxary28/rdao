@@ -1,17 +1,19 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.core.schema.EntityPrefixIndex;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.datasource.modifier.Modifier;
-import com.infomaximum.database.datasource.modifier.ModifierRemove;
-import com.infomaximum.database.datasource.modifier.ModifierSet;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.domainobject.key.Key;
-import com.infomaximum.database.domainobject.key.PrefixIndexKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
+import com.infomaximum.database.domainobject.Value;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.utils.key.FieldKey;
+import com.infomaximum.database.utils.key.Key;
+import com.infomaximum.database.utils.key.PrefixIndexKey;
 
+import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 
 public class PrefixIndexUtils {
 
@@ -29,8 +31,14 @@ public class PrefixIndexUtils {
         return new TreeSet<>(Comparator.reverseOrder());
     }
 
-    public static <T> void diffIndexedLexemes(List<T> fields, Map<T, Object> prevValues, Map<T, Object> newValues,
-                                              Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
+    public static void diffIndexedLexemes(List<Field> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
+                                          Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
+        diffIndexedLexemes(fields, prevValues, newValues, outDeletingLexemes, outInsertingLexemes, Field::getNumber);
+    }
+
+    public static <T> void diffIndexedLexemes(List<T> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
+                                              Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes,
+                                              Function<T, Integer> numberGetter) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
 
@@ -38,10 +46,13 @@ public class PrefixIndexUtils {
         SortedSet<String> newLexemes = buildSortedSet();
 
         for (T field : fields) {
-            String prevText = (String) prevValues.get(field);
+            int number = numberGetter.apply(field);
+            Value<Serializable> prevValue = prevValues[number];
+            String prevText = prevValue != null ? (String) prevValue.getValue() : null;
             PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
 
-            String newText = newValues.containsKey(field) ? (String) newValues.get(field) : prevText;
+            Value<Serializable> newValue = number < newValues.length ? newValues[number] : prevValue;
+            String newText = newValue != null ? (String) newValue.getValue() : prevText;
             PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
         }
 
@@ -85,14 +96,13 @@ public class PrefixIndexUtils {
     }
 
     /**
-     * @param text
      * @return sorted list by length of word
      */
     public static List<String> splitSearchingTextIntoWords(String text) {
         List<String> result = new ArrayList<>();
         forEachWord(text,
                 (beginIndex, endIndex) -> result.add(text.substring(beginIndex, endIndex).toLowerCase()));
-        Collections.sort(result, searchingWordComparator);
+        result.sort(searchingWordComparator);
         return result;
     }
 
@@ -179,8 +189,6 @@ public class PrefixIndexUtils {
 
     /**
      * @param sortedSearchingWords is sorted list by length of word
-     * @param indexingTexts
-     * @return
      */
     public static boolean contains(final List<String> sortedSearchingWords, final String[] indexingTexts, List<String> tempList) {
         tempList.clear();
@@ -207,44 +215,38 @@ public class PrefixIndexUtils {
         return matchCount == sortedSearchingWords.size();
     }
 
-    public static void removeIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+    public static void removeIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
-        try {
+        try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
                 while (keyValue != null) {
                     byte[] newIds = removeId(id, keyValue.getValue());
                     if (newIds != null) {
                         if (newIds.length != 0) {
-                            destination.add(new ModifierSet(index.columnFamily, keyValue.getKey(), newIds));
+                            transaction.put(index.columnFamily, keyValue.getKey(), newIds);
                         } else {
-                            destination.add(new ModifierRemove(index.columnFamily, keyValue.getKey(), false));
+                            transaction.delete(index.columnFamily, keyValue.getKey());
                         }
                     }
 
-                    keyValue = dataSource.next(iteratorId);
+                    keyValue = iterator.next();
                 }
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
     }
 
-    public static void insertIndexedLexemes(EntityPrefixIndex index, long id, Collection<String> lexemes, List<Modifier> destination,
-                                            DataSource dataSource, long transactionId) throws DataSourceDatabaseException {
+    public static void insertIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }
 
-        long iteratorId = dataSource.createIterator(index.columnFamily, transactionId);
-        try {
+        try (DBIterator iterator = transaction.createIterator(index.columnFamily)) {
             for (String lexeme : lexemes) {
-                KeyValue keyValue = dataSource.seek(iteratorId, PrefixIndexKey.buildKeyPatternForEdit(lexeme));
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
                 byte[] key;
                 byte[] idsValue;
                 if (keyValue != null) {
@@ -257,7 +259,7 @@ public class PrefixIndexUtils {
                             break;
                         }
                         prevKeyValue = keyValue;
-                        keyValue = dataSource.next(iteratorId);
+                        keyValue = iterator.next();
                         if (keyValue == null) {
                             key = prevKeyValue.getKey();
                             if (getIdCount(prevKeyValue.getValue()) < PREFERRED_MAX_ID_COUNT_PER_BLOCK) {
@@ -270,14 +272,12 @@ public class PrefixIndexUtils {
                         }
                     } while (true);
                 } else {
-                    key = new PrefixIndexKey(lexeme).pack();
+                    key = new PrefixIndexKey(lexeme, index).pack();
                     idsValue = TypeConvert.pack(id);
                 }
 
-                destination.add(new ModifierSet(index.columnFamily, key, idsValue));
+                transaction.put(index.columnFamily, key, idsValue);
             }
-        } finally {
-            dataSource.closeIterator(iteratorId);
         }
     }
 

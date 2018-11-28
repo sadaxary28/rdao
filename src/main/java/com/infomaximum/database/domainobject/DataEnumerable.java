@@ -1,29 +1,23 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.core.iterator.IndexIterator;
-import com.infomaximum.database.core.iterator.AllIterator;
-import com.infomaximum.database.core.iterator.PrefixIndexIterator;
-import com.infomaximum.database.core.schema.EntityField;
-import com.infomaximum.database.core.iterator.IteratorEntity;
-import com.infomaximum.database.core.schema.Schema;
-import com.infomaximum.database.core.schema.StructEntity;
-import com.infomaximum.database.datasource.DataSource;
-import com.infomaximum.database.datasource.KeyPattern;
-import com.infomaximum.database.datasource.KeyValue;
-import com.infomaximum.database.domainobject.filter.EmptyFilter;
-import com.infomaximum.database.domainobject.filter.Filter;
-import com.infomaximum.database.domainobject.filter.IndexFilter;
-import com.infomaximum.database.domainobject.filter.PrefixIndexFilter;
-import com.infomaximum.database.domainobject.key.FieldKey;
-import com.infomaximum.database.exeption.DataSourceDatabaseException;
-import com.infomaximum.database.exeption.DatabaseException;
-import com.infomaximum.database.exeption.UnexpectedEndObjectException;
-import com.infomaximum.database.exeption.runtime.IllegalTypeException;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.domainobject.iterator.*;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.schema.StructEntity;
+import com.infomaximum.database.utils.key.FieldKey;
+
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.UnexpectedEndObjectException;
+import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 public abstract class DataEnumerable {
@@ -32,138 +26,168 @@ public abstract class DataEnumerable {
 
         private long nextId = -1;
 
-        private boolean isEmpty() {
+        private NextState(long recordId) {
+            this.nextId = recordId;
+        }
+
+        public boolean isEmpty() {
             return nextId == -1;
         }
 
-        private void clear() {
+        public long getNextId() {
+            return nextId;
+        }
+
+        public void reset() {
             nextId = -1;
         }
     }
 
-    final DataSource dataSource;
+    private final DBProvider dbProvider;
 
-    DataEnumerable(DataSource dataSource) {
-        this.dataSource = dataSource;
+    DataEnumerable(DBProvider dbProvider) {
+        this.dbProvider = dbProvider;
     }
 
-    public abstract <T, U extends DomainObject> T getValue(final EntityField field, U object) throws DataSourceDatabaseException;
-    public abstract long createIterator(String columnFamily) throws DataSourceDatabaseException;
-
-    public KeyValue seek(long iteratorId, final KeyPattern pattern) throws DataSourceDatabaseException {
-        return dataSource.seek(iteratorId, pattern);
+    public DBProvider getDbProvider() {
+        return dbProvider;
     }
 
-    public KeyValue next(long iteratorId) throws DataSourceDatabaseException {
-        return dataSource.next(iteratorId);
-    }
+    public abstract DBIterator createIterator(String columnFamily) throws DatabaseException;
 
-    public KeyValue step(long iteratorId, DataSource.StepDirection direction) throws DataSourceDatabaseException {
-        return dataSource.step(iteratorId, direction);
-    }
+    public abstract boolean isMarkedForDeletion(StructEntity entity, long objId);
 
-    public void closeIterator(long iteratorId) {
-        dataSource.closeIterator(iteratorId);
-    }
+    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<Integer> loadingFields) throws DatabaseException {
+        StructEntity entity = Schema.getEntity(clazz);
 
-    public <T extends DomainObject> T get(final Class<T> clazz, long id, final Set<String> loadingFields) throws DataSourceDatabaseException {
-        final String columnFamily = Schema.getEntity(clazz).getColumnFamily();
+        if (isMarkedForDeletion(entity, id)) {
+            return null;
+        }
 
-        long iteratorId = createIterator(columnFamily);
-        try {
-            return seekObject(clazz, loadingFields, iteratorId, FieldKey.buildKeyPattern(id, loadingFields),null);
-        } finally {
-            dataSource.closeIterator(iteratorId);
+        try (DBIterator iterator = createIterator(entity.getColumnFamily())) {
+            return seekObject(DomainObject.getConstructor(clazz), loadingFields, iterator, FieldKey.buildKeyPattern(id, entity.getFieldNames(loadingFields)));
         }
     }
 
-    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DataSourceDatabaseException {
-        return get(clazz, id, Collections.emptySet());
+    public <T extends DomainObject> T get(final Class<T> clazz, long id) throws DatabaseException {
+        return get(clazz, id, null);
     }
 
-    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<String> loadingFields) throws DatabaseException {
+    public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter, final Set<Integer> loadingFields) throws DatabaseException {
         if (filter instanceof EmptyFilter) {
-            return new AllIterator(this, clazz, loadingFields);
-        } else if (filter instanceof IndexFilter) {
-            return new IndexIterator(this, clazz, loadingFields, (IndexFilter)filter);
-        } else if (filter instanceof PrefixIndexFilter) {
-            return new PrefixIndexIterator( this, clazz, loadingFields, (PrefixIndexFilter)filter);
+            return new AllIterator<>(this, clazz, loadingFields);
+        } else if (filter instanceof HashFilter) {
+            return new HashIndexIterator<>(this, clazz, loadingFields, (HashFilter)filter);
+        } else if (filter instanceof PrefixFilter) {
+            return new PrefixIndexIterator<>( this, clazz, loadingFields, (PrefixFilter)filter);
+        } else if (filter instanceof IntervalFilter) {
+            return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
+        } else if (filter instanceof RangeFilter) {
+            return new RangeIndexIterator<>(this, clazz, loadingFields, (RangeFilter) filter);
+        } else if (filter instanceof IdFilter) {
+            return new IdIterator<>(this, clazz, loadingFields, (IdFilter) filter);
         }
+
         throw new IllegalArgumentException("Unknown filter type " + filter.getClass());
     }
 
     public <T extends DomainObject> IteratorEntity<T> find(final Class<T> clazz, Filter filter) throws DatabaseException {
-        return find(clazz, filter, Collections.emptySet());
+        return find(clazz, filter, null);
     }
 
-    public <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id, Collection<String> preInitializedFields) {
-        T obj = buildDomainObject(clazz, id);
-        for (String field : preInitializedFields) {
-            obj._setLoadedField(field, null);
+    public <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id, Collection<Integer> preInitializedFields) {
+        T obj = buildDomainObject(constructor, id);
+        if (preInitializedFields == null) {
+            for (Field field : obj.getStructEntity().getFields()) {
+                obj._setLoadedField(field.getNumber(), null);
+            }
+        } else {
+            for (Integer field : preInitializedFields) {
+                obj._setLoadedField(field, null);
+            }
         }
         return obj;
     }
 
-    private <T extends DomainObject> T buildDomainObject(final Class<T> clazz, long id) {
+    private <T extends DomainObject> T buildDomainObject(final Constructor<T> constructor, long id) {
         try {
-            Constructor<T> constructor = clazz.getConstructor(long.class);
-
-            T domainObject = constructor.newInstance(id);
-
-            //Устанавливаем dataSource
-            StructEntity.dataSourceField.set(domainObject, this);
-
-            return domainObject;
+            return constructor.newInstance(id);
         } catch (ReflectiveOperationException e) {
             throw new IllegalTypeException(e);
         }
     }
 
-    public <T extends DomainObject> T nextObject(final Class<T> clazz, Collection<String> preInitializedFields,
-                                                 long iteratorId, NextState state) throws DataSourceDatabaseException {
+    public <T extends DomainObject> T nextObject(final Constructor<T> constructor, Collection<Integer> preInitializedFields,
+                                                 DBIterator iterator, NextState state, StructEntity entity) throws DatabaseException {
         if (state.isEmpty()) {
             return null;
         }
 
-        T obj = buildDomainObject(clazz, state.nextId, preInitializedFields);
-        state.clear();
-        readObject(obj, iteratorId, state);
+        T obj = buildDomainObject(constructor, state.nextId, preInitializedFields);
+        state.nextId = readObject(obj, iterator);
+        state.nextId = getNextNotMarkedForDeletion(entity, state.nextId, iterator);
         return obj;
     }
 
-    public <T extends DomainObject> T seekObject(final Class<T> clazz, Collection<String> preInitializedFields,
-                                                 long iteratorId, KeyPattern pattern, NextState state) throws DataSourceDatabaseException {
-        KeyValue keyValue = seek(iteratorId, pattern);
+    public <T extends DomainObject> T seekObject(final Constructor<T> constructor, Collection<Integer> preInitializedFields,
+                                                 DBIterator iterator, KeyPattern pattern) throws DatabaseException {
+        KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return null;
         }
 
-        FieldKey key = FieldKey.unpack(keyValue.getKey());
-        if (!key.isBeginningObject()) {
+        if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
             return null;
         }
 
-        T obj = buildDomainObject(clazz, key.getId(), preInitializedFields);
-        readObject(obj, iteratorId, state);
+        T obj = buildDomainObject(constructor, FieldKey.unpackId(keyValue.getKey()), preInitializedFields);
+        readObject(obj, iterator);
         return obj;
     }
 
-    private <T extends DomainObject> void readObject(T obj, long iteratorId, NextState state) throws DataSourceDatabaseException {
-        KeyValue keyValue;
-        FieldKey key;
-        while ((keyValue = next(iteratorId)) != null) {
-            key = FieldKey.unpack(keyValue.getKey());
-            if (key.getId() != obj.getId()) {
-                if (!key.isBeginningObject()) {
-                    throw new UnexpectedEndObjectException(obj.getId(), key);
-                }
-                if (state != null) {
-                    state.nextId = key.getId();
-                }
-                break;
-            }
-            EntityField field = obj.getStructEntity().getField(key.getFieldName());
-            obj._setLoadedField(key.getFieldName(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
+    public NextState seek(DBIterator iterator, KeyPattern pattern, StructEntity entity) throws DatabaseException {
+        KeyValue keyValue = iterator.seek(pattern);
+        if (keyValue == null) {
+            return new NextState(-1);
         }
+
+        if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
+            return new NextState(-1);
+        }
+
+        long objId = FieldKey.unpackId(keyValue.getKey());
+        return new NextState(getNextNotMarkedForDeletion(entity, objId, iterator));
+    }
+
+    private <T extends DomainObject> long readObject(T obj, DBIterator iterator) throws DatabaseException {
+        KeyValue keyValue;
+        while ((keyValue = iterator.next()) != null) {
+            long id = FieldKey.unpackId(keyValue.getKey());
+            if (id != obj.getId()) {
+                if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
+                    throw new UnexpectedEndObjectException(obj.getId(), id, FieldKey.unpackFieldName(keyValue.getKey()));
+                }
+                return id;
+            }
+            Field field = obj.getStructEntity().getField(new StructEntity.ByteArray(keyValue.getKey(), FieldKey.ID_BYTE_SIZE, keyValue.getKey().length));
+            obj._setLoadedField(field.getNumber(), TypeConvert.unpack(field.getType(), keyValue.getValue(), field.getConverter()));
+        }
+
+        return -1;
+    }
+
+    private long getNextNotMarkedForDeletion(StructEntity entity, long startObjId, DBIterator iterator) throws DatabaseException {
+        while (startObjId != -1 && isMarkedForDeletion(entity, startObjId)) {
+            KeyValue keyValue;
+            while ((keyValue = iterator.next()) != null) {
+                if (FieldKey.unpackBeginningObject(keyValue.getKey())) {
+                    break;
+                }
+            }
+
+            startObjId = keyValue != null ? FieldKey.unpackId(keyValue.getKey()) : -1;
+        }
+
+        return startObjId;
     }
 }
