@@ -49,11 +49,11 @@ public class KeyTest {
 
     @Test
     public void testIndexKey() {
-        for (int i=0; i<1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             long id = Math.abs(RandomUtil.random.nextLong());
             long[] values = { Math.abs(RandomUtil.random.nextLong()), Math.abs(RandomUtil.random.nextLong())};
             byte[] attendant = new byte[ATTENDANT_BYTE_SIZE];
-            KeyUtils.putAttendantBytes(attendant, HashIndex.INDEX_NAME_BYTES, TypeConvert.packCRC32(String.valueOf(RandomUtil.random.nextLong())));
+            KeyUtils.putAttendantBytes(attendant, "tst".getBytes(), TypeConvert.packCRC32(String.valueOf(RandomUtil.random.nextLong())));
 
             HashIndexKey key = new HashIndexKey(id, attendant, values);
 

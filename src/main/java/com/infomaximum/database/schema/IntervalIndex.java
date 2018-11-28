@@ -8,8 +8,7 @@ import java.util.List;
 
 public class IntervalIndex extends BaseIntervalIndex {
 
-    private final static String INDEX_NAME = "int";
-    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("int");
 
     private final List<Field> hashedFields;
     private final Field indexedField;

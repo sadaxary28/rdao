@@ -6,9 +6,6 @@ import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 public class PrefixIndexKey {
 
@@ -49,7 +46,7 @@ public class PrefixIndexKey {
     public byte[] pack() {
         byte[] value = TypeConvert.pack(lexeme);
 
-        return TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + value.length + 1 + BLOCK_NUMBER_BYTE_SIZE)
+        return TypeConvert.allocateBuffer(attendant.length + value.length + 1 + BLOCK_NUMBER_BYTE_SIZE)
                 .put(attendant)
                 .put(value)
                 .put(LEXEME_TERMINATOR)
@@ -59,9 +56,9 @@ public class PrefixIndexKey {
 
     public static PrefixIndexKey unpack(byte[] key) {
         byte[] attendant = KeyUtils.getIndexAttendant(key);
-        byte[] payload = new byte[key.length - ATTENDANT_BYTE_SIZE];
-        System.arraycopy(key, ATTENDANT_BYTE_SIZE, payload, 0,key.length - ATTENDANT_BYTE_SIZE);
-        int endIndex = ByteUtils.indexOf(PrefixIndexKey.LEXEME_TERMINATOR, payload);
+        byte[] payload = new byte[key.length - attendant.length];
+        System.arraycopy(key, attendant.length, payload, 0, payload.length);
+        int endIndex = ByteUtils.indexOf(LEXEME_TERMINATOR, payload);
         return new PrefixIndexKey(
                 TypeConvert.unpackString(payload, 0, endIndex),
                 TypeConvert.wrapBuffer(payload).getInt(endIndex + 1),
@@ -71,19 +68,16 @@ public class PrefixIndexKey {
 
     public static KeyPattern buildKeyPatternForFind(final String word, final PrefixIndex index) {
         byte[] payload = TypeConvert.pack(word);
-        byte[] key = new byte[ATTENDANT_BYTE_SIZE + payload.length];
-        System.arraycopy(index.attendant, 0, key, 0, ATTENDANT_BYTE_SIZE);
-        System.arraycopy(payload, 0, key, ATTENDANT_BYTE_SIZE, payload.length);
+        byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + payload.length, index.attendant);
+        System.arraycopy(payload, 0, key, index.attendant.length, payload.length);
         return new KeyPattern(key);
     }
 
     public static KeyPattern buildKeyPatternForEdit(final String lexeme, final PrefixIndex index) {
         byte[] payload = TypeConvert.pack(lexeme);
-        payload = Arrays.copyOf(payload, payload.length + 1);
-        payload[payload.length - 1] = LEXEME_TERMINATOR;
-        byte[] key = new byte[ATTENDANT_BYTE_SIZE + payload.length];
-        System.arraycopy(index.attendant, 0, key, 0, ATTENDANT_BYTE_SIZE);
-        System.arraycopy(payload, 0, key, ATTENDANT_BYTE_SIZE, payload.length);
+        byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + payload.length + 1, index.attendant);
+        System.arraycopy(payload, 0, key, index.attendant.length, payload.length);
+        key[key.length - 1] = LEXEME_TERMINATOR;
         return new KeyPattern(key);
     }
 }

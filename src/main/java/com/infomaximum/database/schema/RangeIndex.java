@@ -9,8 +9,7 @@ import java.util.List;
 
 public class RangeIndex extends BaseIntervalIndex {
 
-    private final static String INDEX_NAME = "rng";
-    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("rng");
 
     private final List<Field> hashedFields;
     private final Field beginIndexedField;

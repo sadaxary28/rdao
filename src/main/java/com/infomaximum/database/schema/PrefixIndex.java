@@ -6,8 +6,7 @@ import java.util.Collection;
 
 public class PrefixIndex extends BaseIndex {
 
-    private final static String INDEX_NAME = "prf";
-    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("prf");
 
     PrefixIndex(com.infomaximum.database.anotation.PrefixIndex index, StructEntity parent) {
         super(buildIndexedFields(index.fields(), parent), parent);

@@ -6,8 +6,6 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
-import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
-
 public abstract class BaseIntervalIndexKey extends IndexKey {
 
     private static final byte NEGATIVE_VALUE = 0;
@@ -33,16 +31,16 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     }
 
     public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue, final BaseIntervalIndex index) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.attendant.length + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
         fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
-        return new KeyPattern(buffer.array(), ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
+        return new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
     }
 
     public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue, final BaseIntervalIndex index) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.attendant.length + ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
         fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
         buffer.putLong(0xffffffffffffffffL);
-        KeyPattern pattern = new KeyPattern(buffer.array(), ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
+        KeyPattern pattern = new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
         pattern.setForBackward(true);
         return pattern;
     }

@@ -2,7 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
-abstract class IndexKey extends Key{
+abstract class IndexKey extends Key {
 
     final byte[] attendant;
 

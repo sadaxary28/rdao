@@ -30,8 +30,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
-import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
-
 public class DomainService {
 
     @FunctionalInterface
@@ -206,25 +204,25 @@ public class DomainService {
             try (DBIterator i = dbProvider.createIterator(domain.getIndexColumnFamily())) {
                 //HashIndex
                 for (HashIndex index : domain.getHashIndexes()) {
-                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
+                    if (i.seek(new KeyPattern(index.attendant)) == null) {
                         doIndex(index);
                     }
                 }
                 //PrefixIndex
                 for (PrefixIndex index : domain.getPrefixIndexes()) {
-                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
+                    if (i.seek(new KeyPattern(index.attendant)) == null) {
                         doPrefixIndex(index);
                     }
                 }
                 //IntervalIndex
                 for (IntervalIndex index : domain.getIntervalIndexes()) {
-                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
+                    if (i.seek(new KeyPattern(index.attendant)) == null) {
                         doIntervalIndex(index);
                     }
                 }
                 //RangeIndex
                 for (RangeIndex index : domain.getRangeIndexes()) {
-                    if (i.seek(new KeyPattern(index.attendant, ATTENDANT_BYTE_SIZE)) == null) {
+                    if (i.seek(new KeyPattern(index.attendant)) == null) {
                         doIntervalIndex(index);
                     }
                 }

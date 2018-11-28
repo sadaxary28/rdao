@@ -7,8 +7,7 @@ import java.util.Collections;
 
 public class HashIndex extends BaseIndex {
 
-    private final static String INDEX_NAME = "hsh";
-    public final static byte[] INDEX_NAME_BYTES = TypeConvert.pack(INDEX_NAME);
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("hsh");
 
     HashIndex(com.infomaximum.database.anotation.HashIndex index, StructEntity parent) {
         super(buildIndexedFields(index.fields(), parent), parent);

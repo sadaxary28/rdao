@@ -11,8 +11,6 @@ import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.util.ArrayList;
 
-import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
-
 public class RangeIndexUtils {
 
     public static void insertIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {
@@ -153,7 +151,7 @@ public class RangeIndexUtils {
             res = indexIterator.step(DBIterator.StepDirection.BACKWARD);
             if (res == null || pattern.match(res.getKey()) == KeyPattern.MATCH_RESULT_UNSUCCESS) {
                 byte[] attendant = KeyUtils.getIndexAttendant(pattern.getPrefix());
-                return indexIterator.seek(new KeyPattern(attendant, ATTENDANT_BYTE_SIZE));
+                return indexIterator.seek(new KeyPattern(attendant));
             }
             begin = RangeIndexKey.unpackIndexedValue(res.getKey());
         }

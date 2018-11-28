@@ -36,9 +36,9 @@ public class HashIndexKey extends IndexKey {
 
     @Override
     public byte[] pack() {
-        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length + ID_BYTE_SIZE,
+        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(attendant.length + ID_BYTE_SIZE * fieldValues.length + ID_BYTE_SIZE,
                 attendant);
-        int offset = TypeConvert.pack(fieldValues, buffer, ATTENDANT_BYTE_SIZE);
+        int offset = TypeConvert.pack(fieldValues, buffer, attendant.length);
         TypeConvert.pack(getId(), buffer, offset);
         return buffer;
     }
@@ -65,25 +65,25 @@ public class HashIndexKey extends IndexKey {
         return TypeConvert.unpackLong(src, ATTENDANT_BYTE_SIZE);
     }
 
-    public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long[] fieldValues) {
-        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * fieldValues.length,
-                hashIndex.attendant);
-        TypeConvert.pack(fieldValues, buffer, ATTENDANT_BYTE_SIZE);
+    public static KeyPattern buildKeyPattern(final HashIndex index, final long[] fieldValues) {
+        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + ID_BYTE_SIZE * fieldValues.length,
+                index.attendant);
+        TypeConvert.pack(fieldValues, buffer, index.attendant.length);
         return new KeyPattern(buffer);
     }
 
-    public static KeyPattern buildKeyPattern(final HashIndex hashIndex, final long fieldValue) {
-        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE,
-                hashIndex.attendant);
-        TypeConvert.pack(fieldValue, buffer, ATTENDANT_BYTE_SIZE);
+    public static KeyPattern buildKeyPattern(final HashIndex index, final long fieldValue) {
+        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + ID_BYTE_SIZE,
+                index.attendant);
+        TypeConvert.pack(fieldValue, buffer, index.attendant.length);
         return new KeyPattern(buffer);
     }
 
-    public static KeyPattern buildKeyPatternForLastKey(final HashIndex hashIndex) {
-        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE,
-                hashIndex.attendant);
-        TypeConvert.pack(0xFFFFFFFFFFFFFFFFL, buffer, ATTENDANT_BYTE_SIZE);
-        return new KeyPattern(buffer, ATTENDANT_BYTE_SIZE);
+    public static KeyPattern buildKeyPatternForLastKey(final HashIndex index) {
+        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + ID_BYTE_SIZE,
+                index.attendant);
+        TypeConvert.pack(0xFFFFFFFFFFFFFFFFL, buffer, index.attendant.length);
+        return new KeyPattern(buffer, index.attendant.length);
     }
 
     private static int readLongCount(final byte[] src) {

@@ -25,7 +25,6 @@ public class StructEntity {
     }
 
     public final static String NAMESPACE_SEPARATOR = ".";
-    private static final String INDEX_CF_POSTFIX ="index";
 
     private final Class<? extends DomainObject> clazz;
     private final String name;
@@ -45,7 +44,7 @@ public class StructEntity {
         this.clazz = clazz;
         this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
-        this.indexColumnFamily = buildIndexColumnFamilyName(this.columnFamily);
+        this.indexColumnFamily = buildIndexColumnFamily(this.columnFamily);
 
         Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
@@ -225,6 +224,10 @@ public class StructEntity {
         return entity.namespace() + NAMESPACE_SEPARATOR + entity.name();
     }
 
+    private static String buildIndexColumnFamily(String parentColumnFamily) {
+        return parentColumnFamily + NAMESPACE_SEPARATOR + "index";
+    }
+
     private List<HashIndex> buildHashIndexes(Entity entity) {
         List<HashIndex> result = new ArrayList<>(entity.hashIndexes().length);
         for (com.infomaximum.database.anotation.HashIndex index: entity.hashIndexes()) {
@@ -274,12 +277,6 @@ public class StructEntity {
         }
 
         return Collections.unmodifiableList(result);
-    }
-
-    private static String buildIndexColumnFamilyName(String parentColumnFamily) {
-        return parentColumnFamily +
-                StructEntity.NAMESPACE_SEPARATOR +
-                INDEX_CF_POSTFIX;
     }
 
     private List<RangeIndex> buildRangeIndexes(Entity entity) {

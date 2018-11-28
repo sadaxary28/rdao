@@ -91,25 +91,25 @@ public class DomainServiceTest extends DomainDataTest {
         });
 
         checkIndexExist(entity,
-                () -> rocksDBProvider.dropColumnFamily("com.infomaximum.store.StoreFile.index"));
+                () -> rocksDBProvider.dropColumnFamily(entity.getIndexColumnFamily()));
 
         checkIndexExist(entity,
-                () -> removeIndex(HashIndex.INDEX_NAME_BYTES));
+                () -> entity.getHashIndexes().forEach(this::removeIndex));
 
         checkIndexExist(entity,
-                () -> removeIndex(PrefixIndex.INDEX_NAME_BYTES));
+                () -> entity.getPrefixIndexes().forEach(this::removeIndex));
 
         checkIndexExist(entity,
-                () -> removeIndex(IntervalIndex.INDEX_NAME_BYTES));
+                () -> entity.getIntervalIndexes().forEach(this::removeIndex));
 
         checkIndexExist(entity,
-                () -> removeIndex(RangeIndex.INDEX_NAME_BYTES));
+                () -> entity.getRangeIndexes().forEach(this::removeIndex));
 
         checkIndexExist(entity,
                 () -> {
-            removeIndex(RangeIndex.INDEX_NAME_BYTES);
-            removeIndex(HashIndex.INDEX_NAME_BYTES);
-        });
+                    entity.getHashIndexes().forEach(this::removeIndex);
+                    entity.getRangeIndexes().forEach(this::removeIndex);
+                });
     }
 
     @Test
@@ -172,14 +172,16 @@ public class DomainServiceTest extends DomainDataTest {
         });
     }
 
-    private void removeIndex(byte[] indexNameBytes) throws DatabaseException {
-        try(DBTransaction transaction = rocksDBProvider.beginTransaction()) {
-            try(DBIterator it = domainObjectSource.createIterator("com.infomaximum.store.StoreFile.index")) {
-                for (KeyValue kv = it.seek(new KeyPattern(indexNameBytes, BaseIndex.INDEX_NAME_BYTE_SIZE)); kv != null ; kv = it.next()) {
-                    transaction.delete("com.infomaximum.store.StoreFile.index", kv.getKey());
+    private void removeIndex(BaseIndex index) {
+        try (DBTransaction transaction = rocksDBProvider.beginTransaction()) {
+            try (DBIterator it = domainObjectSource.createIterator(index.columnFamily)) {
+                for (KeyValue kv = it.seek(new KeyPattern(index.attendant)); kv != null ; kv = it.next()) {
+                    transaction.delete(index.columnFamily, kv.getKey());
                 }
             }
             transaction.commit();
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
         }
     }
 

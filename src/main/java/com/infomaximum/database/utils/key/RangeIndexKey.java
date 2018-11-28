@@ -7,8 +7,6 @@ import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
-import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
-
 public class RangeIndexKey extends BaseIntervalIndexKey {
 
     public enum Type {
@@ -41,7 +39,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
 
     @Override
     public byte[] pack() {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + (hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
+        ByteBuffer buffer = TypeConvert.allocateBuffer(attendant.length + (hashedValues.length + 1) * ID_BYTE_SIZE + 2 * (Long.BYTES + Byte.BYTES));
         BaseIntervalIndexKey.fillBuffer(attendant, hashedValues, indexedValue, buffer);
         // for segment sorting
         putBeginRange(beginRangeValue, type, buffer);
@@ -88,10 +86,10 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     }
 
     public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue, RangeIndex index) {
-        ByteBuffer buffer = TypeConvert.allocateBuffer(ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.attendant.length + ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
         BaseIntervalIndexKey.fillBuffer(index.attendant, hashedValues, beginRangeValue, buffer);
         putBeginRange(beginRangeValue, Type.BEGIN, buffer);
-        return new KeyPattern(buffer.array(), ATTENDANT_BYTE_SIZE + ID_BYTE_SIZE * hashedValues.length);
+        return new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
     }
 
     private static void putBeginRange(long beginRangeValue, Type type, ByteBuffer destination) {
