@@ -144,9 +144,6 @@ public class BoundaryIndexIterator extends DomainDataTest {
                 obj.setLong1(1L);
                 obj.setLong2(4L);
                 obj.setLong3(6L);
-                obj.setString1("a");
-                obj.setString2("abc");
-                obj.setString3("ae");
                 transaction.save(obj);
             }
             for (int i = 0; i < 2; i++) {
@@ -154,9 +151,6 @@ public class BoundaryIndexIterator extends DomainDataTest {
                 obj.setLong1(2L);
                 obj.setLong2(5L);
                 obj.setLong3(7L);
-                obj.setString1("ab");
-                obj.setString2("ae");
-                obj.setString3("aet");
                 transaction.save(obj);
             }
         });
