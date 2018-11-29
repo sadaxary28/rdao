@@ -10,6 +10,7 @@ import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.database.utils.LocalDateTimeUtils;
+import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
@@ -136,6 +137,44 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             i.next();
             Assert.assertTrue(i.hasNext());
             i.next();
+            Assert.assertFalse(i.hasNext());
+        }
+    }
+
+    @Test
+    public void insertAndFindLocalDateTimeWithHashIndex() throws Exception {
+        createDomain(ExchangeFolderEditable.class);
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable s = transaction.create(ExchangeFolderEditable.class);
+            s.setUuid("1");
+            transaction.save(s);
+
+            s = transaction.create(ExchangeFolderEditable.class);
+            s.setUuid("2");
+            transaction.save(s);
+        });
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable s = transaction.create(StoreFileEditable.class);
+            s.setFolderId(1);
+            s.setBegin(10L);
+            s.setEnd(100L);
+            transaction.save(s);
+
+            s = transaction.create(StoreFileEditable.class);
+            s.setFolderId(2);
+            s.setBegin(10L);
+            s.setEnd(100L);
+            transaction.save(s);
+        });
+
+        RangeFilter rangeFilter = new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD,
+                Long.MIN_VALUE,
+                Long.MAX_VALUE
+        ).appendHashedField(StoreFileEditable.FIELD_FOLDER_ID, 2L);
+        try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
+            Assert.assertTrue(i.hasNext());
+            Assert.assertEquals(2, i.next().getId());
             Assert.assertFalse(i.hasNext());
         }
     }
