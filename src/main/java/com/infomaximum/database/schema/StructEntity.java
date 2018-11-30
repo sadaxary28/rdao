@@ -292,12 +292,12 @@ public class StructEntity {
         return Collections.unmodifiableList(result);
     }
 
-    private <T extends BaseIndex> void checkExclusiveAttendants(List<T> indexes) {
+    private static <T extends BaseIndex> void checkExclusiveAttendants(List<T> indexes) {
         for (int i = 0; i < indexes.size(); i++) {
-            byte[] attendantI = indexes.get(i).attendant;
+            T index = indexes.get(i);
             for (int j = i + 1; j < indexes.size(); j++) {
-                if (Arrays.equals(attendantI, indexes.get(j).attendant)) {
-                    throw new StructEntityException("Index attendants aren't exclusive");
+                if (Arrays.equals(index.attendant, indexes.get(j).attendant)) {
+                    throw new StructEntityException("Attendant of " + index.getClass().getSimpleName() + " not unique");
                 }
             }
         }

@@ -1,9 +1,8 @@
-package com.infomaximum.database.domainobject;
+package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.runtime.StructEntityException;
-import com.infomaximum.database.schema.BaseIndex;
 import com.infomaximum.database.utils.TypeConvert;
-import com.infomaximum.domain.BoundaryEditable;
+import com.infomaximum.domain.BoundaryReadable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -13,14 +12,14 @@ import org.powermock.modules.junit4.legacy.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(BaseIndex.class)
-public class DomainTest extends DomainDataTest{
+public class StructEntityTest {
 
     @Test(expected = StructEntityException.class)
-    public void failBecauseSameFieldsHash() throws Exception {
+    public void createThenFailBecauseSameFieldsHash() throws Exception {
         PowerMockito.spy(BaseIndex.class);
         PowerMockito.when(BaseIndex.class, "buildFieldsHashCRC32", ArgumentMatchers.anyList())
-                .then(h -> TypeConvert.pack(1));
+                .thenReturn(TypeConvert.pack(1));
 
-        createDomain(BoundaryEditable.class);
+        new StructEntity(BoundaryReadable.class);
     }
 }
