@@ -8,6 +8,7 @@ import com.infomaximum.database.schema.StructEntity;
 
 public class DomainObjectSource extends DataEnumerable {
 
+    @FunctionalInterface
     public interface Monad {
 
         /**

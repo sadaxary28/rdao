@@ -149,11 +149,12 @@ public class RangeIndexUtils {
         long begin = RangeIndexKey.unpackIndexedValue(res.getKey());
         if (begin != filterBeginValue) {
             res = indexIterator.step(DBIterator.StepDirection.BACKWARD);
-            if (res == null || pattern.match(res.getKey()) == KeyPattern.MATCH_RESULT_UNSUCCESS) {
+            if (res == null) {
                 byte[] attendant = KeyUtils.getIndexAttendant(pattern.getPrefix());
                 return indexIterator.seek(new KeyPattern(attendant));
+            } else if (pattern.match(res.getKey()) != KeyPattern.MATCH_RESULT_UNSUCCESS) {
+                begin = RangeIndexKey.unpackIndexedValue(res.getKey());
             }
-            begin = RangeIndexKey.unpackIndexedValue(res.getKey());
         }
 
         do {

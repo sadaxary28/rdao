@@ -245,7 +245,7 @@ public class StructEntity {
 
             result.add(buildForeignIndex(field));
         }
-
+        checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
     }
 
@@ -262,7 +262,7 @@ public class StructEntity {
         for (com.infomaximum.database.anotation.PrefixIndex index: entity.prefixIndexes()) {
             result.add(new PrefixIndex(index, this));
         }
-
+        checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
     }
 
@@ -275,7 +275,7 @@ public class StructEntity {
         for (com.infomaximum.database.anotation.IntervalIndex index: entity.intervalIndexes()) {
             result.add(new IntervalIndex(index, this));
         }
-
+        checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
     }
 
@@ -288,8 +288,19 @@ public class StructEntity {
         for (com.infomaximum.database.anotation.RangeIndex index: entity.rangeIndexes()) {
             result.add(new RangeIndex(index, this));
         }
-
+        checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
+    }
+
+    private static <T extends BaseIndex> void checkExclusiveAttendants(List<T> indexes) {
+        for (int i = 0; i < indexes.size(); i++) {
+            T index = indexes.get(i);
+            for (int j = i + 1; j < indexes.size(); j++) {
+                if (Arrays.equals(index.attendant, indexes.get(j).attendant)) {
+                    throw new StructEntityException("Attendant of " + index.getClass().getSimpleName() + " not unique");
+                }
+            }
+        }
     }
 
     public static class ByteArray {
