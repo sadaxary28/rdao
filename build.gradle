@@ -33,7 +33,7 @@ repositories {
 
 dependencies {
 
-    compile 'org.rocksdb:rocksdbjni:5.15.10'
+    compile 'com.infomaximum:rocksdbjni:5.15.10.0'
 
     compile 'com.google.guava:guava:23.0'
 
