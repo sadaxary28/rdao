@@ -2,11 +2,14 @@ package com.infomaximum.rocksdb;
 
 import com.google.common.primitives.UnsignedBytes;
 import com.infomaximum.database.exception.ColumnFamilyNotFoundException;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.SequenceNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.exception.DatabaseException;
-import org.rocksdb.*;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
+import org.rocksdb.Transaction;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -147,15 +150,16 @@ public class RocksDBTransaction implements DBTransaction {
         return new RocksDBIterator(transaction.getIterator(rocksDBProvider.getReadOptions(), columnFamily));
     }
 
+    //TODO ULitin V. Временно отключили компакшен - сильно бьет по производительности - необходимо другое решение
     private void compact() throws ColumnFamilyNotFoundException, RocksDBException {
-        for (Map.Entry<String, RangeKey> entry : compactingKeys.entrySet()) {
-            ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(entry.getKey());
-            rocksDBProvider.getRocksDB().compactRange(
-                    columnFamilyHandle,
-                    entry.getValue().begin,
-                    entry.getValue().end,
-                    true, -1, 0);
-        }
+//        for (Map.Entry<String, RangeKey> entry : compactingKeys.entrySet()) {
+//            ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(entry.getKey());
+//            rocksDBProvider.getRocksDB().compactRange(
+//                    columnFamilyHandle,
+//                    entry.getValue().begin,
+//                    entry.getValue().end,
+//                    true, -1, 0);
+//        }
     }
 
     private static class RangeKey {
