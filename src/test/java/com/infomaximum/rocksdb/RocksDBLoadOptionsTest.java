@@ -51,7 +51,7 @@ public class RocksDBLoadOptionsTest extends RocksDataTest {
 
         try (DBOptions options = loadOptionsFromFile(optionsFilePath, false)) {
             Assert.assertEquals(options.maxOpenFiles(), 5);
-            Assert.assertEquals(options.maxTotalWalSize(), 104857600);
+            Assert.assertEquals(options.maxTotalWalSize(), 104857600L);
             Assert.assertEquals(options.infoLogLevel(), InfoLogLevel.WARN_LEVEL);
         }
     }

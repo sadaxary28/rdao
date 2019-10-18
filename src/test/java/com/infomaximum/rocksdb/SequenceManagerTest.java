@@ -64,7 +64,7 @@ public class SequenceManagerTest extends RocksDataTest {
             sequenceManager.createSequence(sequenceName);
 
             SequenceManager.Sequence sequence = sequenceManager.getSequence(sequenceName);
-            for (int i = 1; i < 1000000; i++) {
+            for (long i = 1; i < 1000000; i++) {
                 long id = sequence.next();
                 Assert.assertEquals(i, id);
             }

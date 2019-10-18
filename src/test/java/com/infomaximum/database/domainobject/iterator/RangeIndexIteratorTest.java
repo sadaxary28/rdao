@@ -174,7 +174,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         ).appendHashedField(StoreFileEditable.FIELD_FOLDER_ID, 2L);
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, rangeFilter)) {
             Assert.assertTrue(i.hasNext());
-            Assert.assertEquals(2, i.next().getId());
+            Assert.assertEquals(2L, i.next().getId());
             Assert.assertFalse(i.hasNext());
         }
     }

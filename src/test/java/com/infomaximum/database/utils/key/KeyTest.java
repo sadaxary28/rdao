@@ -1,6 +1,5 @@
 package com.infomaximum.database.utils.key;
 
-import com.infomaximum.database.schema.HashIndex;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.util.RandomUtil;
 import org.junit.Assert;

@@ -9,6 +9,8 @@ import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -66,6 +68,10 @@ public class SequenceManager {
                 sequences.put(sequenceName, new Sequence(keyValue));
             }
         }
+    }
+
+    public Map<String, Sequence> getSequences() {
+        return Collections.unmodifiableMap(sequences);
     }
 
     public class Sequence {

@@ -35,10 +35,10 @@ public class IdIteratorTest extends StoreFileDataTest {
         });
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        assertFilter(0, 0, new IdFilter(0, 10));
-        assertFilter(11, 20, new IdFilter(5, Long.MAX_VALUE));
-        assertFilter(11, 15, new IdFilter(5, 15));
-        assertFilter(11, 11, new IdFilter(11, 11));
+        assertFilter(0, 0L, new IdFilter(0, 10));
+        assertFilter(11, 20L, new IdFilter(5, Long.MAX_VALUE));
+        assertFilter(11, 15L, new IdFilter(5, 15));
+        assertFilter(11, 11L, new IdFilter(11, 11));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class IdIteratorTest extends StoreFileDataTest {
                 : (expectedToId - expectedFromId) + 1;
 
         try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, filter)) {
-            int iteratedRecordCount = 0;
+            long iteratedRecordCount = 0;
             long currId = expectedFromId;
             StoreFileReadable storeFile = null;
             while (i.hasNext()) {

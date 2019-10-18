@@ -13,7 +13,7 @@ public class HashIndex extends BaseIndex {
         super(buildIndexedFields(index.fields(), parent), parent);
     }
 
-    HashIndex(Field field, StructEntity parent) {
+    public HashIndex(Field field, StructEntity parent) {
         super(Collections.singletonList(field), parent);
     }
 

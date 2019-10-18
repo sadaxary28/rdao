@@ -41,7 +41,7 @@ public class MuiltiIndexUpdateTest extends StoreFileDataTest {
                 StoreFileReadable storeFile = iStoreFileReadable.next();
 
                 Assert.assertNotNull(storeFile);
-                Assert.assertEquals(100, storeFile.getSize());
+                Assert.assertEquals(100L, storeFile.getSize());
                 Assert.assertEquals("1", storeFile.getFileName());
 
                 count++;

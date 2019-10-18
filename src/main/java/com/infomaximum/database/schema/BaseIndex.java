@@ -37,4 +37,8 @@ public abstract class BaseIndex {
     }
 
     protected abstract byte[] getIndexNameBytes();
+
+    public String[] getFieldNames() {
+        return sortedFields.stream().map(Field::getName).toArray(String[]::new);
+    }
 }
