@@ -25,23 +25,25 @@ public class DBSchema {
         return tables;
     }
 
-    public DBTable newTable(String name, List<DBField> columns) {
-        DBTable dbTable = new DBTable(nextId(tables), name, columns);
+    public DBTable newTable(String name, String namespace, List<DBField> columns) {
+        DBTable dbTable = new DBTable(nextId(tables), name, namespace, columns);
         tables.add(dbTable);
         return dbTable;
     }
 
-    public int findTableIndex(String tableName) throws SchemaException {
+    public int findTableIndex(String tableName, String tableNamespace) throws SchemaException {
+        DBTable dbTable;
         for (int i = 0; i < tables.size(); ++i) {
-            if (tables.get(i).getName().equals(tableName)) {
+            dbTable = tables.get(i);
+            if (dbTable.getName().equals(tableName) && dbTable.getNamespace().equals(tableNamespace)) {
                 return i;
             }
         }
         return -1;
     }
 
-    public DBTable getTable(String name) throws SchemaException {
-        int i = findTableIndex(name);
+    public DBTable getTable(String name, String namespace) throws SchemaException {
+        int i = findTableIndex(name, namespace);
         if (i == -1) {
             throw new TableNotFoundException(name);
         }

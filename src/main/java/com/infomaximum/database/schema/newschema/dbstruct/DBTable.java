@@ -2,6 +2,7 @@ package com.infomaximum.database.schema.newschema.dbstruct;
 
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
 
 import java.io.Serializable;
@@ -27,6 +28,7 @@ public class DBTable extends DBObject {
     }
 
     private static final String JSON_PROP_NAME = "name";
+    private static final String JSON_PROP_NAMESPACE = "namespace";
     private static final String JSON_PROP_FIELDS = "fields";
     private static final String JSON_PROP_HASH_INDEXES = "hash_indexes";
     private static final String JSON_PROP_PREFIX_INDEXES = "prefix_indexes";
@@ -37,6 +39,7 @@ public class DBTable extends DBObject {
     private final String indexColumnFamily;
 
     private String name;
+    private final String namespace;
     private final List<DBField> fields;
     private final List<DBHashIndex> hashIndexes;
     private final List<DBPrefixIndex> prefixIndexes;
@@ -45,13 +48,14 @@ public class DBTable extends DBObject {
 
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
-    private DBTable(int id, String name, List<DBField> fields,
+    private DBTable(int id, String name, String namespace, List<DBField> fields,
                     List<DBHashIndex> hashIndexes, List<DBPrefixIndex> prefixIndexes,
                     List<DBIntervalIndex> intervalIndexes, List<DBRangeIndex> rangeIndexes) {
         super(id);
-        this.dataColumnFamily = name;
-        this.indexColumnFamily = name + ".index";
+        this.dataColumnFamily = namespace + StructEntity.NAMESPACE_SEPARATOR + name;
+        this.indexColumnFamily = namespace + StructEntity.NAMESPACE_SEPARATOR + name + ".index";
         this.name = name;
+        this.namespace = namespace;
         this.fields = fields;
         this.hashIndexes = hashIndexes;
         this.prefixIndexes = prefixIndexes;
@@ -59,8 +63,8 @@ public class DBTable extends DBObject {
         this.rangeIndexes = rangeIndexes;
     }
 
-    DBTable(int id, String name, List<DBField> fields) {
-        this(id, name, fields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    DBTable(int id, String name, String namespace, List<DBField> fields) {
+        this(id, name, namespace, fields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public String getDataColumnFamily() {
@@ -77,6 +81,10 @@ public class DBTable extends DBObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     public List<DBField> getFields() {
@@ -197,6 +205,7 @@ public class DBTable extends DBObject {
         return new DBTable(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
                 JsonUtils.getValue(JSON_PROP_NAME, String.class, source),
+                JsonUtils.getValue(JSON_PROP_NAMESPACE, String.class, source),
                 JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson),
                 JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, DBHashIndex::fromJson),
                 JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, DBPrefixIndex::fromJson),
@@ -210,6 +219,7 @@ public class DBTable extends DBObject {
         JSONObject object = new JSONObject();
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_NAME, name);
+        object.put(JSON_PROP_NAMESPACE, namespace);
         object.put(JSON_PROP_FIELDS, JsonUtils.toJsonArray(fields));
         object.put(JSON_PROP_HASH_INDEXES, JsonUtils.toJsonArray(hashIndexes));
         object.put(JSON_PROP_PREFIX_INDEXES, JsonUtils.toJsonArray(prefixIndexes));

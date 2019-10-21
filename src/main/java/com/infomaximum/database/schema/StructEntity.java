@@ -30,6 +30,7 @@ public class StructEntity {
     private final String name;
     private final String columnFamily;
     private final String indexColumnFamily;
+    private final String namespace;
     private final Field[] fields;
     private final Map<ByteArray, Field> nameBytesFields;
     private final List<HashIndex> hashIndexes;
@@ -45,6 +46,7 @@ public class StructEntity {
         this.name = annotationEntity.name();
         this.columnFamily = buildColumnFamily(annotationEntity);
         this.indexColumnFamily = buildIndexColumnFamily(this.columnFamily);
+        this.namespace = annotationEntity.namespace();
 
         Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
@@ -87,6 +89,10 @@ public class StructEntity {
 
     public String getColumnFamily() {
         return columnFamily;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     public String getIndexColumnFamily() {

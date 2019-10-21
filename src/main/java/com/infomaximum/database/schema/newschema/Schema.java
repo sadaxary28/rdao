@@ -144,10 +144,10 @@ public class Schema {
     }
 
     public void createTable(StructEntity table) throws DatabaseException {
-        int tableIndex = dbSchema.findTableIndex(table.getName());
+        int tableIndex = dbSchema.findTableIndex(table.getName(), table.getNamespace());
         DBTable dbTable;
         if (tableIndex == -1) {
-            dbTable = dbSchema.newTable(table.getColumnFamily(), new ArrayList<>());
+            dbTable = dbSchema.newTable(table.getName(), table.getNamespace(), new ArrayList<>());
 
             dbProvider.createColumnFamily(dbTable.getDataColumnFamily());
             dbProvider.createColumnFamily(dbTable.getIndexColumnFamily());
@@ -233,8 +233,8 @@ public class Schema {
 //        saveSchema();
 //    }
 //
-    public void createField(Field tableField, String tableName, StructEntity table) throws DatabaseException {
-        createField(tableField, dbSchema.getTable(tableName), table);
+    public void createField(Field tableField, String tableName, String namespace, StructEntity table) throws DatabaseException {
+        createField(tableField, dbSchema.getTable(tableName, namespace), table);
         saveSchema();
     }
 
@@ -244,8 +244,9 @@ public class Schema {
             throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName());
         }
 
-        Integer fTableId = tableField.getForeignDependency() != null ? dbSchema.getTable(tableField.getForeignDependency().getName()).getId() : null;
-
+        Integer fTableId = tableField.getForeignDependency() != null
+                ? dbSchema.getTable(tableField.getForeignDependency().getName(), tableField.getForeignDependency().getNamespace()).getId()
+                : null;
         DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
         if (newField.isForeignKey()) {
             createIndex(new HashIndex(tableField, table), dbTable);
@@ -290,8 +291,8 @@ public class Schema {
 //        saveSchema();
 //    }
 
-    public void createIndex(HashIndex index, String tableName) throws DatabaseException {
-        createIndex(index, dbSchema.getTable(tableName));
+    public void createIndex(HashIndex index, String tableName, String namespace) throws DatabaseException {
+        createIndex(index, dbSchema.getTable(tableName, namespace));
         saveSchema();
     }
 
@@ -306,8 +307,8 @@ public class Schema {
         }
     }
 
-    public void createIndex(PrefixIndex index, String tableName) throws DatabaseException {
-        createIndex(index, dbSchema.getTable(tableName));
+    public void createIndex(PrefixIndex index, String tableName, String namespace) throws DatabaseException {
+        createIndex(index, dbSchema.getTable(tableName, namespace));
         saveSchema();
     }
 
@@ -322,8 +323,8 @@ public class Schema {
         }
     }
 
-    public void createIndex(IntervalIndex index, String tableName) throws DatabaseException {
-        createIndex(index, dbSchema.getTable(tableName));
+    public void createIndex(IntervalIndex index, String tableName, String namespace) throws DatabaseException {
+        createIndex(index, dbSchema.getTable(tableName, namespace));
         saveSchema();
     }
 
@@ -337,8 +338,8 @@ public class Schema {
         }
     }
 
-    public void createIndex(RangeIndex index, String tableName) throws DatabaseException {
-        createIndex(index, dbSchema.getTable(tableName));
+    public void createIndex(RangeIndex index, String tableName, String namespace) throws DatabaseException {
+        createIndex(index, dbSchema.getTable(tableName, namespace));
         saveSchema();
     }
 
