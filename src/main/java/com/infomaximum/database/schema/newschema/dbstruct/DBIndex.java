@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema.impl;
+package com.infomaximum.database.schema.newschema.dbstruct;
 
 import java.util.Arrays;
 

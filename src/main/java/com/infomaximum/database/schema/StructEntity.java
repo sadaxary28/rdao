@@ -38,7 +38,7 @@ public class StructEntity {
     private final List<RangeIndex> rangeIndexes;
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
-    StructEntity(Class<? extends DomainObject> clazz) {
+    public StructEntity(Class<? extends DomainObject> clazz) {
         final Entity annotationEntity = getAnnotationClass(clazz).getAnnotation(Entity.class);
 
         this.clazz = clazz;

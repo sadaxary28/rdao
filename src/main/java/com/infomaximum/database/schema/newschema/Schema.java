@@ -5,7 +5,7 @@ import com.infomaximum.database.exception.*;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.*;
-import com.infomaximum.database.schema.impl.*;
+import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.SequenceManager;
@@ -147,7 +147,7 @@ public class Schema {
         int tableIndex = dbSchema.findTableIndex(table.getName());
         DBTable dbTable;
         if (tableIndex == -1) {
-            dbTable = dbSchema.newTable(table.getName(), new ArrayList<>());
+            dbTable = dbSchema.newTable(table.getColumnFamily(), new ArrayList<>());
 
             dbProvider.createColumnFamily(dbTable.getDataColumnFamily());
             dbProvider.createColumnFamily(dbTable.getIndexColumnFamily());
