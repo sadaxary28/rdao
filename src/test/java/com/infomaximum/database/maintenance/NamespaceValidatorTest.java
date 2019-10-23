@@ -26,6 +26,7 @@ public class NamespaceValidatorTest extends DomainDataTest {
         new NamespaceValidator(rocksDBProvider)
                 .withNamespace("com.infomaximum.database")
                 .withNamespace("com.infomaximum.rocksdb")
+                .withNamespace("service")
                 .execute();
         Assert.assertTrue(true);
     }

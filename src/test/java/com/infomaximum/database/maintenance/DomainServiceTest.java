@@ -34,7 +34,7 @@ public class DomainServiceTest extends DomainDataTest {
     public void init() throws Exception {
         super.init();
 
-        new Schema.Builder().withDomain(StoreFileReadable.class).build();
+        new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class DomainServiceTest extends DomainDataTest {
                 .setDomain(Schema.getEntity(StoreFileReadable.class))
                 .execute();
 
-        Assert.assertArrayEquals(new String[0], rocksDBProvider.getColumnFamilies());
+        Assert.assertArrayEquals(new String[] {com.infomaximum.database.schema.newschema.Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class DomainServiceTest extends DomainDataTest {
                 .setDomain(Schema.getEntity(StoreFileReadable.class))
                 .execute();
 
-        Assert.assertArrayEquals(new String[0], rocksDBProvider.getColumnFamilies());
+        Assert.assertArrayEquals(new String[] {com.infomaximum.database.schema.newschema.Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
     }
 
     private void testNotWorking() throws Exception {

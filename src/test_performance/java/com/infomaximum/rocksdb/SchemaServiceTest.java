@@ -34,7 +34,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setChangeMode(ChangeMode.NONE)
                 .setSchema(new Schema.Builder()
                         .withDomain(StoreFileEditable.class)
-                        .build());
+                        .build(rocksDBProvider));
 
         PerfomanceTest.test(10, step -> {
             schemaService.execute();

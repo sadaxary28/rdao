@@ -20,7 +20,7 @@ public class SchemaServiceTest extends DomainDataTest {
         new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                 .execute();
 
         Assert.assertTrue(true);
@@ -32,7 +32,7 @@ public class SchemaServiceTest extends DomainDataTest {
             new SchemaService(rocksDBProvider)
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -46,7 +46,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.REMOVAL)
                 .setValidationMode(false)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                 .execute();
     }
 
@@ -56,7 +56,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
     }
@@ -71,7 +71,7 @@ public class SchemaServiceTest extends DomainDataTest {
             new SchemaService(rocksDBProvider)
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -88,7 +88,7 @@ public class SchemaServiceTest extends DomainDataTest {
         new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
     }
@@ -106,7 +106,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
                 .appendIgnoringNamespace(ignoringNamespace)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
 
@@ -116,7 +116,7 @@ public class SchemaServiceTest extends DomainDataTest {
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
                     .appendIgnoringNamespace(ignoringNamespace)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build())
+                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -143,7 +143,7 @@ public class SchemaServiceTest extends DomainDataTest {
                     .setValidationMode(true)
                     .setSchema(new Schema.Builder()
                             .withDomain(StoreFileEditable.class)
-                            .build())
+                            .build(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (ForeignDependencyException ex) {
@@ -173,7 +173,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setValidationMode(true)
                 .setSchema(new Schema.Builder()
                         .withDomain(StoreFileEditable.class)
-                        .build())
+                        .build(rocksDBProvider))
                 .execute();
     }
 }

@@ -27,6 +27,7 @@ public abstract class DomainDataTest extends RocksDataTest {
 
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
         domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        com.infomaximum.database.schema.newschema.Schema.create(rocksDBProvider);
     }
 
     @After
@@ -43,7 +44,7 @@ public abstract class DomainDataTest extends RocksDataTest {
     }
 
     protected void createDomain(Class<? extends DomainObject> clazz, RocksDBProvider rocksDBProvider) throws DatabaseException {
-        new Schema.Builder().withDomain(clazz).build();
+        new Schema.Builder().withDomain(clazz).build(rocksDBProvider);
         new DomainService(rocksDBProvider)
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)

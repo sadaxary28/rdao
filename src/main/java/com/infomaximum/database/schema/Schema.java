@@ -1,6 +1,9 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.provider.DBProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,16 +22,22 @@ public class Schema {
             return this;
         }
 
-        public Schema build() {
-            return new Schema(domainClasses);
+        public Schema build(DBProvider dbProvider) {
+            return new Schema(domainClasses, dbProvider);
         }
     }
 
     private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> entities = new ConcurrentHashMap<>();
 
     private final Set<StructEntity> domains;
+    private final com.infomaximum.database.schema.newschema.Schema dbSchema;
 
-    private Schema(Set<Class<? extends DomainObject>> domainClasses) {
+    private Schema(Set<Class<? extends DomainObject>> domainClasses, DBProvider dbProvider) {
+        try {
+            this.dbSchema = com.infomaximum.database.schema.newschema.Schema.read(dbProvider);
+        } catch (DatabaseException e) {
+            throw new SchemaException(e);
+        }
         Set<StructEntity> modifiableDomains = new HashSet<>(domainClasses.size());
         for (Class<? extends DomainObject> domain : domainClasses) {
             modifiableDomains.add(ensureEntity(domain));
@@ -52,6 +61,16 @@ public class Schema {
             entities.putIfAbsent(clazz, entity);
         }
         return entity;
+    }
+
+    public void install() {
+        try {
+            for (StructEntity domain : domains) {
+                dbSchema.createTable(domain);
+            }
+        } catch (DatabaseException e) {
+            throw new SchemaException(e);
+        }
     }
 
     static StructEntity ensureEntity(Class<? extends DomainObject> domain) {

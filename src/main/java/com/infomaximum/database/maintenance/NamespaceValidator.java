@@ -4,6 +4,7 @@ import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.schema.newschema.Schema;
 
 import java.util.*;
 
@@ -30,7 +31,7 @@ public class NamespaceValidator {
 
     private void validateUnknownColumnFamilies() throws DatabaseException {
         for (String columnFamily : dbProvider.getColumnFamilies()) {
-            if (!contains(columnFamily)) {
+            if (!columnFamily.equals(Schema.SERVICE_COLUMN_FAMILY) && !contains(columnFamily)) {
                 throw new InconsistentDatabaseException("Unknown column family " + columnFamily + " .");
             }
         }
