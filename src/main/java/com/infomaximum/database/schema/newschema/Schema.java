@@ -41,20 +41,18 @@ public class Schema {
 
     private final DBProvider dbProvider;
     private final DBSchema dbSchema;
-    private final SequenceManager sequenceManager;
     private final ConcurrentMap<Class<? extends DomainObject>, StructEntity> objTables = new ConcurrentHashMap<>();
 
-    private Schema(RocksDBProvider dbProvider, DBSchema schema) throws DatabaseException {
+    private Schema(DBProvider dbProvider, DBSchema schema) throws DatabaseException {
         this.dbProvider = dbProvider;
         this.dbSchema = schema;
-        this.sequenceManager = new SequenceManager(dbProvider);
     }
 
-    public static Schema create(RocksDBProvider dbProvider) throws DatabaseException {
+    public static Schema create(DBProvider dbProvider) throws DatabaseException {
         return new Schema(dbProvider, createSchema(dbProvider));
     }
 
-    public static Schema read(RocksDBProvider dbProvider) throws DatabaseException {
+    public static Schema read(DBProvider dbProvider) throws DatabaseException {
         return new Schema(dbProvider, readSchema(dbProvider));
     }
 
@@ -107,10 +105,6 @@ public class Schema {
         return dbSchema;
     }
 
-    public SequenceManager getSequenceManager() {
-        return sequenceManager;
-    }
-
 //    @SuppressWarnings("unchecked")
 //    public <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
 //        return objTables.computeIfAbsent(objClass, this::buildObjTable);
@@ -153,7 +147,7 @@ public class Schema {
 
             dbProvider.createColumnFamily(dbTable.getDataColumnFamily());
             dbProvider.createColumnFamily(dbTable.getIndexColumnFamily());
-            sequenceManager.createSequence(dbTable.getName());
+            dbProvider.createSequence(dbTable.getName());
         } else {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
@@ -190,7 +184,7 @@ public class Schema {
         DBTable table = dbSchema.getTables().remove(i);
         dbProvider.dropColumnFamily(table.getDataColumnFamily());
         dbProvider.dropColumnFamily(table.getIndexColumnFamily());
-        sequenceManager.dropSequence(table.getName());
+        dbProvider.dropSequence(table.getName());
 
         removeObjTable(name);
 
