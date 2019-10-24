@@ -8,8 +8,6 @@ import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
-import com.infomaximum.rocksdb.RocksDBProvider;
-import com.infomaximum.rocksdb.SequenceManager;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -105,30 +103,6 @@ public class Schema {
         return dbSchema;
     }
 
-//    @SuppressWarnings("unchecked")
-//    public <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
-//        return objTables.computeIfAbsent(objClass, this::buildObjTable);
-//    }
-
-//    private <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
-//        StructEntity entity = new StructEntity(objClass);
-//        Table table = TableUtils.buildTable(entity);
-//        DBTable dbTable = getDbSchema().getTable(table.getName());
-//        if (!DBTableUtils.buildTable(dbTable, dbSchema).equals(table)) {
-//            throw new SchemaException("Class annotation of " + objClass.getSimpleName() + " not match the schema in the database");
-//        }
-//
-//        DBField[] orderedFields = new DBField[entity.fields().length];
-//        for (com.infomaximum.database.domainobject.anotation.Field field: entity.fields()) {
-//            if (orderedFields[field.number()] != null) {
-//                throw new FieldAlreadyExistsException(field.number(), objClass);
-//            }
-//            orderedFields[field.number()] = dbTable.getField(field.name());
-//        }
-//
-//        return new ObjInfo<>(dbTable, getConstructor(objClass), orderedFields);
-//    }
-
     private static <T extends DomainObject> Constructor<T> getConstructor(Class<T> clazz) {
         try {
             Constructor<T> constructor = clazz.getDeclaredConstructor(long.class, StructEntity.class);
@@ -191,7 +165,32 @@ public class Schema {
         saveSchema();
         return true;
     }
+
+//    @SuppressWarnings("unchecked")
+//    public <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
+//        return objTables.computeIfAbsent(objClass, this::buildObjTable);
+//    }
+
+//    private <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
+//        StructEntity entity = new StructEntity(objClass);
+//        Table table = TableUtils.buildTable(entity);
+//        DBTable dbTable = getDbSchema().getTable(table.getName());
+//        if (!DBTableUtils.buildTable(dbTable, dbSchema).equals(table)) {
+//            throw new SchemaException("Class annotation of " + objClass.getSimpleName() + " not match the schema in the database");
+//        }
 //
+//        DBField[] orderedFields = new DBField[entity.fields().length];
+//        for (com.infomaximum.database.domainobject.anotation.Field field: entity.fields()) {
+//            if (orderedFields[field.number()] != null) {
+//                throw new FieldAlreadyExistsException(field.number(), objClass);
+//            }
+//            orderedFields[field.number()] = dbTable.getField(field.name());
+//        }
+//
+//        return new ObjInfo<>(dbTable, getConstructor(objClass), orderedFields);
+//    }
+
+    //
 //    public void checkIntegrity() throws DatabaseException {
 //        dbSchema.checkIntegrity();
 //

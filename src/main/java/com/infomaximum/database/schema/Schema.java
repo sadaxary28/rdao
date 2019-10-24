@@ -63,13 +63,9 @@ public class Schema {
         return entity;
     }
 
-    public void install() {
-        try {
-            for (StructEntity domain : domains) {
-                dbSchema.createTable(domain);
-            }
-        } catch (DatabaseException e) {
-            throw new SchemaException(e);
+    public void install() throws DatabaseException {
+        for (StructEntity domain : domains) {
+            dbSchema.createTable(domain);
         }
     }
 
