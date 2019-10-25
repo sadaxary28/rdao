@@ -222,6 +222,10 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         close();
     }
 
+    public boolean isClosed() {
+        return closed;
+    }
+
     @Override
     public void close() throws DatabaseException {
         closed = true;
