@@ -15,6 +15,7 @@ import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.*;
+import com.infomaximum.database.schema.newschema.Schema;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.RangeIndexUtils;
@@ -44,10 +45,12 @@ public class DomainService {
     private boolean isValidationMode = false;
 
     private StructEntity domain;
+    private final Schema dbSchema;
     private boolean existsData = false;
 
-    public DomainService(DBProvider dbProvider) {
+    public DomainService(DBProvider dbProvider, Schema dbSchema) {
         this.dbProvider = dbProvider;
+        this.dbSchema = dbSchema;
     }
 
     public DomainService setChangeMode(ChangeMode value) {
@@ -92,6 +95,7 @@ public class DomainService {
     }
 
     private void remove() throws DatabaseException {
+        dbSchema.dropTable(domain.getName(), domain.getNamespace());
         for (String columnFamily : getColumnFamilies()) {
             dbProvider.dropColumnFamily(columnFamily);
         }
@@ -119,6 +123,7 @@ public class DomainService {
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
+        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
     }
 
     private void doPrefixIndex(PrefixIndex index) throws DatabaseException {
@@ -132,6 +137,7 @@ public class DomainService {
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
         });
+        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
     }
 
     private void doIntervalIndex(IntervalIndex index) throws DatabaseException {
@@ -147,6 +153,7 @@ public class DomainService {
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
+        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
     }
 
     private void doIntervalIndex(RangeIndex index) throws DatabaseException {
@@ -162,6 +169,7 @@ public class DomainService {
                     obj.get(index.getEndIndexedField().getNumber()),
                     transaction);
         });
+        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
     }
 
     private Set<String> getColumnFamilies() throws DatabaseException {

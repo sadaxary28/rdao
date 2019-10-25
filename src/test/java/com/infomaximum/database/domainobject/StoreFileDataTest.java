@@ -13,10 +13,12 @@ import java.util.List;
 
 public abstract class StoreFileDataTest extends DomainDataTest {
 
+    protected com.infomaximum.database.schema.newschema.Schema schema;
+
     @Before
     public void init() throws Exception {
         super.init();
-
+        schema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
         createDomain(StoreFileReadable.class);
     }
 

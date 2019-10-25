@@ -40,8 +40,8 @@ public abstract class DomainDataJ5Test extends RocksDataTest {
     }
 
     protected void createDomain(Class<? extends DomainObject> clazz, RocksDBProvider rocksDBProvider) throws DatabaseException {
-        new Schema.Builder().withDomain(clazz).build(rocksDBProvider);
-        new DomainService(rocksDBProvider)
+        Schema schema = new Schema.Builder().withDomain(clazz).build(rocksDBProvider);
+        new DomainService(rocksDBProvider, schema.getDbSchema())
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(clazz))

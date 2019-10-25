@@ -8,6 +8,7 @@ import com.infomaximum.database.provider.DBProvider;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 public class Schema {
 
@@ -63,10 +64,16 @@ public class Schema {
         return entity;
     }
 
-    public void install() throws DatabaseException {
-        for (StructEntity domain : domains) {
-            dbSchema.createTable(domain);
+    public static void install(Set<Class<? extends DomainObject>> domainClasses, DBProvider dbProvider) throws DatabaseException {
+        com.infomaximum.database.schema.newschema.Schema schema = com.infomaximum.database.schema.newschema.Schema.create(dbProvider);
+        Set<StructEntity> modifiableDomains = domainClasses.stream().map(Schema::getNewEntity).collect(Collectors.toSet());
+        for (StructEntity domain : modifiableDomains) {
+            schema.createTable(domain);
         }
+    }
+
+    public com.infomaximum.database.schema.newschema.Schema getDbSchema() {
+        return dbSchema;
     }
 
     static StructEntity ensureEntity(Class<? extends DomainObject> domain) {
@@ -77,5 +84,10 @@ public class Schema {
             entities.put(annotationClass, entity);
         }
         return entity;
+    }
+
+    private static StructEntity getNewEntity(Class<? extends DomainObject> domain) {
+        Class<? extends DomainObject> annotationClass = StructEntity.getAnnotationClass(domain);
+        return new StructEntity(annotationClass);
     }
 }

@@ -59,7 +59,7 @@ public class SchemaService {
         validateConsistentNames();
 
         for (StructEntity domain : schema.getDomains()) {
-            new DomainService(dbProvider)
+            new DomainService(dbProvider, schema.getDbSchema())
                     .setChangeMode(changeModeMode)
                     .setValidationMode(isValidationMode)
                     .setDomain(domain)

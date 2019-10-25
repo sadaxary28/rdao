@@ -8,6 +8,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.database.utils.LocalDateTimeUtils;
 import com.infomaximum.domain.ExchangeFolderEditable;
@@ -60,8 +61,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
                 }
             }
         });
-
-        new DomainService(rocksDBProvider)
+        new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.NONE)
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(StoreFileEditable.class))

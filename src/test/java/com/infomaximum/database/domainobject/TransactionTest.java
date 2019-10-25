@@ -268,6 +268,9 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void removeAll() throws Exception {
+        com.infomaximum.database.schema.newschema.Schema schema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
+        schema.createTable(Schema.getEntity(ExchangeFolderEditable.class));
+
         createDomain(ExchangeFolderReadable.class);
 
         domainObjectSource.executeTransactional(transaction -> {
@@ -291,8 +294,7 @@ public class TransactionTest extends StoreFileDataTest {
         try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
             Assert.assertFalse(i.hasNext());
         }
-
-        new DomainService(domainObjectSource.getDbProvider())
+        new DomainService(domainObjectSource.getDbProvider(), schema)
                 .setChangeMode(ChangeMode.NONE)
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(ExchangeFolderEditable.class))

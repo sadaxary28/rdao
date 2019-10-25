@@ -290,6 +290,11 @@ public class Schema {
         createIndex(index, dbSchema.getTable(tableName, namespace));
         saveSchema();
     }
+//
+//    private <T extends BaseIndex> void isIndexExists(T index, DBTable table) {
+//        DBHashIndex dbIndex = DBTableUtils.buildIndex(index, table);
+//        return table.getHashIndexes().stream().anyMatch(dbIndex::fieldsEquals);
+//    }
 
     private void createIndex(HashIndex index, DBTable table) {
         DBHashIndex dbIndex = DBTableUtils.buildIndex(index, table);
