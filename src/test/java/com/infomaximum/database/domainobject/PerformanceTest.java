@@ -17,7 +17,7 @@ public class PerformanceTest extends DomainDataInstanceTest {
      * В одной транзакции удаление, чтение и коммит: 680 ms
      * Чтение в другой транзакции: 568 ms
      */
-    @Test
+//    @Test
     public void readTest() throws Exception {
         final int objectsCount = 100_000;
         final int deletingCount = 70_000;

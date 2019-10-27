@@ -10,6 +10,7 @@ import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.exception.IndexAlreadyExistsException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
@@ -24,6 +25,8 @@ import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.utils.key.RangeIndexKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +35,8 @@ import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 public class DomainService {
+
+    private final static Logger log = LoggerFactory.getLogger(DomainService.class);
 
     @FunctionalInterface
     private interface ModifierCreator {
@@ -123,7 +128,11 @@ public class DomainService {
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
-        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        try {
+            dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        } catch (IndexAlreadyExistsException e) {
+            log.warn("Index already exists", e);
+        }
     }
 
     private void doPrefixIndex(PrefixIndex index) throws DatabaseException {
@@ -137,7 +146,11 @@ public class DomainService {
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
         });
-        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        try {
+            dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        } catch (IndexAlreadyExistsException e) {
+            log.warn("Index already exists", e);
+        }
     }
 
     private void doIntervalIndex(IntervalIndex index) throws DatabaseException {
@@ -153,7 +166,11 @@ public class DomainService {
 
             transaction.put(index.columnFamily, indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
-        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        try {
+            dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        } catch (IndexAlreadyExistsException e) {
+            log.warn("Index already exists", e);
+        }
     }
 
     private void doIntervalIndex(RangeIndex index) throws DatabaseException {
@@ -169,7 +186,11 @@ public class DomainService {
                     obj.get(index.getEndIndexedField().getNumber()),
                     transaction);
         });
-        dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        try {
+            dbSchema.createIndex(index, domain.getName(), domain.getNamespace());
+        } catch (IndexAlreadyExistsException e) {
+            log.warn("Index already exists", e);
+        }
     }
 
     private Set<String> getColumnFamilies() throws DatabaseException {

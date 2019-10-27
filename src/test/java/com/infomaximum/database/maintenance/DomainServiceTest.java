@@ -164,9 +164,15 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void removeAndValidate() throws Exception{
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(StoreFileReadable.class);
+        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         createDomain(StoreFileReadable.class);
+        createDomain(ExchangeFolderReadable.class);
 
+        new DomainService(rocksDBProvider, schema)
+                .setChangeMode(ChangeMode.REMOVAL)
+                .setValidationMode(true)
+                .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
+                .execute();
         new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.REMOVAL)
                 .setValidationMode(true)
@@ -174,6 +180,9 @@ public class DomainServiceTest extends DomainDataTest {
                 .execute();
 
         Assert.assertArrayEquals(new String[] {com.infomaximum.database.schema.newschema.Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
+        com.infomaximum.database.schema.newschema.Schema afterSchema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
+        Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
+        Assertions.assertThat(afterSchema.getDbSchema().getTables()).isEmpty();
     }
 
     private void testNotWorking() throws Exception {
