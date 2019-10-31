@@ -3,6 +3,7 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.exception.TableNotFoundException;
 import com.infomaximum.database.provider.DBProvider;
 
 import java.util.*;
@@ -65,11 +66,49 @@ public class Schema {
     }
 
     public static void install(Set<Class<? extends DomainObject>> domainClasses, DBProvider dbProvider) throws DatabaseException {
-        com.infomaximum.database.schema.newschema.Schema schema = com.infomaximum.database.schema.newschema.Schema.create(dbProvider);
-        Set<StructEntity> modifiableDomains = domainClasses.stream().map(Schema::getNewEntity).collect(Collectors.toSet());
-        for (StructEntity domain : modifiableDomains) {
-            schema.createTable(domain);
+        com.infomaximum.database.schema.newschema.Schema schema;
+        if (com.infomaximum.database.schema.newschema.Schema.exists(dbProvider)) {
+            schema = com.infomaximum.database.schema.newschema.Schema.read(dbProvider);
+        } else {
+            schema = com.infomaximum.database.schema.newschema.Schema.create(dbProvider);
         }
+        Set<StructEntity> modifiableDomains = domainClasses.stream().map(Schema::getNewEntity).collect(Collectors.toSet());
+        if (modifiableDomains.stream().noneMatch(schema::existTable)) {
+            createTables(schema, modifiableDomains);
+        }
+        if (modifiableDomains.stream().anyMatch(d -> !schema.existTable(d))) {
+            throw new SchemaException("Inconsistent schema error. Schema doesn't contain table: " + modifiableDomains.stream().filter(d -> !schema.existTable(d))
+                    .map(StructEntity::getColumnFamily)
+                    .findAny()
+                    .orElse(null));
+        }
+    }
+
+    private static void createTables(com.infomaximum.database.schema.newschema.Schema schema, Set<StructEntity> modifiableDomains) throws DatabaseException {
+        Set<StructEntity> notCreatedTables = new HashSet<>();
+        for (StructEntity domain : modifiableDomains) {
+            if (isForeignDependenciesCreated(schema, domain)) {
+                schema.createTable(domain);
+            } else {
+                notCreatedTables.add(domain);
+            }
+        }
+        if (notCreatedTables.size() == 0) {
+            return;
+        }
+        if (notCreatedTables.size() == modifiableDomains.size()) {
+            throw new TableNotFoundException(notCreatedTables.stream().findFirst().get().getName());
+        }
+        createTables(schema, notCreatedTables);
+    }
+
+    private static boolean isForeignDependenciesCreated(com.infomaximum.database.schema.newschema.Schema schema, StructEntity domain) {
+        for (Field field : domain.getFields()) {
+            if (field.isForeign() && field.getForeignDependency() != domain && !schema.existTable(field.getForeignDependency())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public com.infomaximum.database.schema.newschema.Schema getDbSchema() {

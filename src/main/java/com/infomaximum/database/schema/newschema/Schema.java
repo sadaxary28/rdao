@@ -8,6 +8,8 @@ import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -24,6 +26,8 @@ import java.util.function.Predicate;
  * ее описание на диске и структура данных будут несогласованны
  */
 public class Schema {
+
+    private final static Logger log = LoggerFactory.getLogger(Schema.class);
 
     public static Set<Class<? extends Serializable>> SUPPORTED_FIELD_TYPES = new HashSet<>(Arrays.asList(
             String.class, byte[].class,
@@ -68,9 +72,18 @@ public class Schema {
         return newSchema;
     }
 
+    public static boolean exists(DBProvider dbProvider) throws DatabaseException {
+        return dbProvider.containsColumnFamily(SERVICE_COLUMN_FAMILY);
+    }
+
     private static DBSchema readSchema(DBProvider dbProvider) throws DatabaseException {
         String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
         String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
+        validateSchema(version, schemaJson);
+        return DBSchema.fromStrings(version, schemaJson);
+    }
+
+    private static void validateSchema(String version, String schemaJson) throws DatabaseException {
         if (version == null) {
             if (schemaJson == null) {
                 throw new SchemaException("Schema not found");
@@ -83,8 +96,6 @@ public class Schema {
         if (!CURRENT_VERSION.equals(version)) {
             throw new SchemaException("Incorrect version of the database (" + version + "). Current version is " + CURRENT_VERSION + ".");
         }
-
-        return DBSchema.fromStrings(version, schemaJson);
     }
 
     private static void saveSchema(DBSchema schema, DBProvider dbProvider) throws DatabaseException {
@@ -113,6 +124,10 @@ public class Schema {
         }
     }
 
+    public boolean existTable(StructEntity table) {
+        return dbSchema.findTableIndex(table.getName(), table.getNamespace()) != -1;
+    }
+
     public void createTable(StructEntity table) throws DatabaseException {
         int tableIndex = dbSchema.findTableIndex(table.getName(), table.getNamespace());
         DBTable dbTable;
@@ -121,7 +136,7 @@ public class Schema {
 
             dbProvider.createColumnFamily(dbTable.getDataColumnFamily());
             dbProvider.createColumnFamily(dbTable.getIndexColumnFamily());
-            dbProvider.createSequence(dbTable.getName());
+            dbProvider.createSequence(dbTable.getDataColumnFamily());
         } else {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
