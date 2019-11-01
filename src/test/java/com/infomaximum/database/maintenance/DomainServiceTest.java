@@ -50,8 +50,8 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void createAll() throws Exception {
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         testNotWorking();
+        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
