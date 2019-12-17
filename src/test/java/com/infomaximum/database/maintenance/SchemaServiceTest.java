@@ -1,9 +1,9 @@
 package com.infomaximum.database.maintenance;
 
-import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.schema.newschema.Schema;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
@@ -13,6 +13,7 @@ import org.junit.Test;
 
 public class SchemaServiceTest extends DomainDataTest {
 
+    //todo add install
     @Test
     public void validateValidScheme() throws DatabaseException {
         createDomain(StoreFileReadable.class);
@@ -20,7 +21,7 @@ public class SchemaServiceTest extends DomainDataTest {
         new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
 
         Assert.assertTrue(true);
@@ -32,7 +33,7 @@ public class SchemaServiceTest extends DomainDataTest {
             new SchemaService(rocksDBProvider)
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                    .setSchema(Schema.read(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -46,7 +47,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.REMOVAL)
                 .setValidationMode(false)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
     }
 
@@ -56,7 +57,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
     }
@@ -71,7 +72,7 @@ public class SchemaServiceTest extends DomainDataTest {
             new SchemaService(rocksDBProvider)
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                    .setSchema(Schema.read(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -88,7 +89,7 @@ public class SchemaServiceTest extends DomainDataTest {
         new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
     }
@@ -106,7 +107,7 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
                 .appendIgnoringNamespace(ignoringNamespace)
-                .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
         Assert.assertTrue(true);
 
@@ -116,7 +117,7 @@ public class SchemaServiceTest extends DomainDataTest {
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
                     .appendIgnoringNamespace(ignoringNamespace)
-                    .setSchema(new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider))
+                    .setSchema(Schema.read(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (InconsistentDatabaseException e) {
@@ -141,9 +142,7 @@ public class SchemaServiceTest extends DomainDataTest {
             new SchemaService(rocksDBProvider)
                     .setNamespace("com.infomaximum.store")
                     .setValidationMode(true)
-                    .setSchema(new Schema.Builder()
-                            .withDomain(StoreFileEditable.class)
-                            .build(rocksDBProvider))
+                    .setSchema(Schema.read(rocksDBProvider))
                     .execute();
             Assert.fail();
         } catch (ForeignDependencyException ex) {
@@ -171,9 +170,7 @@ public class SchemaServiceTest extends DomainDataTest {
         new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setValidationMode(true)
-                .setSchema(new Schema.Builder()
-                        .withDomain(StoreFileEditable.class)
-                        .build(rocksDBProvider))
+                .setSchema(Schema.read(rocksDBProvider))
                 .execute();
     }
 }

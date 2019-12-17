@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.schema.newschema.PrefixIndex;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 

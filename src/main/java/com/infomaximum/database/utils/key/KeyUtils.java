@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.exception.runtime.KeyCorruptedException;
-import com.infomaximum.database.schema.BaseIndex;
+import com.infomaximum.database.schema.newschema.BaseIndex;
 
 public class KeyUtils {
 

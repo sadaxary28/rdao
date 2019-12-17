@@ -2,7 +2,6 @@ package com.infomaximum.database.schema.newschema;
 
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.DomainDataJ5Test;
-import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.schema.newschema.dbstruct.DBField;
 import com.infomaximum.database.schema.newschema.dbstruct.DBSchema;
 import com.infomaximum.database.schema.newschema.dbstruct.DBTable;

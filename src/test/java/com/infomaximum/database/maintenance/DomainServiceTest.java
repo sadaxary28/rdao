@@ -13,6 +13,9 @@ import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.schema.newschema.BaseIndex;
+import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.newschema.StructEntity;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
@@ -22,6 +25,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Collections;
 
 
 public class DomainServiceTest extends DomainDataTest {
@@ -35,8 +40,7 @@ public class DomainServiceTest extends DomainDataTest {
     @Before
     public void init() throws Exception {
         super.init();
-
-        new Schema.Builder().withDomain(StoreFileReadable.class).build(rocksDBProvider);
+        SchemaService.install(Collections.singleton(StoreFileReadable.class), rocksDBProvider);
     }
 
     private com.infomaximum.database.schema.newschema.Schema ensureSchema(Class<? extends DomainObject>... domains) throws DatabaseException {

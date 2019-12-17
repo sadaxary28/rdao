@@ -5,7 +5,7 @@ import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
-import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.newschema.Schema;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
@@ -269,7 +269,7 @@ public class TransactionTest extends StoreFileDataTest {
     @Test
     public void removeAll() throws Exception {
         com.infomaximum.database.schema.newschema.Schema schema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
-        schema.createTable(Schema.getEntity(ExchangeFolderEditable.class));
+        schema.createTable(com.infomaximum.database.schema.newschema.Schema.getEntity(ExchangeFolderEditable.class));
 
         createDomain(ExchangeFolderReadable.class);
 

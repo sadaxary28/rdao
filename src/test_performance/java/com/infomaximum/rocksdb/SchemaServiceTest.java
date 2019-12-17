@@ -1,9 +1,9 @@
 package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.domainobject.DomainDataTest;
-import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.SchemaService;
+import com.infomaximum.database.schema.newschema.Schema;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.rocksdb.util.PerfomanceTest;
@@ -32,9 +32,7 @@ public class SchemaServiceTest extends DomainDataTest {
         SchemaService schemaService = new SchemaService(rocksDBProvider)
                 .setNamespace("com.infomaximum.store")
                 .setChangeMode(ChangeMode.NONE)
-                .setSchema(new Schema.Builder()
-                        .withDomain(StoreFileEditable.class)
-                        .build(rocksDBProvider));
+                .setSchema(Schema.read(rocksDBProvider));
 
         PerfomanceTest.test(10, step -> {
             schemaService.execute();

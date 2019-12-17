@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema;
+package com.infomaximum.database.schema.newschema;
 
 import com.infomaximum.database.utils.IntervalIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;

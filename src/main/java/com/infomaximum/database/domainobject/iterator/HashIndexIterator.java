@@ -5,8 +5,8 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.Field;
-import com.infomaximum.database.schema.HashIndex;
+import com.infomaximum.database.schema.newschema.Field;
+import com.infomaximum.database.schema.newschema.HashIndex;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.key.HashIndexKey;
 

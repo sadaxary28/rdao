@@ -4,7 +4,6 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.*;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.provider.*;
-import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
@@ -43,7 +42,7 @@ public class Schema {
 
     private final DBProvider dbProvider;
     private final DBSchema dbSchema;
-    private final ConcurrentMap<Class<? extends DomainObject>, StructEntity> objTables = new ConcurrentHashMap<>();
+    private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> objTables = new ConcurrentHashMap<>();
 
     private Schema(DBProvider dbProvider, DBSchema schema) throws DatabaseException {
         this.dbProvider = dbProvider;
@@ -181,29 +180,26 @@ public class Schema {
         return true;
     }
 
-//    @SuppressWarnings("unchecked")
-//    public <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
-//        return objTables.computeIfAbsent(objClass, this::buildObjTable);
-//    }
+    public static StructEntity getEntity(Class<? extends DomainObject> clazz) {
+        StructEntity entity = objTables.get(clazz);
+        if (entity == null) {
+            entity = objTables.get(StructEntity.getAnnotationClass(clazz));
+            objTables.putIfAbsent(clazz, entity);
+        }
+        return entity;
+    }
 
-//    private <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
-//        StructEntity entity = new StructEntity(objClass);
-//        Table table = TableUtils.buildTable(entity);
-//        DBTable dbTable = getDbSchema().getTable(table.getName());
-//        if (!DBTableUtils.buildTable(dbTable, dbSchema).equals(table)) {
-//            throw new SchemaException("Class annotation of " + objClass.getSimpleName() + " not match the schema in the database");
-//        }
-//
-//        DBField[] orderedFields = new DBField[entity.fields().length];
-//        for (com.infomaximum.database.domainobject.anotation.Field field: entity.fields()) {
-//            if (orderedFields[field.number()] != null) {
-//                throw new FieldAlreadyExistsException(field.number(), objClass);
-//            }
-//            orderedFields[field.number()] = dbTable.getField(field.name());
-//        }
-//
-//        return new ObjInfo<>(dbTable, getConstructor(objClass), orderedFields);
-//    }
+    public static <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
+        return objTables.computeIfAbsent(objClass, Schema::buildObjTable);
+    }
+
+    private static <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
+        return new StructEntity(objClass);
+    }
+
+    public Collection<StructEntity> getDomains() {
+        return objTables.values();
+    }
 
     //
 //    public void checkIntegrity() throws DatabaseException {

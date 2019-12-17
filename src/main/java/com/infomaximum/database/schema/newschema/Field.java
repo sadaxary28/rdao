@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema;
+package com.infomaximum.database.schema.newschema;
 
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.exception.runtime.StructEntityException;
@@ -23,7 +23,7 @@ public class Field {
         this.converter = buildPacker(field.packerType());
         if (field.foreignDependency() != Class.class) {
             if (parent.getObjectClass() != field.foreignDependency()) {
-                this.foreignDependency = Schema.ensureEntity(field.foreignDependency());
+                this.foreignDependency = Schema.resolve(field.foreignDependency());
             } else {
                 this.foreignDependency = parent;
             }

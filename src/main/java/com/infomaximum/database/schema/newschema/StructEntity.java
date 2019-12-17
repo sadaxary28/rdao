@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema;
+package com.infomaximum.database.schema.newschema;
 
 import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -216,7 +216,7 @@ public class StructEntity {
         return referencingForeignFields;
     }
 
-    static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
+    public static Class<? extends DomainObject> getAnnotationClass(Class<? extends DomainObject> clazz) {
         while (!clazz.isAnnotationPresent(Entity.class)) {
             if (!DomainObject.class.isAssignableFrom(clazz.getSuperclass())) {
                 throw new StructEntityException("Not found " + Entity.class + " annotation in " + clazz + ".");

@@ -1,20 +1,5 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.infomaximum.database.domainobject.DomainDataTest;
-import com.infomaximum.database.domainobject.DomainObjectSource;
-import com.infomaximum.database.domainobject.filter.*;
-import com.infomaximum.database.schema.BaseIndex;
-import com.infomaximum.database.utils.TypeConvert;
-import com.infomaximum.domain.BoundaryEditable;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 //
 //@ExtendWith(PowerMockExtension.class)
 //@PrepareForTest(BaseIndex.class)

@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema;
+package com.infomaximum.database.schema.newschema;
 
 public interface TypeConverter<T> {
 
