@@ -7,6 +7,7 @@ import com.infomaximum.database.utils.TypeConvert;
 import java.util.Collection;
 import java.util.List;
 
+@Deprecated
 public class RangeIndex extends BaseIntervalIndex {
 
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("rng");
