@@ -44,13 +44,12 @@ public class DBTable extends DBObject {
     private final List<DBHashIndex> hashIndexes;
     private final List<DBPrefixIndex> prefixIndexes;
     private final List<DBIntervalIndex> intervalIndexes;
-    private final List<DBRangeIndex> rangeIndexes;
 
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     private DBTable(int id, String name, String namespace, List<DBField> fields,
                     List<DBHashIndex> hashIndexes, List<DBPrefixIndex> prefixIndexes,
-                    List<DBIntervalIndex> intervalIndexes, List<DBRangeIndex> rangeIndexes) {
+                    List<DBIntervalIndex> intervalIndexes) {
         super(id);
         this.dataColumnFamily = namespace + StructEntity.NAMESPACE_SEPARATOR + name;
         this.indexColumnFamily = namespace + StructEntity.NAMESPACE_SEPARATOR + name + ".index";
@@ -60,11 +59,10 @@ public class DBTable extends DBObject {
         this.hashIndexes = hashIndexes;
         this.prefixIndexes = prefixIndexes;
         this.intervalIndexes = intervalIndexes;
-        this.rangeIndexes = rangeIndexes;
     }
 
     DBTable(int id, String name, String namespace, List<DBField> fields) {
-        this(id, name, namespace, fields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        this(id, name, namespace, fields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public String getDataColumnFamily() {
@@ -134,16 +132,11 @@ public class DBTable extends DBObject {
         return intervalIndexes;
     }
 
-    public List<DBRangeIndex> getRangeIndexes() {
-        return rangeIndexes;
-    }
-
     public Stream<? extends DBIndex> getIndexesStream() {
-        return Stream.concat(Stream.concat(Stream.concat(
+        return Stream.concat(Stream.concat(
                 hashIndexes.stream(),
                 prefixIndexes.stream()),
-                intervalIndexes.stream()),
-                rangeIndexes.stream());
+                intervalIndexes.stream());
     }
 
     public void attachIndex(DBHashIndex index) {
@@ -156,10 +149,6 @@ public class DBTable extends DBObject {
 
     public void attachIndex(DBIntervalIndex index) {
         attachIndex(index, intervalIndexes);
-    }
-
-    public void attachIndex(DBRangeIndex index) {
-        attachIndex(index, rangeIndexes);
     }
 
     void checkIntegrity() throws SchemaException {
@@ -178,12 +167,6 @@ public class DBTable extends DBObject {
 
         for (DBIntervalIndex i : intervalIndexes) {
             indexingFieldIds.add(i.getIndexedFieldId());
-            IntStream.of(i.getHashFieldIds()).forEach(indexingFieldIds::add);
-        }
-
-        for (DBRangeIndex i : rangeIndexes) {
-            indexingFieldIds.add(i.getBeginFieldId());
-            indexingFieldIds.add(i.getEndFieldId());
             IntStream.of(i.getHashFieldIds()).forEach(indexingFieldIds::add);
         }
 
@@ -209,8 +192,7 @@ public class DBTable extends DBObject {
                 JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson),
                 JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, DBHashIndex::fromJson),
                 JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, DBPrefixIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, DBIntervalIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_RANGE_INDEXES, source, DBRangeIndex::fromJson)
+                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, DBIntervalIndex::fromJson)
         );
     }
 
@@ -224,7 +206,6 @@ public class DBTable extends DBObject {
         object.put(JSON_PROP_HASH_INDEXES, JsonUtils.toJsonArray(hashIndexes));
         object.put(JSON_PROP_PREFIX_INDEXES, JsonUtils.toJsonArray(prefixIndexes));
         object.put(JSON_PROP_INTERVAL_INDEXES, JsonUtils.toJsonArray(intervalIndexes));
-        object.put(JSON_PROP_RANGE_INDEXES, JsonUtils.toJsonArray(rangeIndexes));
         return object;
     }
 }

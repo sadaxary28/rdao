@@ -14,8 +14,7 @@ class DBTableUtils {
 //                table.getFields().stream().map(field -> DBTableUtils.buildField(field, schema)).collect(Collectors.toList()),
 //                table.getHashIndexes().stream().map(index -> DBTableUtils.buildIndex(index, table)).collect(Collectors.toList()),
 //                table.getPrefixIndexes().stream().map(index -> DBTableUtils.buildIndex(index, table)).collect(Collectors.toList()),
-//                table.getIntervalIndexes().stream().map(index -> DBTableUtils.buildIndex(index, table)).collect(Collectors.toList()),
-//                table.getRangeIndexes().stream().map(index -> DBTableUtils.buildIndex(index, table)).collect(Collectors.toList())
+//                table.getIntervalIndexes().stream().map(index -> DBTableUtils.buildIndex(index, table)).collect(Collectors.toList())
 //        );
 //    }
 
@@ -45,13 +44,6 @@ class DBTableUtils {
 //                toFieldNames(index.getHashFieldIds(), table)
 //        );
 //    }
-//
-//    static RangeIndex buildIndex(DBRangeIndex index, DBTable table) throws SchemaException {
-//        return new RangeIndex(
-//                getFieldName(index.getBeginFieldId(), table),
-//                getFieldName(index.getEndFieldId(), table),
-//                toFieldNames(index.getHashFieldIds(), table)
-//        );
 //    }
 
     private static String getFieldName(int fieldId, DBTable table) throws SchemaException {

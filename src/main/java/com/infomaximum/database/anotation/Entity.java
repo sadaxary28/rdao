@@ -17,5 +17,4 @@ public @interface Entity {
     HashIndex[] hashIndexes() default {};
     PrefixIndex[] prefixIndexes() default {};
     IntervalIndex[] intervalIndexes() default {};
-    RangeIndex[] rangeIndexes() default {};
 }
