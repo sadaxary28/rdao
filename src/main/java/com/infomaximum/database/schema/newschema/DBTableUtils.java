@@ -77,14 +77,6 @@ class DBTableUtils {
         );
     }
 
-    static DBRangeIndex buildIndex(RangeIndex index, DBTable table) throws SchemaException {
-        return new DBRangeIndex(
-                table.getField(index.getBeginIndexedField().getName()).getId(),
-                table.getField(index.getEndIndexedField().getName()).getId(),
-                toSortedFieldIds(index.getHashedFields().stream().map(Field::getName).toArray(String[]::new), table)
-        );
-    }
-
     private static int[] toSortedFieldIds(String[] fieldNames, DBTable table) throws SchemaException {
         int[] ids = new int[fieldNames.length];
         for (int i = 0; i < fieldNames.length; ++i) {

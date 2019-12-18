@@ -372,12 +372,6 @@ public class Schema {
         return dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
     }
 
-    public boolean dropIndex(RangeIndex index, String tableName, String namespace) throws DatabaseException {
-        DBTable table = dbSchema.getTable(tableName, namespace);
-        DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
-        return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
-    }
-
     private void saveSchema() throws DatabaseException {
         saveSchema(dbSchema, dbProvider);
     }

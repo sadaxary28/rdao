@@ -82,8 +82,6 @@ public abstract class DataEnumerable {
             return new PrefixIndexIterator<>( this, clazz, loadingFields, (PrefixFilter)filter);
         } else if (filter instanceof IntervalFilter) {
             return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
-        } else if (filter instanceof RangeFilter) {
-            return new RangeIndexIterator<>(this, clazz, loadingFields, (RangeFilter) filter);
         } else if (filter instanceof IdFilter) {
             return new IdIterator<>(this, clazz, loadingFields, (IdFilter) filter);
         }
