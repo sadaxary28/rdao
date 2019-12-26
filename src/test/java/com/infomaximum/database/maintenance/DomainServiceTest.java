@@ -122,6 +122,17 @@ public class DomainServiceTest extends DomainDataTest {
         checkIndexExist(entity,
                 () -> entity.getIntervalIndexes().forEach(this::removeIndex),
                 schema);
+
+        checkIndexExist(entity,
+                () -> entity.getRangeIndexes().forEach(this::removeIndex),
+                schema);
+
+        checkIndexExist(entity,
+                () -> {
+                    entity.getHashIndexes().forEach(this::removeIndex);
+                    entity.getRangeIndexes().forEach(this::removeIndex);
+                },
+                schema);
     }
 
     @Test

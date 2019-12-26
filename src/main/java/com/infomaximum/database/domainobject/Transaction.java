@@ -12,10 +12,12 @@ import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.newschema.*;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
+import com.infomaximum.database.utils.RangeIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
+import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.io.Serializable;
 import java.util.*;
@@ -97,6 +99,14 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
             }
         }
 
+        // update range-indexed values
+        for (RangeIndex index: object.getStructEntity().getRangeIndexes()) {
+            if (anyChanged(index.sortedFields, newValues)) {
+                tryLoadFields(columnFamily, object, index.sortedFields, loadedValues);
+                updateIndexedValue(index, object, loadedValues, newValues, transaction);
+            }
+        }
+
         // update self-object
         if (object._isJustCreated()) {
             transaction.put(columnFamily, new FieldKey(object.getId()).pack(), TypeConvert.EMPTY_BYTE_ARRAY);
@@ -156,6 +166,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
                     // delete interval-indexed values
                     for (IntervalIndex index : entity.getIntervalIndexes()) {
+                        tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
+                        removeIndexedValue(index, objId, loadedValues, transaction);
+                    }
+
+                    // delete range-indexed values
+                    for (RangeIndex index : entity.getRangeIndexes()) {
                         tryLoadFields(columnFamily, objId, index.sortedFields, loadedValues);
                         removeIndexedValue(index, objId, loadedValues, transaction);
                     }
@@ -317,6 +333,38 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
         indexKey.setIndexedValue(values[index.getIndexedField().getNumber()].getValue());
 
         transaction.singleDelete(index.columnFamily, indexKey.pack());
+    }
+
+    private static void updateIndexedValue(RangeIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
+        final List<Field> hashedFields = index.getHashedFields();
+        final RangeIndexKey indexKey = new RangeIndexKey(obj.getId(), new long[hashedFields.size()], index);
+
+        if (!obj._isJustCreated()) {
+            // Remove old value-index
+            HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
+            RangeIndexUtils.removeIndexedRange(index, indexKey,
+                    prevValues[index.getBeginIndexedField().getNumber()].getValue(),
+                    prevValues[index.getEndIndexedField().getNumber()].getValue(),
+                    transaction, transaction::delete);
+        }
+
+        // Add new value-index
+        setHashValues(hashedFields, prevValues, newValues, indexKey.getHashedValues());
+        RangeIndexUtils.insertIndexedRange(index, indexKey,
+                getValue(index.getBeginIndexedField(), prevValues, newValues),
+                getValue(index.getEndIndexedField(), prevValues, newValues),
+                transaction);
+    }
+
+    private static void removeIndexedValue(RangeIndex index, long id, Value<Serializable>[] values, DBTransaction transaction) throws DatabaseException {
+        final List<Field> hashedFields = index.getHashedFields();
+        final RangeIndexKey indexKey = new RangeIndexKey(id, new long[hashedFields.size()], index);
+
+        HashIndexUtils.setHashValues(hashedFields, values, indexKey.getHashedValues());
+        RangeIndexUtils.removeIndexedRange(index, indexKey,
+                values[index.getBeginIndexedField().getNumber()].getValue(),
+                values[index.getEndIndexedField().getNumber()].getValue(),
+                transaction, transaction::singleDelete);
     }
 
     private static void setHashValues(List<Field> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, long[] destination) {

@@ -36,6 +36,7 @@ public class StructEntity {
     private final List<HashIndex> hashIndexes;
     private final List<PrefixIndex> prefixIndexes;
     private final List<IntervalIndex> intervalIndexes;
+    private final List<RangeIndex> rangeIndexes;
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     public StructEntity(Class<? extends DomainObject> clazz) {
@@ -75,6 +76,7 @@ public class StructEntity {
         this.hashIndexes = buildHashIndexes(annotationEntity);
         this.prefixIndexes = buildPrefixIndexes(annotationEntity);
         this.intervalIndexes = buildIntervalIndexes(annotationEntity);
+        this.rangeIndexes = buildRangeIndexes(annotationEntity);
     }
 
     private void registerToForeignEntity(Field foreignField) {
@@ -176,6 +178,24 @@ public class StructEntity {
         throw new IndexNotFoundException(IntervalIndex.toString(getFieldNames(hashedFields), getField(indexedField).getName()), clazz);
     }
 
+    public RangeIndex getRangeIndex(Collection<Integer> hashedFields, int beginField, int endField) {
+        for (RangeIndex index : rangeIndexes) {
+            if (index.sortedFields.size() != (hashedFields.size() + 2)) {
+                continue;
+            }
+
+            if (index.getBeginIndexedField().getNumber() != beginField || index.getEndIndexedField().getNumber() != endField) {
+                continue;
+            }
+
+            if (index.getHashedFields().stream().allMatch(f -> hashedFields.contains(f.getNumber()))) {
+                return index;
+            }
+        }
+
+        throw new IndexNotFoundException(RangeIndex.toString(getFieldNames(hashedFields), getField(beginField).getName(), getField(endField).getName()), clazz);
+    }
+
     public List<HashIndex> getHashIndexes() {
         return hashIndexes;
     }
@@ -186,6 +206,10 @@ public class StructEntity {
 
     public List<IntervalIndex> getIntervalIndexes() {
         return intervalIndexes;
+    }
+
+    public List<RangeIndex> getRangeIndexes() {
+        return rangeIndexes;
     }
 
     public List<Reference> getReferencingForeignFields() {
@@ -256,6 +280,19 @@ public class StructEntity {
         List<IntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
         for (com.infomaximum.database.anotation.IntervalIndex index: entity.intervalIndexes()) {
             result.add(new IntervalIndex(index, this));
+        }
+        checkExclusiveAttendants(result);
+        return Collections.unmodifiableList(result);
+    }
+
+    private List<RangeIndex> buildRangeIndexes(Entity entity) {
+        if (entity.rangeIndexes().length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<RangeIndex> result = new ArrayList<>(entity.rangeIndexes().length);
+        for (com.infomaximum.database.anotation.RangeIndex index: entity.rangeIndexes()) {
+            result.add(new RangeIndex(index, this));
         }
         checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
