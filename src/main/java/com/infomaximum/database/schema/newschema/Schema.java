@@ -261,6 +261,7 @@ public class Schema {
         dropIndexesByField(field, table.getHashIndexes(), table);
         dropIndexesByField(field, table.getPrefixIndexes(), table);
         dropIndexesByField(field, table.getIntervalIndexes(), table);
+        dropIndexesByField(field, table.getRangeIndexes(), table);
 
         dropFieldData(field, table);
 

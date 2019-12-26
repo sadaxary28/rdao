@@ -133,6 +133,12 @@ class SchemaTest extends DomainDataJ5Test {
         expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(3, 1));
         expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(3, 6));
 
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(10, 11));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(10, 11, 6));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(8, 9));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(8, 9, 6));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(12, 13));
+
         DBTableTestUtil.assertThatContains(rocksDBProvider, expected);
     }
 

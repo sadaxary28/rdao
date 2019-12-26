@@ -29,6 +29,10 @@ import com.infomaximum.database.domainobject.filter.RangeFilter;
                 @IntervalIndex(indexedField = BoundaryReadable.FIELD_LONG_1),
                 @IntervalIndex(indexedField = BoundaryReadable.FIELD_LONG_2),
                 @IntervalIndex(indexedField = BoundaryReadable.FIELD_LONG_3)
+        },
+        rangeIndexes = {
+                @RangeIndex(beginField = BoundaryReadable.FIELD_LONG_1, endField = BoundaryReadable.FIELD_LONG_2),
+                @RangeIndex(beginField = BoundaryReadable.FIELD_LONG_2, endField = BoundaryReadable.FIELD_LONG_3)
         }
 )
 public class BoundaryReadable extends DomainObject {

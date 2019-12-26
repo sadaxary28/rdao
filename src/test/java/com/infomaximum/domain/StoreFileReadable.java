@@ -49,6 +49,13 @@ import java.time.LocalDateTime;
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_LOCAL_BEGIN),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @IntervalIndex(indexedField = StoreFileReadable.FIELD_SIZE, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID})
+        },
+        rangeIndexes = {
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN, endField = StoreFileReadable.FIELD_END, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID}),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_BEGIN_TIME, endField = StoreFileReadable.FIELD_END_TIME, hashedFields = {StoreFileReadable.FIELD_FOLDER_ID}),
+                @RangeIndex(beginField = StoreFileReadable.FIELD_LOCAL_BEGIN, endField = StoreFileReadable.FIELD_LOCAL_END)
         }
 )
 public class StoreFileReadable extends DomainObject {
