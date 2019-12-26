@@ -60,17 +60,7 @@ public class SchemaService {
         if (namespace == null || namespace.isEmpty()) {
             throw new IllegalArgumentException();
         }
-
-//        validateConsistentNames();
-
-        for (StructEntity domain : schema.getDomains()) {
-            new DomainService(dbProvider, schema)
-                    .setChangeMode(changeModeMode)
-                    .setValidationMode(isValidationMode)
-                    .setDomain(domain)
-                    .execute();
-        }
-
+        schema.checkIntegrity();
         validate();
     }
 
@@ -138,6 +128,7 @@ public class SchemaService {
                     .findAny()
                     .orElse(null));
         }
+        schema.checkIntegrity();
     }
 
     private static StructEntity getNewEntity(Class<? extends DomainObject> domain) {

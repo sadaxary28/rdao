@@ -208,44 +208,30 @@ public class Schema {
         return objTables.values();
     }
 
-    //
-//    public void checkIntegrity() throws DatabaseException {
-//        dbSchema.checkIntegrity();
-//
-//        for (DBTable table : dbSchema.getTables()) {
-//            if (!dbProvider.containsColumnFamily(table.getDataColumnFamily())) {
-//                throw new SchemaException("ColumnFamily '" + table.getDataColumnFamily() + "' not found, table='" + table.getName() + "'");
-//            }
-//
-//            if (!dbProvider.containsColumnFamily(table.getIndexColumnFamily())) {
-//                throw new SchemaException("ColumnFamily '" + table.getIndexColumnFamily() + "' not found, table='" + table.getName() + "'");
-//            }
-//
-//            if (!sequenceManager.getSequences().containsKey(table.getId())) {
-//                throw new SequenceNotFoundException(table);
-//            }
-//        }
-//
-//        Set<Integer> existingTableIds = dbSchema.getTables().stream().map(DBObject::getId).collect(Collectors.toSet());
-//        sequenceManager.getSequences().keySet().stream()
-//                .filter(fieldId -> !existingTableIds.contains(fieldId))
-//                .findFirst()
-//                .ifPresent(tableId -> {
-//                    throw new SchemaException("Table id=" + tableId + " not found");
-//                });
-//    }
-//
-//    public List<Table> getTables() {
-//        return dbSchema.getTables().stream()
-//                .map(t -> DBTableUtils.buildTable(t, dbSchema))
-//                .collect(Collectors.toList());
-//    }
-//
-//    public void renameTable(String oldName, String newName) throws DatabaseException {
-//        dbSchema.getTable(oldName).setName(newName);
-//        saveSchema();
-//    }
-//
+    public void checkIntegrity() throws DatabaseException {
+        dbSchema.checkIntegrity();
+
+        for (DBTable table : dbSchema.getTables()) {
+            if (!dbProvider.containsColumnFamily(table.getDataColumnFamily())) {
+                throw new SchemaException("ColumnFamily '" + table.getDataColumnFamily() + "' not found, table='" + table.getName() + "'");
+            }
+
+            if (!dbProvider.containsColumnFamily(table.getIndexColumnFamily())) {
+                throw new SchemaException("ColumnFamily '" + table.getIndexColumnFamily() + "' not found, table='" + table.getName() + "'");
+            }
+            if (!dbProvider.containsSequence(table.getDataColumnFamily())) {
+                throw new SequenceNotFoundException(table.getDataColumnFamily());
+            }
+        }
+
+    }
+
+    //todo check it
+    public void renameTable(String oldName, String newName, String namespace) throws DatabaseException {
+        dbSchema.getTable(oldName, namespace).setName(newName);
+        saveSchema();
+    }
+
 
     private DBField createField(Field tableField, DBTable dbTable, StructEntity table) throws DatabaseException {
         int i = dbTable.findFieldIndex(tableField.getName());
@@ -295,10 +281,10 @@ public class Schema {
         }
     }
 
-//    public void renameField(String oldName, String newName, String tableName) throws DatabaseException {
-//        dbSchema.getTable(tableName).getField(oldName).setName(newName);
-//        saveSchema();
-//    }
+    public void renameField(String oldName, String newName, String tableName, String namespace) throws DatabaseException {
+        dbSchema.getTable(tableName, namespace).getField(oldName).setName(newName);
+        saveSchema();
+    }
 
     private void createIndex(HashIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
         DBHashIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);

@@ -12,7 +12,6 @@ import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.newschema.*;
 import com.infomaximum.database.schema.newschema.Schema;
 import com.infomaximum.database.utils.key.FieldKey;
@@ -78,6 +77,7 @@ public class DomainService {
         columnFamilies.remove(domain.getIndexColumnFamily());
     }
 
+    //todo add it to remove module
     private void remove() throws DatabaseException {
         dbSchema.dropTable(domain.getName(), domain.getNamespace());
         for (String columnFamily : getColumnFamilies()) {
