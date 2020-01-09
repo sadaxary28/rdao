@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static com.infomaximum.database.schema.newschema.BaseIndex.ATTENDANT_BYTE_SIZE;
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 /**
  * Created by kris on 24.05.17.

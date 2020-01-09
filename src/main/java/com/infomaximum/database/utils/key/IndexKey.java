@@ -1,6 +1,6 @@
 package com.infomaximum.database.utils.key;
 
-import static com.infomaximum.database.schema.newschema.BaseIndex.ATTENDANT_BYTE_SIZE;
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 abstract class IndexKey extends Key {
 

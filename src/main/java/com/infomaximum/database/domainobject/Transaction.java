@@ -9,7 +9,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.runtime.ClosedObjectException;
 import com.infomaximum.database.provider.*;
-import com.infomaximum.database.schema.newschema.*;
+import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.database.utils.RangeIndexUtils;

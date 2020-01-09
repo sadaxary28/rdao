@@ -1,11 +1,10 @@
-package com.infomaximum.database.schema.newschema;
+package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.schema.DomainDataJ5Test;
-import com.infomaximum.database.schema.newschema.dbstruct.DBField;
-import com.infomaximum.database.schema.newschema.dbstruct.DBSchema;
-import com.infomaximum.database.schema.newschema.dbstruct.DBTable;
-import com.infomaximum.database.schema.newschema.dbstruct.DBTableTestUtil;
+import com.infomaximum.database.schema.dbstruct.DBField;
+import com.infomaximum.database.schema.dbstruct.DBSchema;
+import com.infomaximum.database.schema.dbstruct.DBTable;
+import com.infomaximum.database.schema.dbstruct.DBTableTestUtil;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.GeneralReadable;

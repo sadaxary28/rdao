@@ -2,7 +2,7 @@ package com.infomaximum.rocksdb;
 
 import com.infomaximum.database.domainobject.DomainDataTest;
 import com.infomaximum.database.exception.ColumnFamilyNotFoundException;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.DataTestEditable;
 import org.junit.Assert;

@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema.newschema;
+package com.infomaximum.database.schema;
 
 import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
@@ -16,9 +16,9 @@ public class StructEntity {
     public static class Reference {
 
         public final Class<? extends DomainObject> objClass;
-        public final HashIndex fieldIndex;
+        public final com.infomaximum.database.schema.HashIndex fieldIndex;
 
-        private Reference(Class<? extends DomainObject> objClass, HashIndex fieldIndex) {
+        private Reference(Class<? extends DomainObject> objClass, com.infomaximum.database.schema.HashIndex fieldIndex) {
             this.objClass = objClass;
             this.fieldIndex = fieldIndex;
         }
@@ -31,12 +31,12 @@ public class StructEntity {
     private final String columnFamily;
     private final String indexColumnFamily;
     private final String namespace;
-    private final Field[] fields;
-    private final Map<ByteArray, Field> nameBytesFields;
-    private final List<HashIndex> hashIndexes;
-    private final List<PrefixIndex> prefixIndexes;
-    private final List<IntervalIndex> intervalIndexes;
-    private final List<RangeIndex> rangeIndexes;
+    private final com.infomaximum.database.schema.Field[] fields;
+    private final Map<ByteArray, com.infomaximum.database.schema.Field> nameBytesFields;
+    private final List<com.infomaximum.database.schema.HashIndex> hashIndexes;
+    private final List<com.infomaximum.database.schema.PrefixIndex> prefixIndexes;
+    private final List<com.infomaximum.database.schema.IntervalIndex> intervalIndexes;
+    private final List<com.infomaximum.database.schema.RangeIndex> rangeIndexes;
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     public StructEntity(Class<? extends DomainObject> clazz) {
@@ -48,9 +48,9 @@ public class StructEntity {
         this.indexColumnFamily = buildIndexColumnFamily(this.columnFamily);
         this.namespace = annotationEntity.namespace();
 
-        Map<String, Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
+        Map<String, com.infomaximum.database.schema.Field> modifiableNameToFields = new HashMap<>(annotationEntity.fields().length);
 
-        this.fields = new Field[annotationEntity.fields().length];
+        this.fields = new com.infomaximum.database.schema.Field[annotationEntity.fields().length];
         for(com.infomaximum.database.anotation.Field field: annotationEntity.fields()) {
             //Проверяем на уникальность
             if (modifiableNameToFields.containsKey(field.name())) {
@@ -61,7 +61,7 @@ public class StructEntity {
                 throw new StructEntityException("Field number=" + field.number() + " already exists into " + clazz.getName() + ".");
             }
 
-            Field f = new Field(field, this);
+            com.infomaximum.database.schema.Field f = new com.infomaximum.database.schema.Field(field, this);
             fields[field.number()] = f;
 
             modifiableNameToFields.put(f.getName(), f);
@@ -79,7 +79,7 @@ public class StructEntity {
         this.rangeIndexes = buildRangeIndexes(annotationEntity);
     }
 
-    private void registerToForeignEntity(Field foreignField) {
+    private void registerToForeignEntity(com.infomaximum.database.schema.Field foreignField) {
         foreignField.getForeignDependency().referencingForeignFields.add(new Reference(clazz, buildForeignIndex(foreignField)));
     }
 
@@ -103,22 +103,22 @@ public class StructEntity {
         return clazz;
     }
 
-    public Field getField(ByteArray name) {
-        Field field = nameBytesFields.get(name);
+    public com.infomaximum.database.schema.Field getField(ByteArray name) {
+        com.infomaximum.database.schema.Field field = nameBytesFields.get(name);
         if (field == null) {
             throw new FieldNotFoundException(clazz, name.convertToString());
         }
         return field;
     }
 
-    public Field getField(int number) {
+    public com.infomaximum.database.schema.Field getField(int number) {
         if (number >= fields.length) {
             throw new FieldNotFoundException(clazz, "number=" + number);
         }
         return fields[number];
     }
 
-    public Field[] getFields() {
+    public com.infomaximum.database.schema.Field[] getFields() {
         return fields;
     }
 
@@ -132,8 +132,8 @@ public class StructEntity {
                 .collect(Collectors.toSet());
     }
 
-    public HashIndex getHashIndex(Collection<Integer> indexedFields) {
-        for (HashIndex index : hashIndexes) {
+    public com.infomaximum.database.schema.HashIndex getHashIndex(Collection<Integer> indexedFields) {
+        for (com.infomaximum.database.schema.HashIndex index : hashIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
@@ -143,11 +143,11 @@ public class StructEntity {
             }
         }
 
-        throw new IndexNotFoundException(HashIndex.toString(getFieldNames(indexedFields)), clazz);
+        throw new IndexNotFoundException(com.infomaximum.database.schema.HashIndex.toString(getFieldNames(indexedFields)), clazz);
     }
 
-    public PrefixIndex getPrefixIndex(Collection<Integer> indexedFields) {
-        for (PrefixIndex index : prefixIndexes) {
+    public com.infomaximum.database.schema.PrefixIndex getPrefixIndex(Collection<Integer> indexedFields) {
+        for (com.infomaximum.database.schema.PrefixIndex index : prefixIndexes) {
             if (index.sortedFields.size() != indexedFields.size()) {
                 continue;
             }
@@ -157,11 +157,11 @@ public class StructEntity {
             }
         }
 
-        throw new IndexNotFoundException(PrefixIndex.toString(getFieldNames(indexedFields)), clazz);
+        throw new IndexNotFoundException(com.infomaximum.database.schema.PrefixIndex.toString(getFieldNames(indexedFields)), clazz);
     }
 
-    public IntervalIndex getIntervalIndex(Collection<Integer> hashedFields, Integer indexedField) {
-        for (IntervalIndex index : intervalIndexes) {
+    public com.infomaximum.database.schema.IntervalIndex getIntervalIndex(Collection<Integer> hashedFields, Integer indexedField) {
+        for (com.infomaximum.database.schema.IntervalIndex index : intervalIndexes) {
             if (index.sortedFields.size() != (hashedFields.size() + 1)) {
                 continue;
             }
@@ -175,11 +175,11 @@ public class StructEntity {
             }
         }
 
-        throw new IndexNotFoundException(IntervalIndex.toString(getFieldNames(hashedFields), getField(indexedField).getName()), clazz);
+        throw new IndexNotFoundException(com.infomaximum.database.schema.IntervalIndex.toString(getFieldNames(hashedFields), getField(indexedField).getName()), clazz);
     }
 
-    public RangeIndex getRangeIndex(Collection<Integer> hashedFields, int beginField, int endField) {
-        for (RangeIndex index : rangeIndexes) {
+    public com.infomaximum.database.schema.RangeIndex getRangeIndex(Collection<Integer> hashedFields, int beginField, int endField) {
+        for (com.infomaximum.database.schema.RangeIndex index : rangeIndexes) {
             if (index.sortedFields.size() != (hashedFields.size() + 2)) {
                 continue;
             }
@@ -193,22 +193,22 @@ public class StructEntity {
             }
         }
 
-        throw new IndexNotFoundException(RangeIndex.toString(getFieldNames(hashedFields), getField(beginField).getName(), getField(endField).getName()), clazz);
+        throw new IndexNotFoundException(com.infomaximum.database.schema.RangeIndex.toString(getFieldNames(hashedFields), getField(beginField).getName(), getField(endField).getName()), clazz);
     }
 
-    public List<HashIndex> getHashIndexes() {
+    public List<com.infomaximum.database.schema.HashIndex> getHashIndexes() {
         return hashIndexes;
     }
 
-    public List<PrefixIndex> getPrefixIndexes() {
+    public List<com.infomaximum.database.schema.PrefixIndex> getPrefixIndexes() {
         return prefixIndexes;
     }
 
-    public List<IntervalIndex> getIntervalIndexes() {
+    public List<com.infomaximum.database.schema.IntervalIndex> getIntervalIndexes() {
         return intervalIndexes;
     }
 
-    public List<RangeIndex> getRangeIndexes() {
+    public List<com.infomaximum.database.schema.RangeIndex> getRangeIndexes() {
         return rangeIndexes;
     }
 
@@ -234,13 +234,13 @@ public class StructEntity {
         return parentColumnFamily + NAMESPACE_SEPARATOR + "index";
     }
 
-    private List<HashIndex> buildHashIndexes(Entity entity) {
-        List<HashIndex> result = new ArrayList<>(entity.hashIndexes().length);
+    private List<com.infomaximum.database.schema.HashIndex> buildHashIndexes(Entity entity) {
+        List<com.infomaximum.database.schema.HashIndex> result = new ArrayList<>(entity.hashIndexes().length);
         for (com.infomaximum.database.anotation.HashIndex index: entity.hashIndexes()) {
-            result.add(new HashIndex(index, this));
+            result.add(new com.infomaximum.database.schema.HashIndex(index, this));
         }
 
-        for (Field field : fields) {
+        for (com.infomaximum.database.schema.Field field : fields) {
             if (!field.isForeign()) {
                 continue;
             }
@@ -255,44 +255,44 @@ public class StructEntity {
         return Collections.unmodifiableList(result);
     }
 
-    private HashIndex buildForeignIndex(Field foreignField) {
-        return new HashIndex(foreignField, this);
+    private com.infomaximum.database.schema.HashIndex buildForeignIndex(com.infomaximum.database.schema.Field foreignField) {
+        return new com.infomaximum.database.schema.HashIndex(foreignField, this);
     }
 
-    private List<PrefixIndex> buildPrefixIndexes(Entity entity) {
+    private List<com.infomaximum.database.schema.PrefixIndex> buildPrefixIndexes(Entity entity) {
         if (entity.prefixIndexes().length == 0) {
             return Collections.emptyList();
         }
 
-        List<PrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
+        List<com.infomaximum.database.schema.PrefixIndex> result = new ArrayList<>(entity.prefixIndexes().length);
         for (com.infomaximum.database.anotation.PrefixIndex index: entity.prefixIndexes()) {
-            result.add(new PrefixIndex(index, this));
+            result.add(new com.infomaximum.database.schema.PrefixIndex(index, this));
         }
         checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
     }
 
-    private List<IntervalIndex> buildIntervalIndexes(Entity entity) {
+    private List<com.infomaximum.database.schema.IntervalIndex> buildIntervalIndexes(Entity entity) {
         if (entity.intervalIndexes().length == 0) {
             return Collections.emptyList();
         }
 
-        List<IntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
+        List<com.infomaximum.database.schema.IntervalIndex> result = new ArrayList<>(entity.intervalIndexes().length);
         for (com.infomaximum.database.anotation.IntervalIndex index: entity.intervalIndexes()) {
-            result.add(new IntervalIndex(index, this));
+            result.add(new com.infomaximum.database.schema.IntervalIndex(index, this));
         }
         checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);
     }
 
-    private List<RangeIndex> buildRangeIndexes(Entity entity) {
+    private List<com.infomaximum.database.schema.RangeIndex> buildRangeIndexes(Entity entity) {
         if (entity.rangeIndexes().length == 0) {
             return Collections.emptyList();
         }
 
-        List<RangeIndex> result = new ArrayList<>(entity.rangeIndexes().length);
+        List<com.infomaximum.database.schema.RangeIndex> result = new ArrayList<>(entity.rangeIndexes().length);
         for (com.infomaximum.database.anotation.RangeIndex index: entity.rangeIndexes()) {
-            result.add(new RangeIndex(index, this));
+            result.add(new com.infomaximum.database.schema.RangeIndex(index, this));
         }
         checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);

@@ -1,12 +1,12 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.provider.DBIterator;
-import com.infomaximum.database.schema.newschema.Field;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.domainobject.DataEnumerable;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.schema.newschema.Schema;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.exception.DatabaseException;
 

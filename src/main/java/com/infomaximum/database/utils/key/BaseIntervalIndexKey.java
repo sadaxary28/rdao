@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.schema.newschema.BaseIntervalIndex;
+import com.infomaximum.database.schema.BaseIntervalIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;

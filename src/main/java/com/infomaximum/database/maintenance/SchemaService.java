@@ -4,12 +4,12 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.exception.TableNotFoundException;
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.schema.newschema.Field;
-import com.infomaximum.database.schema.newschema.Schema;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
-import com.infomaximum.database.schema.newschema.dbstruct.DBTable;
+import com.infomaximum.database.schema.dbstruct.DBTable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -113,7 +113,7 @@ public class SchemaService {
 
     public static void install(Set<Class<? extends DomainObject>> domainClasses, DBProvider dbProvider) throws DatabaseException {
         Schema schema;
-        if (com.infomaximum.database.schema.newschema.Schema.exists(dbProvider)) {
+        if (Schema.exists(dbProvider)) {
             schema = Schema.read(dbProvider);
         } else {
             schema = Schema.create(dbProvider);
@@ -136,7 +136,7 @@ public class SchemaService {
         return new StructEntity(annotationClass);
     }
 
-    private static void createTables(com.infomaximum.database.schema.newschema.Schema schema, Set<StructEntity> modifiableDomains) throws DatabaseException {
+    private static void createTables(Schema schema, Set<StructEntity> modifiableDomains) throws DatabaseException {
         Set<StructEntity> notCreatedTables = new HashSet<>();
         for (StructEntity domain : modifiableDomains) {
             if (isForeignDependenciesCreated(schema, domain)) {

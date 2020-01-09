@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.exception.TableNotFoundException;

@@ -5,8 +5,8 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
-import com.infomaximum.database.schema.newschema.Field;
-import com.infomaximum.database.schema.newschema.TypeConverter;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.TypeConverter;
 
 import java.io.Serializable;
 import java.time.Instant;

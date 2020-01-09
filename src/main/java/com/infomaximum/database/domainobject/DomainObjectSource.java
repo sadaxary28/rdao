@@ -4,7 +4,7 @@ import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.StructEntity;
 
 public class DomainObjectSource extends DataEnumerable {
 

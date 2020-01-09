@@ -4,8 +4,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
-import com.infomaximum.database.schema.newschema.Field;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Field;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
@@ -27,7 +27,7 @@ public abstract class DomainDataTest extends RocksDataTest {
 
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
         domainObjectSource = new DomainObjectSource(rocksDBProvider);
-        com.infomaximum.database.schema.newschema.Schema.create(rocksDBProvider);
+        Schema.create(rocksDBProvider);
     }
 
     @After

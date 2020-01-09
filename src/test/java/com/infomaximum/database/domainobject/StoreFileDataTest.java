@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs;
 import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Before;
@@ -13,12 +14,12 @@ import java.util.List;
 
 public abstract class StoreFileDataTest extends DomainDataTest {
 
-    protected com.infomaximum.database.schema.newschema.Schema schema;
+    protected Schema schema;
 
     @Before
     public void init() throws Exception {
         super.init();
-        schema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
+        schema = Schema.read(rocksDBProvider);
         createDomain(StoreFileReadable.class);
     }
 

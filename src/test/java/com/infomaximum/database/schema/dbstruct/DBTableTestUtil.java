@@ -1,7 +1,7 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import org.assertj.core.api.Assertions;
 

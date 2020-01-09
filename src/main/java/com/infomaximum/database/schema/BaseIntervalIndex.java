@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema.newschema;
+package com.infomaximum.database.schema;
 
 import java.util.List;
 

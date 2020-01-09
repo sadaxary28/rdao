@@ -1,4 +1,4 @@
-package com.infomaximum.database.schema.newschema;
+package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.utils.IntervalIndexUtils;

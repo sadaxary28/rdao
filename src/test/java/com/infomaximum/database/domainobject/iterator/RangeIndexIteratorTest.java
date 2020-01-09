@@ -7,7 +7,7 @@ import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.database.utils.LocalDateTimeUtils;
 import com.infomaximum.domain.ExchangeFolderEditable;

@@ -1,6 +1,6 @@
 package com.infomaximum.database.utils.key;
 
-import com.infomaximum.database.schema.newschema.BaseIntervalIndex;
+import com.infomaximum.database.schema.BaseIntervalIndex;
 import com.infomaximum.database.utils.IntervalIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 

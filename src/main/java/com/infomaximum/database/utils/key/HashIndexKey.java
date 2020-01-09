@@ -2,12 +2,12 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.exception.runtime.KeyCorruptedException;
-import com.infomaximum.database.schema.newschema.HashIndex;
+import com.infomaximum.database.schema.HashIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
 
-import static com.infomaximum.database.schema.newschema.BaseIndex.ATTENDANT_BYTE_SIZE;
+import static com.infomaximum.database.schema.BaseIndex.ATTENDANT_BYTE_SIZE;
 
 public class HashIndexKey extends IndexKey {
 

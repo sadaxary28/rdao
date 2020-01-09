@@ -3,7 +3,7 @@ package com.infomaximum.database.maintenance;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;

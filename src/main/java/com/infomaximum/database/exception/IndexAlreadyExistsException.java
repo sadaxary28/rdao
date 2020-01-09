@@ -1,6 +1,6 @@
 package com.infomaximum.database.exception;
 
-import com.infomaximum.database.schema.newschema.BaseIndex;
+import com.infomaximum.database.schema.BaseIndex;
 
 public class IndexAlreadyExistsException extends SchemaException {
 

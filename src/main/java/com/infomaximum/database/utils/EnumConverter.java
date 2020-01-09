@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils;
 
 import com.google.common.primitives.UnsignedInts;
-import com.infomaximum.database.schema.newschema.TypeConverter;
+import com.infomaximum.database.schema.TypeConverter;
 
 public abstract class EnumConverter<T extends Enum<?> & BaseEnum> implements TypeConverter<T> {
 

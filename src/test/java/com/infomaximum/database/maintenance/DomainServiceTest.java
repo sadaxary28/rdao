@@ -8,14 +8,13 @@ import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.*;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
-import com.infomaximum.database.schema.newschema.BaseIndex;
-import com.infomaximum.database.schema.newschema.Schema;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.BaseIndex;
+import com.infomaximum.database.schema.Schema;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
@@ -43,8 +42,8 @@ public class DomainServiceTest extends DomainDataTest {
         SchemaService.install(Collections.singleton(StoreFileReadable.class), rocksDBProvider);
     }
 
-    private com.infomaximum.database.schema.newschema.Schema ensureSchema(Class<? extends DomainObject>... domains) throws DatabaseException {
-        com.infomaximum.database.schema.newschema.Schema schema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
+    private Schema ensureSchema(Class<? extends DomainObject>... domains) throws DatabaseException {
+        Schema schema = Schema.read(rocksDBProvider);
         for (Class<? extends DomainObject> domain : domains) {
             StructEntity structEntity = Schema.getEntity(domain);
             schema.createTable(structEntity);
@@ -55,7 +54,7 @@ public class DomainServiceTest extends DomainDataTest {
     @Test
     public void createAll() throws Exception {
         testNotWorking();
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.CREATION)
                 .setValidationMode(true)
@@ -67,7 +66,7 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void createPartial() throws Exception {
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
 
         new DomainService(rocksDBProvider, schema)
@@ -88,7 +87,7 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void createIndexAndIndexingDataAfterDropIndex() throws Exception {
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         StructEntity entity = Schema.getEntity(StoreFileReadable.class);
         new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.CREATION)
@@ -137,7 +136,7 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void validateUnknownColumnFamily() throws Exception {
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         createDomain(StoreFileReadable.class);
 
         rocksDBProvider.createColumnFamily("com.infomaximum.store.StoreFile.some_prefix");
@@ -149,7 +148,7 @@ public class DomainServiceTest extends DomainDataTest {
 
     @Test
     public void remove() throws Exception{
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         createDomain(StoreFileReadable.class);
         Assertions.assertThat(schema.getDbSchema().getTables()).hasSize(2);
 
@@ -162,13 +161,13 @@ public class DomainServiceTest extends DomainDataTest {
                 .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
                 .execute();
 
-        Assert.assertArrayEquals(new String[] {com.infomaximum.database.schema.newschema.Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
+        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
         Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
     }
 
     @Test
     public void removeAndValidate() throws Exception{
-        com.infomaximum.database.schema.newschema.Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
+        Schema schema = ensureSchema(ExchangeFolderReadable.class, StoreFileReadable.class);
         createDomain(StoreFileReadable.class);
         createDomain(ExchangeFolderReadable.class);
 
@@ -183,8 +182,8 @@ public class DomainServiceTest extends DomainDataTest {
                 .setDomain(Schema.getEntity(StoreFileReadable.class))
                 .execute();
 
-        Assert.assertArrayEquals(new String[] {com.infomaximum.database.schema.newschema.Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
-        com.infomaximum.database.schema.newschema.Schema afterSchema = com.infomaximum.database.schema.newschema.Schema.read(rocksDBProvider);
+        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
+        Schema afterSchema = Schema.read(rocksDBProvider);
         Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
         Assertions.assertThat(afterSchema.getDbSchema().getTables()).isEmpty();
     }
@@ -223,7 +222,7 @@ public class DomainServiceTest extends DomainDataTest {
         }
     }
 
-    private void checkIndexExist(StructEntity entity, Producer before, com.infomaximum.database.schema.newschema.Schema schema) throws Exception {
+    private void checkIndexExist(StructEntity entity, Producer before, Schema schema) throws Exception {
         before.accept();
         new DomainService(rocksDBProvider, schema)
                 .setChangeMode(ChangeMode.CREATION)

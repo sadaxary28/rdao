@@ -1,10 +1,10 @@
 package com.infomaximum.database.maintenance;
 
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 
 import java.util.*;
 

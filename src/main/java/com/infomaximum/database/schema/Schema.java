@@ -1,9 +1,10 @@
-package com.infomaximum.database.schema.newschema;
+package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.*;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.provider.*;
+import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TypeConvert;

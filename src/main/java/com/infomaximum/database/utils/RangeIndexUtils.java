@@ -5,7 +5,7 @@ import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.newschema.RangeIndex;
+import com.infomaximum.database.schema.RangeIndex;
 import com.infomaximum.database.utils.key.KeyUtils;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 

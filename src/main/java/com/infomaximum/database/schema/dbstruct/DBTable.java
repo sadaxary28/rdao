@@ -1,8 +1,8 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
-import com.infomaximum.database.schema.newschema.StructEntity;
+import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
 
 import java.io.Serializable;

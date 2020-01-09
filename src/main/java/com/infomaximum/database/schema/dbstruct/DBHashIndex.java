@@ -1,22 +1,23 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
 import net.minidev.json.JSONObject;
 
-public class DBPrefixIndex extends DBIndex {
+public class DBHashIndex extends DBIndex {
 
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    private DBPrefixIndex(int id, int[] fieldIds) {
+    private DBHashIndex(int id, int[] fieldIds) {
         super(id, fieldIds);
+        checkSorting(fieldIds);
     }
 
-    public DBPrefixIndex(int[] fieldIds) {
+    public DBHashIndex(int[] fieldIds) {
         this(-1, fieldIds);
     }
 
-    static DBPrefixIndex fromJson(JSONObject source) throws SchemaException {
-        return new DBPrefixIndex(
+    static DBHashIndex fromJson(JSONObject source) throws SchemaException {
+        return new DBHashIndex(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
                 JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source)
         );
