@@ -6,6 +6,7 @@ import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.RangeIndex;
+import com.infomaximum.database.schema.dbstruct.DBRangeIndex;
 import com.infomaximum.database.utils.key.KeyUtils;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 
 public class RangeIndexUtils {
 
-    public static void insertIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {
+    public static void insertIndexedRange(DBRangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {
         if (!isIndexedRange(beginValue, endValue)) {
             return;
         }

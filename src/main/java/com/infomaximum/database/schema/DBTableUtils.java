@@ -3,9 +3,15 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.schema.newschema.dbstruct.*;
+import com.infomaximum.database.schema.table.THashIndex;
+import com.infomaximum.database.schema.table.TIntervalIndex;
+import com.infomaximum.database.schema.table.TPrefixIndex;
+import com.infomaximum.database.schema.table.TRangeIndex;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 class DBTableUtils {
 
@@ -63,36 +69,34 @@ class DBTableUtils {
                 .getName();
     }
 
-    static DBHashIndex buildIndex(HashIndex index, DBTable table) throws SchemaException {
-        return new DBHashIndex(toSortedFieldIds(index.getFieldNames(), table));
+    static DBHashIndex buildIndex(THashIndex index, DBTable table) throws SchemaException {
+        return new DBHashIndex(toSortedFields(index.getFields(), table));
     }
 
-    static DBPrefixIndex buildIndex(PrefixIndex index, DBTable table) throws SchemaException {
-        return new DBPrefixIndex(toSortedFieldIds(index.getFieldNames(), table));
+    static DBPrefixIndex buildIndex(TPrefixIndex index, DBTable table) throws SchemaException {
+        return new DBPrefixIndex(toSortedFields(index.getFields(), table));
     }
 
-    static DBIntervalIndex buildIndex(IntervalIndex index, DBTable table) throws SchemaException {
+    static DBIntervalIndex buildIndex(TIntervalIndex index, DBTable table) throws SchemaException {
         return new DBIntervalIndex(
-                table.getField(index.getIndexedField().getName()).getId(),
-                toSortedFieldIds(index.getHashedFields().stream().map(Field::getName).toArray(String[]::new), table)
+                table.getField(index.getIndexedField()),
+                toSortedFields(index.getHashedFields(), table)
         );
     }
 
-    static DBRangeIndex buildIndex(RangeIndex index, DBTable table) throws SchemaException {
+    static DBRangeIndex buildIndex(TRangeIndex index, DBTable table) throws SchemaException {
         return new DBRangeIndex(
-                table.getField(index.getBeginIndexedField().getName()).getId(),
-                table.getField(index.getEndIndexedField().getName()).getId(),
-                toSortedFieldIds(index.getHashedFields().stream().map(Field::getName).toArray(String[]::new), table)
+                table.getField(index.getBeginField()),
+                table.getField(index.getEndField()),
+                toSortedFields(index.getHashedFields(), table)
         );
     }
 
-    private static int[] toSortedFieldIds(String[] fieldNames, DBTable table) throws SchemaException {
-        int[] ids = new int[fieldNames.length];
-        for (int i = 0; i < fieldNames.length; ++i) {
-            ids[i] = table.getField(fieldNames[i]).getId();
-        }
-        Arrays.sort(ids);
-        return ids;
+    private static List<DBField> toSortedFields(String[] fieldNames, DBTable table) throws SchemaException {
+        return Arrays.stream(fieldNames)
+                .map(table::getField)
+                .sorted(Comparator.comparing(DBObject::getId))
+                .collect(Collectors.toList());
     }
 
     private static String[] toFieldNames(int[] fieldIds, DBTable table) throws SchemaException {

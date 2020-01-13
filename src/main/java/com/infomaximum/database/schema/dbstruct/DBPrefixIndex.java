@@ -1,24 +1,36 @@
 package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.FieldUtil;
 import net.minidev.json.JSONObject;
+
+import java.util.List;
 
 public class DBPrefixIndex extends DBIndex {
 
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("prf");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    private DBPrefixIndex(int id, int[] fieldIds) {
+    private DBPrefixIndex(int id, List<DBField> fieldIds) {
         super(id, fieldIds);
     }
 
-    public DBPrefixIndex(int[] fieldIds) {
+    public DBPrefixIndex(List<DBField> fieldIds) {
         this(-1, fieldIds);
     }
 
-    static DBPrefixIndex fromJson(JSONObject source) throws SchemaException {
+    @Override
+    protected byte[] getIndexNameBytes() {
+        return INDEX_NAME_BYTES;
+    }
+
+    static DBPrefixIndex fromJson(JSONObject source, List<DBField> allFields) throws SchemaException {
+        int[] fieldIds = JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source);
+        List<DBField> fields = FieldUtil.getFieldsByIds(fieldIds, allFields);
         return new DBPrefixIndex(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
-                JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source)
+                fields
         );
     }
 
@@ -26,7 +38,7 @@ public class DBPrefixIndex extends DBIndex {
     JSONObject toJson() {
         JSONObject object = new JSONObject();
         object.put(JSON_PROP_ID, getId());
-        object.put(JSON_PROP_FIELD_IDS, JsonUtils.toJsonArray(getFieldIds()));
+        object.put(JSON_PROP_FIELD_IDS, JsonUtils.toJsonArray(getFields()));
         return object;
     }
 }

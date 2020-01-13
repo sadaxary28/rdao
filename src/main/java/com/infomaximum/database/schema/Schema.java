@@ -5,7 +5,7 @@ import com.infomaximum.database.exception.*;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.schema.newschema.dbstruct.*;
+import com.infomaximum.database.schema.table.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
@@ -130,7 +130,7 @@ public class Schema {
         return dbSchema.findTableIndex(table.getName(), table.getNamespace()) != -1;
     }
 
-    public void createTable(StructEntity table) throws DatabaseException {
+    public void createTable(Table table) throws DatabaseException {
         Schema.resolve(table.getObjectClass());
         int tableIndex = dbSchema.findTableIndex(table.getName(), table.getNamespace());
         DBTable dbTable;
@@ -144,20 +144,24 @@ public class Schema {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
 
-        for (Field tableField : table.getFields()) {
-            createField(tableField, dbTable, table);
+        for (TField tableField : table.getFields()) {
+            createField(tableField, dbTable);
         }
 
-        for (HashIndex index : table.getHashIndexes()) {
-            createIndex(index, dbTable, table);
+        for (THashIndex index : table.getHashIndexes()) {
+            createIndex(index, dbTable);
         }
 
-        for (PrefixIndex index : table.getPrefixIndexes()) {
-            createIndex(index, dbTable, table);
+        for (TPrefixIndex index : table.getPrefixIndexes()) {
+            createIndex(index, dbTable);
         }
 
-        for (IntervalIndex index : table.getIntervalIndexes()) {
-            createIndex(index, dbTable, table);
+        for (TIntervalIndex index : table.getIntervalIndexes()) {
+            createIndex(index, dbTable);
+        }
+
+        for (TRangeIndex index : table.getRangeIndexes()) {
+            createIndex(index, dbTable);
         }
         saveSchema();
     }
@@ -234,18 +238,18 @@ public class Schema {
     }
 
 
-    private DBField createField(Field tableField, DBTable dbTable, StructEntity table) throws DatabaseException {
+    private DBField createField(TField tableField, DBTable dbTable) throws DatabaseException {
         int i = dbTable.findFieldIndex(tableField.getName());
         if (i != -1) {
             throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName());
         }
 
-        Integer fTableId = tableField.getForeignDependency() != null
-                ? dbSchema.getTable(tableField.getForeignDependency().getName(), tableField.getForeignDependency().getNamespace()).getId()
+        Integer fTableId = tableField.getForeignTable() != null
+                ? dbSchema.getTable(tableField.getForeignTable().getName(), tableField.getForeignTable().getNamespace()).getId()
                 : null;
         DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
         if (newField.isForeignKey()) {
-            createIndex(new HashIndex(tableField, table), dbTable, table);
+            createIndex(new THashIndex(tableField.getName()), dbTable);
         }
         saveSchema();
         return newField;
@@ -288,42 +292,53 @@ public class Schema {
         saveSchema();
     }
 
-    private void createIndex(HashIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
+    private void createIndex(THashIndex index, DBTable dbTable) throws DatabaseException {
         DBHashIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getHashIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
-            IndexService.doIndex(index, table, dbProvider);
+            IndexService.doIndex(dbIndex, dbTable, dbProvider);
             saveSchema();
-        } else if (index.sortedFields.size() != 1 || !dbTable.getField(index.sortedFields.get(0).getName()).isForeignKey()) {
+        } else if (index.getFields().length != 1 || !dbTable.getField(index.getFields()[0]).isForeignKey()) {
             throw new IndexAlreadyExistsException(index);
         }
     }
 
-    private void createIndex(PrefixIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
+    private void createIndex(TPrefixIndex index, DBTable dbTable) throws DatabaseException {
         DBPrefixIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getPrefixIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
-            IndexService.doPrefixIndex(index, table, dbProvider);
+            IndexService.doPrefixIndex(dbIndex, dbTable, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(index);
         }
     }
 
-    private void createIndex(IntervalIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
+    private void createIndex(TIntervalIndex index, DBTable dbTable) throws DatabaseException {
         DBIntervalIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(index, table, dbProvider);
+            IndexService.doIntervalIndex(dbIndex, dbTable, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(index);
         }
     }
 
-    public boolean dropIndex(HashIndex index, String tableName, String namespace) throws DatabaseException {
+    private void createIndex(TRangeIndex index, DBTable dbTable) throws DatabaseException {
+        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
+        if (dbTable.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
+            dbTable.attachIndex(dbIndex);
+            IndexService.doIntervalIndex(dbIndex, dbTable, dbProvider);
+            saveSchema();
+        } else {
+            throw new IndexAlreadyExistsException(index);
+        }
+    }
+
+    public boolean dropIndex(THashIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
-        if (index.sortedFields.size() == 1 && table.getField(index.sortedFields.get(0).getName()).isForeignKey()) {
+        if (index.getFields().length == 1 && table.getField(index.getFields()[0]).isForeignKey()) {
             return true;
         }
 
@@ -347,19 +362,19 @@ public class Schema {
         return false;
     }
 
-    public boolean dropIndex(PrefixIndex index, String tableName, String namespace) throws DatabaseException {
+    public boolean dropIndex(TPrefixIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
         return dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
     }
 
-    public boolean dropIndex(IntervalIndex index, String tableName, String namespace) throws DatabaseException {
+    public boolean dropIndex(TIntervalIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
         return dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
     }
 
-    public boolean dropIndex(RangeIndex index, String tableName, String namespace) throws DatabaseException {
+    public boolean dropIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);

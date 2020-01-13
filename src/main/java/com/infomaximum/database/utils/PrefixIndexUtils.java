@@ -7,6 +7,7 @@ import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.schema.dbstruct.DBPrefixIndex;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
@@ -239,7 +240,7 @@ public class PrefixIndexUtils {
         }
     }
 
-    public static void insertIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
+    public static void insertIndexedLexemes(DBPrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;
         }

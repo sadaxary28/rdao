@@ -2,6 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.BaseIntervalIndex;
+import com.infomaximum.database.schema.dbstruct.DBIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -15,6 +16,14 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     long indexedValue;
 
     BaseIntervalIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
+        super(id, index.attendant);
+        if (hashedValues == null) {
+            throw new IllegalArgumentException();
+        }
+        this.hashedValues = hashedValues;
+    }
+
+    BaseIntervalIndexKey(long id, long[] hashedValues, DBIndex index) {
         super(id, index.attendant);
         if (hashedValues == null) {
             throw new IllegalArgumentException();

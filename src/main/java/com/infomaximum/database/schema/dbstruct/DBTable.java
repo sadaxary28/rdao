@@ -6,12 +6,8 @@ import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class DBTable extends DBObject {
@@ -169,22 +165,22 @@ public class DBTable extends DBObject {
         Set<Integer> indexingFieldIds = new HashSet<>(fields.size());
 
         for (DBHashIndex i : hashIndexes) {
-            IntStream.of(i.getFieldIds()).forEach(indexingFieldIds::add);
+            i.getFields().stream().mapToInt(DBObject::getId).forEach(indexingFieldIds::add);
         }
 
         for (DBPrefixIndex i : prefixIndexes) {
-            IntStream.of(i.getFieldIds()).forEach(indexingFieldIds::add);
+            i.getFields().stream().mapToInt(DBObject::getId).forEach(indexingFieldIds::add);
         }
 
         for (DBIntervalIndex i : intervalIndexes) {
-            indexingFieldIds.add(i.getIndexedFieldId());
-            IntStream.of(i.getHashFieldIds()).forEach(indexingFieldIds::add);
+            indexingFieldIds.add(i.getIndexedField().getId());
+            i.getFields().stream().mapToInt(DBObject::getId).forEach(indexingFieldIds::add);
         }
 
         for (DBRangeIndex i : rangeIndexes) {
-            indexingFieldIds.add(i.getBeginFieldId());
-            indexingFieldIds.add(i.getEndFieldId());
-            IntStream.of(i.getHashFieldIds()).forEach(indexingFieldIds::add);
+            indexingFieldIds.add(i.getBeginField().getId());
+            indexingFieldIds.add(i.getEndField().getId());
+            i.getFields().stream().mapToInt(DBObject::getId).forEach(indexingFieldIds::add);
         }
 
         Set<Integer> existingFieldIds = fields.stream().map(DBObject::getId).collect(Collectors.toSet());
@@ -202,15 +198,17 @@ public class DBTable extends DBObject {
     }
 
     static DBTable fromJson(JSONObject source) throws SchemaException {
+        List<DBField> dbFields = JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson);
+        dbFields.sort(Comparator.comparing(DBObject::getId));
         return new DBTable(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
                 JsonUtils.getValue(JSON_PROP_NAME, String.class, source),
                 JsonUtils.getValue(JSON_PROP_NAMESPACE, String.class, source),
-                JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson),
-                JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, DBHashIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, DBPrefixIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, DBIntervalIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_RANGE_INDEXES, source, DBRangeIndex::fromJson)
+                dbFields,
+                JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, s -> DBHashIndex.fromJson(s, dbFields)),
+                JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, s -> DBPrefixIndex.fromJson(s, dbFields)),
+                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, s-> DBIntervalIndex.fromJson(s, dbFields)),
+                JsonUtils.toList(JSON_PROP_RANGE_INDEXES, source, s -> DBRangeIndex.fromJson(s, dbFields))
         );
     }
 

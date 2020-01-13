@@ -3,6 +3,7 @@ package com.infomaximum.database.utils.key;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.exception.runtime.KeyCorruptedException;
 import com.infomaximum.database.schema.HashIndex;
+import com.infomaximum.database.schema.dbstruct.DBHashIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -15,6 +16,10 @@ public class HashIndexKey extends IndexKey {
 
     public HashIndexKey(long id, final HashIndex index) {
         this(id, index.attendant, new long[index.sortedFields.size()]);
+    }
+
+    public HashIndexKey(long id, final DBHashIndex index) {
+        this(id, index.attendant, new long[index.getFields().size()]);
     }
 
     public HashIndexKey(long id, final byte[] attendant, final long[] fieldValues) {

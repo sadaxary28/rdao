@@ -2,6 +2,12 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.exception.runtime.KeyCorruptedException;
 import com.infomaximum.database.schema.BaseIndex;
+import com.infomaximum.database.schema.dbstruct.DBField;
+import com.infomaximum.database.utils.TypeConvert;
+
+import java.util.List;
+
+import static com.infomaximum.database.schema.dbstruct.DBIndex.ATTENDANT_BYTE_SIZE;
 
 public class KeyUtils {
 
@@ -16,12 +22,9 @@ public class KeyUtils {
         System.arraycopy(fieldsHash, 0, destination, indexName.length, fieldsHash.length);
     }
 
-    static byte[] allocateAndPutIndexAttendant(int size, byte[] attendant) {
-        if (size < attendant.length) {
-            throw new IllegalArgumentException("Attendant size more than buffer size");
-        }
-        byte[] result = new byte[size];
-        System.arraycopy(attendant, 0, result, 0, attendant.length);
+    public static byte[] buildIndexAttendant(byte[] indexNameBytes, List<DBField> sortedIndexedFields) {
+        byte[] result = new byte[ATTENDANT_BYTE_SIZE];
+        KeyUtils.putAttendantBytes(result, indexNameBytes, buildFieldsHashCRC32(sortedIndexedFields));
         return result;
     }
 
@@ -32,5 +35,20 @@ public class KeyUtils {
         byte[] result = new byte[BaseIndex.ATTENDANT_BYTE_SIZE];
         System.arraycopy(src, 0, result, 0, BaseIndex.ATTENDANT_BYTE_SIZE);
         return result;
+    }
+
+    static byte[] allocateAndPutIndexAttendant(int size, byte[] attendant) {
+        if (size < attendant.length) {
+            throw new IllegalArgumentException("Attendant size more than buffer size");
+        }
+        byte[] result = new byte[size];
+        System.arraycopy(attendant, 0, result, 0, attendant.length);
+        return result;
+    }
+
+    private static byte[] buildFieldsHashCRC32(List<DBField> indexedFields) {
+        StringBuilder stringBuilder = new StringBuilder();
+        indexedFields.forEach(field -> stringBuilder.append(field.getName()).append(':').append(field.getType().getName()).append('.'));
+        return TypeConvert.packCRC32(stringBuilder.toString());
     }
 }

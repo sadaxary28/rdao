@@ -83,33 +83,33 @@ public class DBTableTestUtil {
     private static void assertIndex(DBHashIndex expected, List<DBHashIndex> actuals) {
         DBHashIndex actual = actuals.stream().filter(dbHashIndex -> dbHashIndex.getId() == expected.getId()).findFirst().orElse(null);
         Assertions.assertThat(actual).isNotNull();
-        Assertions.assertThat(expected.getFieldIds()).containsExactly(actual.getFieldIds());
+        Assertions.assertThat(expected.getFields()).containsExactly(actual.getFields());
         Assertions.assertThat(expected.getId()).isEqualTo(actual.getId());
     }
 
     private static void assertIndex(DBPrefixIndex expected, List<DBPrefixIndex> actuals) {
         DBPrefixIndex actual = actuals.stream().filter(dbHashIndex -> dbHashIndex.getId() == expected.getId()).findFirst().orElse(null);
         Assertions.assertThat(actual).isNotNull();
-        Assertions.assertThat(expected.getFieldIds()).containsExactly(actual.getFieldIds());
+        Assertions.assertThat(expected.getFields()).containsExactly(actual.getFields());
         Assertions.assertThat(expected.getId()).isEqualTo(actual.getId());
     }
 
     private static void assertIndex(DBRangeIndex expected, List<DBRangeIndex> actuals) {
         DBRangeIndex actual = actuals.stream().filter(dbHashIndex -> dbHashIndex.getId() == expected.getId()).findFirst().orElse(null);
         Assertions.assertThat(actual).isNotNull();
-        Assertions.assertThat(expected.getFieldIds()).containsExactly(actual.getFieldIds());
-        Assertions.assertThat(expected.getHashFieldIds()).containsExactly(actual.getHashFieldIds());
+        Assertions.assertThat(expected.getFields()).containsExactly(actual.getFields());
+        Assertions.assertThat(expected.getHashFields()).containsExactly(actual.getHashFields());
         Assertions.assertThat(expected.getId()).isEqualTo(actual.getId());
-        Assertions.assertThat(expected.getBeginFieldId()).isEqualTo(actual.getBeginFieldId());
-        Assertions.assertThat(expected.getEndFieldId()).isEqualTo(actual.getEndFieldId());
+        Assertions.assertThat(expected.getBeginField()).isEqualTo(actual.getBeginField());
+        Assertions.assertThat(expected.getEndField()).isEqualTo(actual.getEndField());
     }
 
     private static void assertIndex(DBIntervalIndex expected, List<DBIntervalIndex> actuals) {
         DBIntervalIndex actual = actuals.stream().filter(dbHashIndex -> dbHashIndex.getId() == expected.getId()).findFirst().orElse(null);
         Assertions.assertThat(actual).isNotNull();
-        Assertions.assertThat(expected.getFieldIds()).containsExactly(actual.getFieldIds());
-        Assertions.assertThat(expected.getHashFieldIds()).containsExactly(actual.getHashFieldIds());
+        Assertions.assertThat(expected.getFields()).containsExactly(actual.getFields());
+        Assertions.assertThat(expected.getHashFields()).containsExactly(actual.getHashFields());
         Assertions.assertThat(expected.getId()).isEqualTo(actual.getId());
-        Assertions.assertThat(expected.getIndexedFieldId()).isEqualTo(actual.getIndexedFieldId());
+        Assertions.assertThat(expected.getIndexedField()).isEqualTo(actual.getIndexedField());
     }
 }
