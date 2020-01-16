@@ -5,11 +5,9 @@ import com.infomaximum.database.exception.*;
 import com.infomaximum.database.exception.runtime.IllegalTypeException;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.schema.newschema.dbstruct.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,7 +169,7 @@ public class Schema {
         DBTable table = dbSchema.getTables().remove(i);
         dbProvider.dropColumnFamily(table.getDataColumnFamily());
         dbProvider.dropColumnFamily(table.getIndexColumnFamily());
-        dbProvider.dropSequence(table.getName());
+        dbProvider.dropSequence(table.getDataColumnFamily());
 
         removeObjTable(name);
 
@@ -184,7 +182,7 @@ public class Schema {
         if (entity == null) {
             entity = objTables.get(StructEntity.getAnnotationClass(clazz));
             if (entity == null) {
-                throw new InternalException("can't find entity: " + clazz);
+                throw new SchemaException("StructEntity doesn't initialized: " + clazz);
             }
             objTables.putIfAbsent(clazz, entity);
         }
@@ -212,11 +210,16 @@ public class Schema {
     public void checkIntegrity() throws DatabaseException {
         dbSchema.checkIntegrity();
 
+        //todo V.Bukharkin add check with cf in db for exclude
+        Set<String> processedNames = new HashSet<>();
         for (DBTable table : dbSchema.getTables()) {
+            if (processedNames.contains(table.getDataColumnFamily())) {
+                throw new InconsistentDatabaseException("Column family " + table.getNamespace() + " into " + table.getName() + " already exists.");
+            }
+            processedNames.add(table.getNamespace());
             if (!dbProvider.containsColumnFamily(table.getDataColumnFamily())) {
                 throw new SchemaException("ColumnFamily '" + table.getDataColumnFamily() + "' not found, table='" + table.getName() + "'");
             }
-
             if (!dbProvider.containsColumnFamily(table.getIndexColumnFamily())) {
                 throw new SchemaException("ColumnFamily '" + table.getIndexColumnFamily() + "' not found, table='" + table.getName() + "'");
             }
@@ -224,7 +227,6 @@ public class Schema {
                 throw new SequenceNotFoundException(table.getDataColumnFamily());
             }
         }
-
     }
 
     //todo check it
@@ -267,7 +269,6 @@ public class Schema {
         dropFieldData(field, table);
 
         table.getFields().remove(i);
-        removeObjTable(tableName);
 
         saveSchema();
         return true;
@@ -326,7 +327,6 @@ public class Schema {
         if (index.sortedFields.size() == 1 && table.getField(index.sortedFields.get(0).getName()).isForeignKey()) {
             return true;
         }
-
         DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
         return dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
     }
@@ -337,8 +337,6 @@ public class Schema {
             if (predicate.test(dbIndex)) {
                 dropIndexData(dbIndex, table);
                 indexes.remove(i);
-
-                removeObjTable(table.getName());
 
                 saveSchema();
                 return true;

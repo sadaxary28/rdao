@@ -56,14 +56,6 @@ public class DomainService {
     public void execute() throws DatabaseException {
         final String dataColumnFamily = domain.getColumnFamily();
 
-        if (!dbProvider.containsSequence(dataColumnFamily)) {
-            if (changeMode == ChangeMode.CREATION) {
-                dbProvider.createSequence(dataColumnFamily);
-            } else if (isValidationMode) {
-                throw new InconsistentDatabaseException("Sequence " + dataColumnFamily + " not found.");
-            }
-        }
-
         existsData = isExistsColumnFamily(dataColumnFamily);
 
         if (changeMode == ChangeMode.REMOVAL) {

@@ -140,8 +140,6 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void updateByNonExistenceObject() throws Exception {
-        createDomain(ExchangeFolderReadable.class);
-
         try {
             domainObjectSource.executeTransactional(transaction -> {
                 StoreFileEditable file = transaction.create(StoreFileEditable.class);
@@ -240,8 +238,6 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void removeReferencedObject() throws Exception {
-        createDomain(ExchangeFolderReadable.class);
-
         domainObjectSource.executeTransactional(transaction -> {
             ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
             transaction.save(folder);
@@ -268,11 +264,6 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void removeAll() throws Exception {
-        Schema schema = Schema.read(rocksDBProvider);
-        schema.createTable(Schema.getEntity(ExchangeFolderEditable.class));
-
-        createDomain(ExchangeFolderReadable.class);
-
         domainObjectSource.executeTransactional(transaction -> {
             ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
             transaction.save(folder);

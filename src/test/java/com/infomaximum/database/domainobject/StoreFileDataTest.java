@@ -5,6 +5,7 @@ import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.Schema;
+import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,6 +21,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
     public void init() throws Exception {
         super.init();
         schema = Schema.read(rocksDBProvider);
+        createDomain(ExchangeFolderReadable.class);
         createDomain(StoreFileReadable.class);
     }
 

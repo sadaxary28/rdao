@@ -142,7 +142,6 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
     @Test
     public void insertAndFindLocalDateTimeWithHashIndex() throws Exception {
-        createDomain(ExchangeFolderEditable.class);
         domainObjectSource.executeTransactional(transaction -> {
             ExchangeFolderEditable s = transaction.create(ExchangeFolderEditable.class);
             s.setUuid("1");

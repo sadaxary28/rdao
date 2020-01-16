@@ -3,8 +3,7 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.schema.newschema.dbstruct.*;
-
+``
 import java.util.Arrays;
 
 class DBTableUtils {
