@@ -60,10 +60,11 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(generalSE);
 
         assertColumnFamilies("com.infomaximum.rocksdb.general", "com.infomaximum.rocksdb.general.index");
+        DBField field = DBTableTestUtil.buildDBField(1, "value", Long.class, null);
         DBTable expected = DBTableTestUtil.buildDBTable(1, "general", "com.infomaximum.rocksdb", new ArrayList<DBField>() {{
-                    add(DBTableTestUtil.buildDBField(1, "value", Long.class, null));
+                    add(field);
                 }});
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(1));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field));
         DBTableTestUtil.assertThatContains(rocksDBProvider, expected);
     }
 
@@ -75,15 +76,21 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(exchangeFolder);
 
         assertColumnFamilies("com.infomaximum.exchange.ExchangeFolder", "com.infomaximum.exchange.ExchangeFolder.index");
+        DBField field1 = DBTableTestUtil.buildDBField(1, "uuid", String.class, null);
+        DBField field2 = DBTableTestUtil.buildDBField(2, "email", String.class, null);
+        DBField field3 = DBTableTestUtil.buildDBField(3, "date", Instant.class, null);
+        DBField field4 = DBTableTestUtil.buildDBField(4, "state", String.class, null);
+        DBField field5 = DBTableTestUtil.buildDBField(5, "parent_id", Long.class, 1);
+
         DBTable expected = DBTableTestUtil.buildDBTable(1, "ExchangeFolder", "com.infomaximum.exchange", new ArrayList<DBField>() {{
-                    add(DBTableTestUtil.buildDBField(1, "uuid", String.class, null));
-                    add(DBTableTestUtil.buildDBField(2, "email", String.class, null));
-                    add(DBTableTestUtil.buildDBField(3, "date", Instant.class, null));
-                    add(DBTableTestUtil.buildDBField(4, "state", String.class, null));
-                    add(DBTableTestUtil.buildDBField(5, "parent_id", Long.class, 1));
+                    add(field1);
+                    add(field2);
+                    add(field3);
+                    add(field4);
+                    add(field5);
                 }});
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(5));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(1, 2));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field5));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field1, field2));
         DBTableTestUtil.assertThatContains(rocksDBProvider, expected);
     }
 
@@ -99,44 +106,59 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(storeFile);
 
         assertColumnFamilies("com.infomaximum.store.StoreFile", "com.infomaximum.store.StoreFile.index");
+        DBField field1 = DBTableTestUtil.buildDBField(1, "name", String.class, null);
+        DBField field2 = DBTableTestUtil.buildDBField(2, "type", String.class, null);
+        DBField field3 = DBTableTestUtil.buildDBField(3, "size", Long.class, null);
+        DBField field4 = DBTableTestUtil.buildDBField(4, "single", Boolean.class, null);
+        DBField field5 = DBTableTestUtil.buildDBField(5, "format", FormatType.class, null);
+        DBField field6 = DBTableTestUtil.buildDBField(6, "folder_id", Long.class, 2);
+        DBField field7 = DBTableTestUtil.buildDBField(7, "double", Double.class, null);
+        DBField field8 = DBTableTestUtil.buildDBField(8, "begin_time", Instant.class, null);
+        DBField field9 = DBTableTestUtil.buildDBField(9, "end_time", Instant.class, null);
+        DBField field10 = DBTableTestUtil.buildDBField(10, "begin", Long.class, null);
+        DBField field11 = DBTableTestUtil.buildDBField(11, "end", Long.class, null);
+        DBField field12 = DBTableTestUtil.buildDBField(12, "local_begin", LocalDateTime.class, null);
+        DBField field13 = DBTableTestUtil.buildDBField(13, "local_end", LocalDateTime.class, null);
+        DBField field14 = DBTableTestUtil.buildDBField(14, "data", byte[].class, null);
+
         DBTable expected = DBTableTestUtil.buildDBTable(1, "StoreFile", "com.infomaximum.store", new ArrayList<DBField>() {{
-                    add(DBTableTestUtil.buildDBField(1, "name", String.class, null));
-                    add(DBTableTestUtil.buildDBField(2, "type", String.class, null));
-                    add(DBTableTestUtil.buildDBField(3, "size", Long.class, null));
-                    add(DBTableTestUtil.buildDBField(4, "single", Boolean.class, null));
-                    add(DBTableTestUtil.buildDBField(5, "format", FormatType.class, null));
-                    add(DBTableTestUtil.buildDBField(6, "folder_id", Long.class, 2));
-                    add(DBTableTestUtil.buildDBField(7, "double", Double.class, null));
-                    add(DBTableTestUtil.buildDBField(8, "begin_time", Instant.class, null));
-                    add(DBTableTestUtil.buildDBField(9, "end_time", Instant.class, null));
-                    add(DBTableTestUtil.buildDBField(10, "begin", Long.class, null));
-                    add(DBTableTestUtil.buildDBField(11, "end", Long.class, null));
-                    add(DBTableTestUtil.buildDBField(12, "local_begin", LocalDateTime.class, null));
-                    add(DBTableTestUtil.buildDBField(13, "local_end", LocalDateTime.class, null));
-                    add(DBTableTestUtil.buildDBField(14, "data", byte[].class, null));
+                    add(field1);
+                    add(field2);
+                    add(field3);
+                    add(field4);
+                    add(field5);
+                    add(field6);
+                    add(field7);
+                    add(field8);
+                    add(field9);
+                    add(field10);
+                    add(field11);
+                    add(field12);
+                    add(field13);
+                    add(field14);
                 }});
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(6));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(3));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(1));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(1, 3));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(5));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(12));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field6));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field3));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field1));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field1, field3));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field5));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field12));
 
-        expected.attachIndex(DBTableTestUtil.buildDBPrefixIndex(1));
-        expected.attachIndex(DBTableTestUtil.buildDBPrefixIndex(1, 2));
+        expected.attachIndex(DBTableTestUtil.buildDBPrefixIndex(field1));
+        expected.attachIndex(DBTableTestUtil.buildDBPrefixIndex(field1, field2));
 
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(3));
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(7));
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(8));
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(12));
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(3, 1));
-        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(3, 6));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field3));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field7));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field8));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field12));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field3, field1));
+        expected.attachIndex(DBTableTestUtil.buildDBIntervalIndex(field3, field6));
 
-        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(10, 11));
-        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(10, 11, 6));
-        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(8, 9));
-        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(8, 9, 6));
-        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(12, 13));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(field10, field11));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(field10, field11, field6));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(field8, field9));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(field8, field9, field6));
+        expected.attachIndex(DBTableTestUtil.buildDBRangeIndex(field12, field13));
 
         DBTableTestUtil.assertThatContains(rocksDBProvider, expected);
     }

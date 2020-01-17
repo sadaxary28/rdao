@@ -1,25 +1,35 @@
 package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.utils.TypeConvert;
 import net.minidev.json.JSONObject;
+
+import java.util.List;
 
 public class DBHashIndex extends DBIndex {
 
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("hsh");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    private DBHashIndex(int id, int[] fieldIds) {
-        super(id, fieldIds);
-        checkSorting(fieldIds);
+    private DBHashIndex(int id, DBField[] fields) {
+        super(id, fields);
+        checkSorting(fields);
     }
 
-    public DBHashIndex(int[] fieldIds) {
-        this(-1, fieldIds);
+    public DBHashIndex(DBField[] fields) {
+        this(-1, fields);
     }
 
-    static DBHashIndex fromJson(JSONObject source) throws SchemaException {
+    @Override
+    protected byte[] getIndexNameBytes() {
+        return INDEX_NAME_BYTES;
+    }
+
+    static DBHashIndex fromJson(JSONObject source, List<DBField> tableFields) throws SchemaException {
         return new DBHashIndex(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
-                JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source)
+                IndexUtils.getFieldsByIds(tableFields, JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source))
         );
     }
 

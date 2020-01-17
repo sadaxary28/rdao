@@ -8,12 +8,11 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.*;
+import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class IndexService {
@@ -36,6 +35,20 @@ public class IndexService {
         });
     }
 
+    public static void doIndex(DBHashIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
+        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final HashIndexKey indexKey = new HashIndexKey(0, index);
+
+        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+            indexKey.setId(obj.getId());
+            HashIndexUtils.setHashValues(IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds()),
+                    obj,
+                    indexKey.getFieldValues());
+
+            transaction.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+        });
+    }
+
     public static void doPrefixIndex(PrefixIndex index, StructEntity table, DBProvider dbProvider) throws DatabaseException {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
@@ -46,6 +59,19 @@ public class IndexService {
                 PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getNumber()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, transaction);
+        });
+    }
+
+    public static void doPrefixIndex(DBPrefixIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
+        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
+
+        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+            lexemes.clear();
+            for (DBField field : IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds())) {
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getId()), lexemes);
+            }
+            PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, table.getIndexColumnFamily(), transaction);
         });
     }
 
@@ -64,7 +90,33 @@ public class IndexService {
         });
     }
 
+    public static void doIntervalIndex(DBIntervalIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
+        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final DBField[] hashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
+        final DBField indexedField = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getIndexedFieldId());
+        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.length], index);
+
+        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+            indexKey.setId(obj.getId());
+            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            indexKey.setIndexedValue(obj.get(indexedField.getId()));
+
+            transaction.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+        });
+    }
+
     private static void indexData(Set<Integer> loadingFields, StructEntity table, DBProvider dbProvider, ModifierCreator recordCreator) throws DatabaseException {
+        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
+        try (DBTransaction transaction = dbProvider.beginTransaction();
+             IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(table.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {
+             while (iter.hasNext()) {
+                 recordCreator.apply(iter.next(), transaction);
+             }
+            transaction.commit();
+        }
+    }
+
+    private static void indexData(Set<Integer> loadingFields, DBTable table, DBProvider dbProvider, ModifierCreator recordCreator) throws DatabaseException {
         DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
         try (DBTransaction transaction = dbProvider.beginTransaction();
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(table.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {

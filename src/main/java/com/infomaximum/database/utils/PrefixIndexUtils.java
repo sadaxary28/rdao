@@ -7,6 +7,7 @@ import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.schema.dbstruct.DBPrefixIndex;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
@@ -277,6 +278,48 @@ public class PrefixIndexUtils {
                 }
 
                 transaction.put(index.columnFamily, key, idsValue);
+            }
+        }
+    }
+
+    public static void insertIndexedLexemes(DBPrefixIndex index, long id, Collection<String> lexemes, String indexColumnFamily, DBTransaction transaction) throws DatabaseException {
+        if (lexemes.isEmpty()) {
+            return;
+        }
+
+        try (DBIterator iterator = transaction.createIterator(indexColumnFamily)) {
+            for (String lexeme : lexemes) {
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
+                byte[] key;
+                byte[] idsValue;
+                if (keyValue != null) {
+                    KeyValue prevKeyValue;
+                    do {
+                        long lastId = TypeConvert.unpackLong(keyValue.getValue(), keyValue.getValue().length - FieldKey.ID_BYTE_SIZE);
+                        if (id < lastId) {
+                            key = keyValue.getKey();
+                            idsValue = appendId(id, keyValue.getValue());
+                            break;
+                        }
+                        prevKeyValue = keyValue;
+                        keyValue = iterator.next();
+                        if (keyValue == null) {
+                            key = prevKeyValue.getKey();
+                            if (getIdCount(prevKeyValue.getValue()) < PREFERRED_MAX_ID_COUNT_PER_BLOCK) {
+                                idsValue = appendId(id, prevKeyValue.getValue());
+                            } else {
+                                PrefixIndexKey.incrementBlockNumber(key);
+                                idsValue = TypeConvert.pack(id);
+                            }
+                            break;
+                        }
+                    } while (true);
+                } else {
+                    key = new PrefixIndexKey(lexeme, index).pack();
+                    idsValue = TypeConvert.pack(id);
+                }
+
+                transaction.put(indexColumnFamily, key, idsValue);
             }
         }
     }

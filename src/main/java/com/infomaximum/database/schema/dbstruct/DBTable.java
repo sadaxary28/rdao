@@ -40,7 +40,7 @@ public class DBTable extends DBObject {
 
     private String name;
     private final String namespace;
-    private final List<DBField> fields;
+    private final List<DBField> sortedFields;
     private final List<DBHashIndex> hashIndexes;
     private final List<DBPrefixIndex> prefixIndexes;
     private final List<DBIntervalIndex> intervalIndexes;
@@ -48,7 +48,7 @@ public class DBTable extends DBObject {
 
     private final List<Reference> referencingForeignFields = new ArrayList<>();
 
-    private DBTable(int id, String name, String namespace, List<DBField> fields,
+    private DBTable(int id, String name, String namespace, List<DBField> sortedFields,
                     List<DBHashIndex> hashIndexes, List<DBPrefixIndex> prefixIndexes,
                     List<DBIntervalIndex> intervalIndexes, List<DBRangeIndex> rangeIndexes) {
         super(id);
@@ -56,15 +56,15 @@ public class DBTable extends DBObject {
         this.indexColumnFamily = namespace + StructEntity.NAMESPACE_SEPARATOR + name + ".index";
         this.name = name;
         this.namespace = namespace;
-        this.fields = fields;
+        this.sortedFields = sortedFields;
         this.hashIndexes = hashIndexes;
         this.prefixIndexes = prefixIndexes;
         this.intervalIndexes = intervalIndexes;
         this.rangeIndexes = rangeIndexes;
     }
 
-    DBTable(int id, String name, String namespace, List<DBField> fields) {
-        this(id, name, namespace, fields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    DBTable(int id, String name, String namespace, List<DBField> sortedFields) {
+        this(id, name, namespace, sortedFields, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public String getDataColumnFamily() {
@@ -87,8 +87,8 @@ public class DBTable extends DBObject {
         return namespace;
     }
 
-    public List<DBField> getFields() {
-        return fields;
+    public List<DBField> getSortedFields() {
+        return sortedFields;
     }
 
     public List<Reference> getReferencingForeignFields() {
@@ -96,14 +96,14 @@ public class DBTable extends DBObject {
     }
 
     public DBField newField(String name, Class<? extends Serializable> type, Integer foreignTableId) {
-        DBField field = new DBField(DBSchema.nextId(fields), name, type, foreignTableId);
-        fields.add(field);
+        DBField field = new DBField(DBSchema.nextId(sortedFields), name, type, foreignTableId);
+        sortedFields.add(field);
         return field;
     }
 
     public int findFieldIndex(String fieldName) {
-        for (int i = 0; i < fields.size(); ++i) {
-            if (fields.get(i).getName().equals(fieldName)) {
+        for (int i = 0; i < sortedFields.size(); ++i) {
+            if (sortedFields.get(i).getName().equals(fieldName)) {
                 return i;
             }
         }
@@ -119,7 +119,11 @@ public class DBTable extends DBObject {
     }
 
     public DBField getField(String fieldName) throws SchemaException {
-        return fields.get(getFieldIndex(fieldName));
+        return sortedFields.get(getFieldIndex(fieldName));
+    }
+
+    public DBField getField(int id) throws SchemaException {
+        return sortedFields.get(id);
     }
 
     public List<DBHashIndex> getHashIndexes() {
@@ -163,10 +167,11 @@ public class DBTable extends DBObject {
     }
 
     void checkIntegrity() throws SchemaException {
-        DBSchema.checkUniqueId(fields);
+        DBSchema.checkUniqueId(sortedFields);
         DBSchema.checkUniqueId(getIndexesStream().collect(Collectors.toList()));
+        checkFieldsOrder();
 
-        Set<Integer> indexingFieldIds = new HashSet<>(fields.size());
+        Set<Integer> indexingFieldIds = new HashSet<>(sortedFields.size());
 
         for (DBHashIndex i : hashIndexes) {
             IntStream.of(i.getFieldIds()).forEach(indexingFieldIds::add);
@@ -187,7 +192,7 @@ public class DBTable extends DBObject {
             IntStream.of(i.getHashFieldIds()).forEach(indexingFieldIds::add);
         }
 
-        Set<Integer> existingFieldIds = fields.stream().map(DBObject::getId).collect(Collectors.toSet());
+        Set<Integer> existingFieldIds = sortedFields.stream().map(DBObject::getId).collect(Collectors.toSet());
         indexingFieldIds.stream()
                 .filter(fieldId -> !existingFieldIds.contains(fieldId))
                 .findFirst()
@@ -201,16 +206,28 @@ public class DBTable extends DBObject {
         destination.add(index);
     }
 
+    private void checkFieldsOrder() {
+        int id = 0;
+        for (DBField sortedField : sortedFields) {
+            if (sortedField.getId() != id) {
+                throw new SchemaException("Table " + namespace + "." + name + " has inconsistent fields order: " + sortedFields.stream()
+                        .map(DBObject::getId)
+                        .collect(Collectors.toList()));
+            }
+        }
+    }
+
     static DBTable fromJson(JSONObject source) throws SchemaException {
+        List<DBField> fields = JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson);
         return new DBTable(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
                 JsonUtils.getValue(JSON_PROP_NAME, String.class, source),
                 JsonUtils.getValue(JSON_PROP_NAMESPACE, String.class, source),
-                JsonUtils.toList(JSON_PROP_FIELDS, source, DBField::fromJson),
-                JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, DBHashIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, DBPrefixIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, DBIntervalIndex::fromJson),
-                JsonUtils.toList(JSON_PROP_RANGE_INDEXES, source, DBRangeIndex::fromJson)
+                fields,
+                JsonUtils.toList(JSON_PROP_HASH_INDEXES, source, s -> DBHashIndex.fromJson(s, fields)),
+                JsonUtils.toList(JSON_PROP_PREFIX_INDEXES, source, s ->  DBPrefixIndex.fromJson(s, fields)),
+                JsonUtils.toList(JSON_PROP_INTERVAL_INDEXES, source, s ->  DBIntervalIndex.fromJson(s, fields)),
+                JsonUtils.toList(JSON_PROP_RANGE_INDEXES, source, s ->  DBRangeIndex.fromJson(s, fields))
         );
     }
 
@@ -220,7 +237,7 @@ public class DBTable extends DBObject {
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_NAME, name);
         object.put(JSON_PROP_NAMESPACE, namespace);
-        object.put(JSON_PROP_FIELDS, JsonUtils.toJsonArray(fields));
+        object.put(JSON_PROP_FIELDS, JsonUtils.toJsonArray(sortedFields));
         object.put(JSON_PROP_HASH_INDEXES, JsonUtils.toJsonArray(hashIndexes));
         object.put(JSON_PROP_PREFIX_INDEXES, JsonUtils.toJsonArray(prefixIndexes));
         object.put(JSON_PROP_INTERVAL_INDEXES, JsonUtils.toJsonArray(intervalIndexes));

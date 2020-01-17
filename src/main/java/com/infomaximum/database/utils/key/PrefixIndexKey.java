@@ -2,6 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.schema.dbstruct.DBPrefixIndex;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
@@ -24,6 +25,10 @@ public class PrefixIndexKey {
 
     public PrefixIndexKey(String lexeme, final PrefixIndex index) {
         this(lexeme, 0, index.attendant);
+    }
+
+    public PrefixIndexKey(String lexeme, final DBPrefixIndex index) {
+        this(lexeme, 0, index.getAttendant());
     }
 
     public String getLexeme() {
@@ -77,6 +82,14 @@ public class PrefixIndexKey {
         byte[] payload = TypeConvert.pack(lexeme);
         byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + payload.length + 1, index.attendant);
         System.arraycopy(payload, 0, key, index.attendant.length, payload.length);
+        key[key.length - 1] = LEXEME_TERMINATOR;
+        return new KeyPattern(key);
+    }
+
+    public static KeyPattern buildKeyPatternForEdit(final String lexeme, final DBPrefixIndex index) {
+        byte[] payload = TypeConvert.pack(lexeme);
+        byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.getAttendant().length + payload.length + 1, index.getAttendant());
+        System.arraycopy(payload, 0, key, index.getAttendant().length, payload.length);
         key[key.length - 1] = LEXEME_TERMINATOR;
         return new KeyPattern(key);
     }

@@ -14,8 +14,8 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     final long[] hashedValues;
     long indexedValue;
 
-    BaseIntervalIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
-        super(id, index.attendant);
+    BaseIntervalIndexKey(long id, long[] hashedValues, byte[] attendant) {
+        super(id, attendant);
         if (hashedValues == null) {
             throw new IllegalArgumentException();
         }

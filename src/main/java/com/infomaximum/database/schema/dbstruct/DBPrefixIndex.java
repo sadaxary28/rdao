@@ -1,25 +1,35 @@
 package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.utils.IndexUtils;
+import com.infomaximum.database.utils.TypeConvert;
 import net.minidev.json.JSONObject;
+
+import java.util.List;
 
 public class DBPrefixIndex extends DBIndex {
 
+    private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("prf");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    private DBPrefixIndex(int id, int[] fieldIds) {
-        super(id, fieldIds);
+    private DBPrefixIndex(int id, DBField[] fields) {
+        super(id, fields);
     }
 
-    public DBPrefixIndex(int[] fieldIds) {
-        this(-1, fieldIds);
+    public DBPrefixIndex(DBField[] fields) {
+        this(-1, fields);
     }
 
-    static DBPrefixIndex fromJson(JSONObject source) throws SchemaException {
+    static DBPrefixIndex fromJson(JSONObject source, List<DBField> tableFields) throws SchemaException {
         return new DBPrefixIndex(
                 JsonUtils.getValue(JSON_PROP_ID, Integer.class, source),
-                JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source)
+                IndexUtils.getFieldsByIds(tableFields, JsonUtils.getIntArrayValue(JSON_PROP_FIELD_IDS, source))
         );
+    }
+
+    @Override
+    protected byte[] getIndexNameBytes() {
+        return INDEX_NAME_BYTES;
     }
 
     @Override

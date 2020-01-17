@@ -22,7 +22,7 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     private Type type;
 
     public RangeIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
-        super(id, hashedValues, index);
+        super(id, hashedValues, index.attendant);
     }
 
     public void setIndexedValue(long value) {
