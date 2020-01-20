@@ -11,6 +11,7 @@ import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
+import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -104,6 +105,39 @@ public class IndexService {
             transaction.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
     }
+
+    public static void doIntervalIndex(RangeIndex index, StructEntity table, DBProvider dbProvider) throws DatabaseException {
+        final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
+        final List<Field> hashedFields = index.getHashedFields();
+        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()], index);
+
+        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+            indexKey.setId(obj.getId());
+            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            RangeIndexUtils.insertIndexedRange(index, indexKey,
+                    obj.get(index.getBeginIndexedField().getNumber()),
+                    obj.get(index.getEndIndexedField().getNumber()),
+                    transaction);
+        });
+    }
+
+    public static void doIntervalIndex(DBRangeIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
+        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final DBField[] hashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
+        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.length], index);
+
+        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+            indexKey.setId(obj.getId());
+            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            RangeIndexUtils.insertIndexedRange(index,
+                    indexKey,
+                    obj.get(index.getBeginFieldId()),
+                    obj.get(index.getEndFieldId()),
+                    table.getIndexColumnFamily(),
+                    transaction);
+        });
+    }
+
 
     private static void indexData(Set<Integer> loadingFields, StructEntity table, DBProvider dbProvider, ModifierCreator recordCreator) throws DatabaseException {
         DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);

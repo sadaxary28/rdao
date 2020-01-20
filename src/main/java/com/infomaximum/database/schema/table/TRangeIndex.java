@@ -15,10 +15,20 @@ public class TRangeIndex extends TBaseIndex {
         this(beginField, endField, EMPTY_HASHED_FIELDS);
     }
 
+    public TRangeIndex(TField beginField, TField endField) {
+        this(beginField.getName(), endField.getName());
+    }
+
     public TRangeIndex(String beginField, String endField, String[] hashedFields) {
         this.beginField = beginField;
         this.endField = endField;
         this.hashedFields = hashedFields;
+    }
+
+    public TRangeIndex(TField beginField, TField endField, TField[] hashedFields) {
+        this(beginField.getName(),
+                endField.getName(),
+                Arrays.stream(hashedFields).map(TField::getName).toArray(String[]::new));
     }
 
     public String getBeginField() {

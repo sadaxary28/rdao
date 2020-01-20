@@ -6,6 +6,7 @@ import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.schema.table.*;
 import com.infomaximum.database.utils.IndexService;
+import com.infomaximum.database.utils.TableUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.database.utils.key.FieldKey;
 import org.slf4j.Logger;
@@ -114,6 +115,7 @@ public class Schema {
         return dbSchema;
     }
 
+    @Deprecated
     public boolean existTable(StructEntity table) {
         return dbSchema.findTableIndex(table.getName(), table.getNamespace()) != -1;
     }
@@ -130,23 +132,27 @@ public class Schema {
         } else {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
-
         for (TField tableField : table.getFields()) {
             createField(tableField, dbTable);
         }
-
         for (THashIndex index : table.getHashIndexes()) {
             createIndex(index, dbTable);
         }
-
         for (TPrefixIndex index : table.getPrefixIndexes()) {
             createIndex(index, dbTable);
         }
-
         for (TIntervalIndex index : table.getIntervalIndexes()) {
             createIndex(index, dbTable);
         }
+        for (TRangeIndex index : table.getRangeIndexes()) {
+            createIndex(index, dbTable);
+        }
         saveSchema();
+    }
+
+    public Table getTable(String name, String namespace) {
+        DBTable dbTable = dbSchema.getTable(name, namespace);
+        return TableUtils.buildTable(dbTable, dbSchema);
     }
 
     @Deprecated
@@ -163,20 +169,19 @@ public class Schema {
         } else {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
-
         for (Field tableField : table.getFields()) {
             createField(tableField, dbTable, table);
         }
-
         for (HashIndex index : table.getHashIndexes()) {
             createIndex(index, dbTable, table);
         }
-
         for (PrefixIndex index : table.getPrefixIndexes()) {
             createIndex(index, dbTable, table);
         }
-
         for (IntervalIndex index : table.getIntervalIndexes()) {
+            createIndex(index, dbTable, table);
+        }
+        for (RangeIndex index : table.getRangeIndexes()) {
             createIndex(index, dbTable, table);
         }
         saveSchema();
@@ -397,6 +402,29 @@ public class Schema {
         if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
             IndexService.doIntervalIndex(dbIndex, dbTable, dbProvider);
+            saveSchema();
+        } else {
+            throw new IndexAlreadyExistsException(dbIndex);
+        }
+    }
+
+    @Deprecated
+    private void createIndex(RangeIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
+        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
+        if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
+            dbTable.attachIndex(dbIndex);
+            IndexService.doIntervalIndex(index, table, dbProvider);
+            saveSchema();
+        } else {
+            throw new IndexAlreadyExistsException(index);
+        }
+    }
+
+    private void createIndex(TRangeIndex index, DBTable table) throws DatabaseException {
+        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, table);
+        if (table.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
+            table.attachIndex(dbIndex);
+            IndexService.doIntervalIndex(dbIndex, table, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(dbIndex);

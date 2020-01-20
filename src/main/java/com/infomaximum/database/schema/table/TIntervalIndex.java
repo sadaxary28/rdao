@@ -15,8 +15,17 @@ public class TIntervalIndex extends TBaseIndex {
         this.hashedFields = hashedFields;
     }
 
+    public TIntervalIndex(TField indexedField, TField[] hashedFields) {
+        this(indexedField.getName(),
+                Arrays.stream(hashedFields).map(TField::getName).toArray(String[]::new));
+    }
+
     public TIntervalIndex(String indexedField) {
         this(indexedField, EMPTY_HASHED_FIELDS);
+    }
+
+    public TIntervalIndex(TField indexedField) {
+        this(indexedField.getName());
     }
 
     public String getIndexedField() {

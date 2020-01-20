@@ -42,6 +42,12 @@ public class DBSchema {
         return -1;
     }
 
+    public DBTable getTableById(int id) throws SchemaException {
+        return tables.stream().filter(table ->  table.getId() == id)
+                .findAny()
+                .orElseThrow(() -> new TableNotFoundException("Table with id: " + id + " doesn't found"));
+    }
+
     public DBTable getTable(String name, String namespace) throws SchemaException {
         int i = findTableIndex(name, namespace);
         if (i == -1) {
@@ -74,7 +80,7 @@ public class DBSchema {
         return items
                 .map(DBObject::getId)
                 .max(Integer::compare)
-                .orElse(0) + 1;
+                .orElse(-1) + 1;
     }
 
     static <T extends DBObject> void checkUniqueId(List<T> objects) throws SchemaException {

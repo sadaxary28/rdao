@@ -6,12 +6,16 @@ public class TPrefixIndex extends TBaseIndex {
 
     private final String[] fields;
 
-    public TPrefixIndex(String[] fields) {
+    public TPrefixIndex(String... fields) {
         if (fields.length == 0) {
             throw new IllegalArgumentException();
         }
 
         this.fields = fields;
+    }
+
+    public TPrefixIndex(TField... fields) {
+        this(Arrays.stream(fields).map(TField::getName).toArray(String[]::new));
     }
 
     public String[] getFields() {
