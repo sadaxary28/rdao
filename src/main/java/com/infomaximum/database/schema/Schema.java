@@ -43,6 +43,7 @@ public class Schema {
     private final DBProvider dbProvider;
     private final DBSchema dbSchema;
     private final static ConcurrentMap<Class<? extends DomainObject>, StructEntity> objTables = new ConcurrentHashMap<>();
+    private final static ConcurrentMap<TableReference, Class<? extends DomainObject>> tableClasses = new ConcurrentHashMap<>();
 
     private Schema(DBProvider dbProvider, DBSchema schema) {
         this.dbProvider = dbProvider;
@@ -192,7 +193,7 @@ public class Schema {
         dbProvider.dropColumnFamily(table.getIndexColumnFamily());
         dbProvider.dropSequence(table.getDataColumnFamily());
 
-        removeObjTable(name);
+        removeObjTable(name, namespace);
 
         saveSchema();
         return true;
@@ -210,6 +211,10 @@ public class Schema {
         return entity;
     }
 
+    public static Class<? extends DomainObject> getTableClass(String name, String namespace) {
+        return tableClasses.get(new TableReference(name, namespace));
+    }
+
     public static <T extends DomainObject> StructEntity resolve(Class<T> objClass) throws SchemaException {
         Class<? extends DomainObject> annotationClass = StructEntity.getAnnotationClass(objClass);
         StructEntity entity = objTables.get(annotationClass);
@@ -217,6 +222,8 @@ public class Schema {
             entity = new StructEntity(annotationClass);
             objTables.put(annotationClass, entity);
         }
+        TableReference tableReference = new TableReference(entity.getName(), entity.getNamespace());
+        tableClasses.putIfAbsent(tableReference, annotationClass);
         return entity;
     }
 
@@ -467,13 +474,14 @@ public class Schema {
         }
     }
 
-    private void removeObjTable(String tableName) {
+    private void removeObjTable(String name, String namespace) {
         Iterator<Map.Entry<Class<? extends DomainObject>, StructEntity>> i = objTables.entrySet().iterator();
         while (i.hasNext()) {
             StructEntity table = i.next().getValue();
-            if (table.getName().equals(tableName)) {
+            if (table.getName().equals(name) && table.getNamespace().equalsIgnoreCase(namespace)) {
                 i.remove();
             }
+            tableClasses.remove(new TableReference(name, namespace));
         }
     }
 }
