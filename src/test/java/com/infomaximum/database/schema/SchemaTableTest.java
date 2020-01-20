@@ -1,6 +1,8 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.runtime.TableNotFoundException;
+import com.infomaximum.database.exception.runtime.TableRemoveException;
 import com.infomaximum.database.schema.table.*;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.GeneralReadable;
@@ -24,6 +26,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     private Schema schema;
 
+    //Создание таблицы_____________________________________________
     @Test
     @DisplayName("Создает простую таблицу с полями без зависимостей")
     void createTableOnlyFieldsTest() throws DatabaseException {
@@ -140,7 +143,6 @@ public class SchemaTableTest extends DomainDataJ5Test {
         );
         schema.createTable(table);
 
-
         hashIndexes = new ArrayList<THashIndex>() {{
             add(new THashIndex("folder_id"));
             add(new THashIndex("size"));
@@ -158,6 +160,30 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 rangeIndexes
         );
         assertThatSchemaContainsTable(expected);
+    }
+
+    //Удаление таблицы_____________________________________________
+    @Test
+    @DisplayName("Удаляет простую таблицу")
+    void removeTableTest() throws DatabaseException {
+        createExchangeFolderTable();
+        createStoreFolderTable();
+
+        schema.dropTable("StoreFile", "com.infomaximum.store");
+        assertTableDoesntExist("StoreFile", "com.infomaximum.store");
+
+        schema.dropTable("ExchangeFolder", "com.infomaximum.exchange");
+        assertTableDoesntExist("ExchangeFolder", "com.infomaximum.exchange");
+    }
+
+    @Test
+    @DisplayName("Ошибка при удалени таблицы, на которую ссылается другая таблица")
+    void failBecauseRemoveDependencedTableTest() throws DatabaseException {
+        createExchangeFolderTable();
+        createStoreFolderTable();
+
+        Assertions.assertThatThrownBy(() -> schema.dropTable("ExchangeFolder", "com.infomaximum.exchange"))
+                .isExactlyInstanceOf(TableRemoveException.class);
     }
 
 
@@ -178,6 +204,62 @@ public class SchemaTableTest extends DomainDataJ5Test {
         schema.createTable(table);
     }
 
+    private void createStoreFolderTable() throws DatabaseException {
+        Schema.resolve(StoreFileReadable.class);
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("name", String.class));
+            add(new TField("type", String.class));
+            add(new TField("size", Long.class));
+            add(new TField("single", Boolean.class));
+            add(new TField("format", String.class));
+            add(new TField("folder_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
+            add(new TField("double", Double.class));
+            add(new TField("begin_time", Instant.class));
+            add(new TField("end_time", Instant.class));
+            add(new TField("begin", Long.class));
+            add(new TField("end", Long.class));
+            add(new TField("local_begin", LocalDateTime.class));
+            add(new TField("local_end", LocalDateTime.class));
+            add(new TField("data", byte[].class));
+        }};
+        List<THashIndex> hashIndexes = new ArrayList<THashIndex>() {{
+            add(new THashIndex("size"));
+            add(new THashIndex("name"));
+            add(new THashIndex("size", "name"));
+            add(new THashIndex("format"));
+            add(new THashIndex("local_begin"));
+        }};
+        List<TPrefixIndex> prefixIndexes = new ArrayList<TPrefixIndex>() {{
+            add(new TPrefixIndex("name"));
+            add(new TPrefixIndex("name", "type"));
+        }};
+        List<TIntervalIndex> intervalIndexes = new ArrayList<TIntervalIndex>() {{
+            add(new TIntervalIndex("size"));
+            add(new TIntervalIndex("double"));
+            add(new TIntervalIndex("begin_time"));
+            add(new TIntervalIndex("local_begin"));
+            add(new TIntervalIndex("size", new String[]{"name"}));
+            add(new TIntervalIndex("size", new String[]{"folder_id"}));
+        }};
+        List<TRangeIndex> rangeIndexes = new ArrayList<TRangeIndex>() {{
+            add(new TRangeIndex("begin", "end"));
+            add(new TRangeIndex("begin", "end", new String[]{"folder_id"}));
+            add(new TRangeIndex("begin_time", "end_time"));
+            add(new TRangeIndex("begin_time", "begin_time", new String[]{"folder_id"}));
+            add(new TRangeIndex("local_begin", "local_end"));
+        }};
+        Table table = new Table("StoreFile",
+                "com.infomaximum.store",
+                fields,
+                hashIndexes,
+                prefixIndexes,
+                intervalIndexes,
+                rangeIndexes
+        );
+        schema.createTable(table);
+    }
+
     private void assertThatSchemaContainsTable(Table expected) throws DatabaseException {
         Schema schema = Schema.read(rocksDBProvider);
         Table actual = schema.getTable(expected.getName(), expected.getNamespace());
@@ -186,5 +268,14 @@ public class SchemaTableTest extends DomainDataJ5Test {
         String indexColumnFamily = expected.getNamespace() + "." + expected.getName() + ".index";
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(dataColumnFamily)).isTrue();
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(indexColumnFamily)).isTrue();
+    }
+
+    private void assertTableDoesntExist(String name, String namespace) throws DatabaseException {
+        Schema schema = Schema.read(rocksDBProvider);
+        Assertions.assertThatThrownBy(() -> schema.getTable(name, namespace)).isExactlyInstanceOf(TableNotFoundException.class);
+        String dataColumnFamily = namespace + "." + name;
+        String indexColumnFamily = namespace + "." + name + ".index";
+        Assertions.assertThat(rocksDBProvider.containsColumnFamily(dataColumnFamily)).isFalse();
+        Assertions.assertThat(rocksDBProvider.containsColumnFamily(indexColumnFamily)).isFalse();
     }
 }

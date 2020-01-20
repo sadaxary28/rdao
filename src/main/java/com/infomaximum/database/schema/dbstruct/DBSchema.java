@@ -1,7 +1,7 @@
 package com.infomaximum.database.schema.dbstruct;
 
-import com.infomaximum.database.exception.SchemaException;
-import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import net.minidev.json.JSONArray;
 
 import java.util.List;

@@ -2,6 +2,7 @@ package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.*;
+import com.infomaximum.database.exception.runtime.*;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.schema.table.*;
@@ -194,6 +195,9 @@ public class Schema {
         }
 
         DBTable table = dbSchema.getTables().remove(i);
+        if (hasDependenceOfOtherTable(table.getId())) {
+            throw new TableRemoveException("Can't remove table: " + namespace + "." + name + ", there are dependencies on the table");
+        }
         dbProvider.dropColumnFamily(table.getDataColumnFamily());
         dbProvider.dropColumnFamily(table.getIndexColumnFamily());
         dbProvider.dropSequence(table.getDataColumnFamily());
@@ -511,5 +515,20 @@ public class Schema {
             }
             tableClasses.remove(new TableReference(name, namespace));
         }
+    }
+
+    //todo V.Bukharkin медленный способ, нужно придумать быстрее
+    private boolean hasDependenceOfOtherTable(int tableId) {
+        for (DBTable table : getDbSchema().getTables()) {
+            if(table.getId() == tableId) {
+                continue;
+            }
+            for (DBField field : table.getSortedFields()) {
+                if (field.isForeignKey() && field.getForeignTableId() == tableId) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

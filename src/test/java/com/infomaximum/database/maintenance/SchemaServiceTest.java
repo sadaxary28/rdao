@@ -1,7 +1,7 @@
 package com.infomaximum.database.maintenance;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderEditable;
 import com.infomaximum.domain.ExchangeFolderReadable;
