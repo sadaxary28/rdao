@@ -161,44 +161,44 @@ public class DomainServiceTest extends DomainDataTest {
                 .execute());
     }
 
-    @Test
-    public void remove() throws Exception{
-        Schema schema = ensureSchema();
-        Assertions.assertThat(schema.getDbSchema().getTables()).hasSize(2);
+//    @Test
+//    public void remove() throws Exception{
+//        Schema schema = ensureSchema();
+//        Assertions.assertThat(schema.getDbSchema().getTables()).hasSize(2);
+//
+//        new DomainService(rocksDBProvider, schema)
+//                .setChangeMode(ChangeMode.REMOVAL)
+//                .setDomain(Schema.getEntity(StoreFileReadable.class))
+//                .execute();
+//        new DomainService(rocksDBProvider, schema)
+//                .setChangeMode(ChangeMode.REMOVAL)
+//                .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
+//                .execute();
+//
+//        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
+//        Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
+//    }
 
-        new DomainService(rocksDBProvider, schema)
-                .setChangeMode(ChangeMode.REMOVAL)
-                .setDomain(Schema.getEntity(StoreFileReadable.class))
-                .execute();
-        new DomainService(rocksDBProvider, schema)
-                .setChangeMode(ChangeMode.REMOVAL)
-                .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
-                .execute();
-
-        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
-        Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
-    }
-
-    @Test
-    public void removeAndValidate() throws Exception{
-        Schema schema = ensureSchema();
-
-        new DomainService(rocksDBProvider, schema)
-                .setChangeMode(ChangeMode.REMOVAL)
-                .setValidationMode(true)
-                .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
-                .execute();
-        new DomainService(rocksDBProvider, schema)
-                .setChangeMode(ChangeMode.REMOVAL)
-                .setValidationMode(true)
-                .setDomain(Schema.getEntity(StoreFileReadable.class))
-                .execute();
-
-        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
-        Schema afterSchema = Schema.read(rocksDBProvider);
-        Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
-        Assertions.assertThat(afterSchema.getDbSchema().getTables()).isEmpty();
-    }
+//    @Test
+//    public void removeAndValidate() throws Exception{
+//        Schema schema = ensureSchema();
+//
+//        new DomainService(rocksDBProvider, schema)
+//                .setChangeMode(ChangeMode.REMOVAL)
+//                .setValidationMode(true)
+//                .setDomain(Schema.getEntity(ExchangeFolderReadable.class))
+//                .execute();
+//        new DomainService(rocksDBProvider, schema)
+//                .setChangeMode(ChangeMode.REMOVAL)
+//                .setValidationMode(true)
+//                .setDomain(Schema.getEntity(StoreFileReadable.class))
+//                .execute();
+//
+//        Assert.assertArrayEquals(new String[] { Schema.SERVICE_COLUMN_FAMILY}, rocksDBProvider.getColumnFamilies());
+//        Schema afterSchema = Schema.read(rocksDBProvider);
+//        Assertions.assertThat(schema.getDbSchema().getTables()).isEmpty();
+//        Assertions.assertThat(afterSchema.getDbSchema().getTables()).isEmpty();
+//    }
 
     private void testNotWorking() throws Exception {
         try {

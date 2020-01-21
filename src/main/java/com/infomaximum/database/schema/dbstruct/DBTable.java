@@ -6,10 +6,7 @@ import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -45,8 +42,6 @@ public class DBTable extends DBObject {
     private final List<DBPrefixIndex> prefixIndexes;
     private final List<DBIntervalIndex> intervalIndexes;
     private final List<DBRangeIndex> rangeIndexes;
-
-    private final List<Reference> referencingForeignFields = new ArrayList<>();
 
     private DBTable(int id, String name, String namespace, List<DBField> sortedFields,
                     List<DBHashIndex> hashIndexes, List<DBPrefixIndex> prefixIndexes,
@@ -87,12 +82,28 @@ public class DBTable extends DBObject {
         return namespace;
     }
 
-    public List<DBField> getSortedFields() {
-        return sortedFields;
+    public void dropField(int id) {
+        sortedFields.remove(id);
     }
 
-    public List<Reference> getReferencingForeignFields() {
-        return referencingForeignFields;
+    public void dropIndex(DBHashIndex index) {
+        dropIndex(index, hashIndexes);
+    }
+
+    public void dropIndex(DBPrefixIndex index) {
+        dropIndex(index, prefixIndexes);
+    }
+
+    public void dropIndex(DBIntervalIndex index) {
+        dropIndex(index, intervalIndexes);
+    }
+
+    public void dropIndex(DBRangeIndex index) {
+        dropIndex(index, rangeIndexes);
+    }
+
+    public List<DBField> getSortedFields() {
+        return Collections.unmodifiableList(sortedFields);
     }
 
     public DBField newField(String name, Class<? extends Serializable> type, Integer foreignTableId) {
@@ -127,19 +138,19 @@ public class DBTable extends DBObject {
     }
 
     public List<DBHashIndex> getHashIndexes() {
-        return hashIndexes;
+        return Collections.unmodifiableList(hashIndexes);
     }
 
     public List<DBPrefixIndex> getPrefixIndexes() {
-        return prefixIndexes;
+        return Collections.unmodifiableList(prefixIndexes);
     }
 
     public List<DBIntervalIndex> getIntervalIndexes() {
-        return intervalIndexes;
+        return Collections.unmodifiableList(intervalIndexes);
     }
 
     public List<DBRangeIndex> getRangeIndexes() {
-        return rangeIndexes;
+        return Collections.unmodifiableList(rangeIndexes);
     }
 
     public Stream<? extends DBIndex> getIndexesStream() {
@@ -213,6 +224,16 @@ public class DBTable extends DBObject {
                 throw new SchemaException("Table " + namespace + "." + name + " has inconsistent fields order: " + sortedFields.stream()
                         .map(DBObject::getId)
                         .collect(Collectors.toList()));
+            }
+            id++;
+        }
+    }
+
+    private <T extends DBIndex> void dropIndex(T index, List<T> indexes) {
+        for (int i = 0; i < indexes.size(); i++) {
+            if (index.fieldsEquals(indexes.get(i))) {
+                indexes.remove(i);
+                return;
             }
         }
     }

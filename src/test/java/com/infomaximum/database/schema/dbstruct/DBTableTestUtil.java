@@ -48,7 +48,6 @@ public class DBTableTestUtil {
             Assertions.assertThat(actual.getIntervalIndexes()).hasSameSizeAs(expected.getIntervalIndexes());
             Assertions.assertThat(actual.getPrefixIndexes()).hasSameSizeAs(expected.getPrefixIndexes());
             Assertions.assertThat(actual.getRangeIndexes()).hasSameSizeAs(expected.getRangeIndexes());
-            Assertions.assertThat(actual.getReferencingForeignFields()).hasSameSizeAs(expected.getReferencingForeignFields());
 
             expected.getSortedFields().forEach(expectedField -> {
                 assertField(expectedField, actual.getField(expectedField.getName()));

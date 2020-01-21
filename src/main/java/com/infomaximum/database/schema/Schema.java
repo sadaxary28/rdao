@@ -265,12 +265,11 @@ public class Schema {
             }
         }
     }
-
-    //todo check it
-    public void renameTable(String oldName, String newName, String namespace) throws DatabaseException {
-        dbSchema.getTable(oldName, namespace).setName(newName);
-        saveSchema();
-    }
+//
+//    public void renameTable(String oldName, String newName, String namespace) throws DatabaseException {
+//        dbSchema.getTable(oldName, namespace).setName(newName);
+//        saveSchema();
+//    }
 
     @Deprecated
     private DBField createField(Field tableField, DBTable dbTable, StructEntity table) throws DatabaseException {
@@ -290,7 +289,7 @@ public class Schema {
         return newField;
     }
 
-    public DBField createField(TField tableField, DBTable dbTable) throws DatabaseException {
+    private DBField createField(TField tableField, DBTable dbTable) throws DatabaseException {
         int i = dbTable.findFieldIndex(tableField.getName());
         if (i != -1) {
             throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName());
@@ -307,36 +306,46 @@ public class Schema {
         return newField;
     }
 
-    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
-        DBTable table = dbSchema.getTable(tableName, namespace);
-        int i = table.findFieldIndex(fieldName);
-        if (i == -1) {
-            return false;
-        }
-
-        DBField field = table.getSortedFields().get(i);
-        dropIndexesByField(field, table.getHashIndexes(), table);
-        dropIndexesByField(field, table.getPrefixIndexes(), table);
-        dropIndexesByField(field, table.getIntervalIndexes(), table);
-        dropIndexesByField(field, table.getRangeIndexes(), table);
-
-        dropFieldData(field, table);
-
-        table.getSortedFields().remove(i);
-
-        saveSchema();
-        return true;
+    public void createField(TField tableField, Table table) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
+        createField(tableField, dbTable);
     }
 
-    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
-        for (int i = indexes.size() - 1; i > -1; --i) {
-            T index = indexes.get(i);
-            if (index.fieldContains(field.getId())) {
-                dropIndexData(index, table);
-                indexes.remove(i);
-            }
-        }
+    public void createField(TField tableField, String tableName, String tableNamespace) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
+        createField(tableField, dbTable);
     }
+
+//    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
+//        DBTable table = dbSchema.getTable(tableName, namespace);
+//        int i = table.findFieldIndex(fieldName);
+//        if (i == -1) {
+//            return false;
+//        }
+//
+//        DBField field = table.getSortedFields().get(i);
+//        dropIndexesByField(field, table.getHashIndexes(), table);
+//        dropIndexesByField(field, table.getPrefixIndexes(), table);
+//        dropIndexesByField(field, table.getIntervalIndexes(), table);
+//        dropIndexesByField(field, table.getRangeIndexes(), table);
+//
+//        dropFieldData(field, table);
+//
+//        table.dropField(i);
+//
+//        saveSchema();
+//        return true;
+//    }
+
+//    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
+//        for (int i = indexes.size() - 1; i > -1; --i) {
+//            T index = indexes.get(i);
+//            if (index.fieldContains(field.getId())) {
+//                dropIndexData(index, table);
+//                indexes.remove(i);
+//            }
+//        }
+//    }
 
     public void renameField(String oldName, String newName, String tableName, String namespace) throws DatabaseException {
         dbSchema.getTable(tableName, namespace).getField(oldName).setName(newName);
@@ -435,12 +444,14 @@ public class Schema {
         }
     }
 
+    @Deprecated
     public boolean dropIndex(HashIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         if (index.sortedFields.size() == 1 && table.getField(index.sortedFields.get(0).getName()).isForeignKey()) {
             return true;
         }
         DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        table.dropIndex(targetIndex);
         return dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -449,8 +460,6 @@ public class Schema {
             T dbIndex = indexes.get(i);
             if (predicate.test(dbIndex)) {
                 dropIndexData(dbIndex, table);
-                indexes.remove(i);
-
                 saveSchema();
                 return true;
             }
@@ -458,43 +467,49 @@ public class Schema {
         return false;
     }
 
+    @Deprecated
     public boolean dropIndex(PrefixIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        table.dropIndex(targetIndex);
         return dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
     }
 
+    @Deprecated
     public boolean dropIndex(IntervalIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        table.dropIndex(targetIndex);
         return dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
     }
 
+    @Deprecated
     public boolean dropIndex(RangeIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        table.dropIndex(targetIndex);
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
     }
 
     private void saveSchema() throws DatabaseException {
         saveSchema(dbSchema, dbProvider);
     }
-
-    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
-        try (DBTransaction transaction = dbProvider.beginTransaction()) {
-            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
-                KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
-                        new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getId()))
-                });
-
-                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
-                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
-                }
-            }
-
-            transaction.commit();
-        }
-    }
+//
+//    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
+//        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+//            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
+//                KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
+//                        new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getId()))
+//                });
+//
+//                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
+//                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
+//                }
+//            }
+//
+//            transaction.commit();
+//        }
+//    }
 
     private void dropIndexData(DBIndex index, DBTable table) throws DatabaseException {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {

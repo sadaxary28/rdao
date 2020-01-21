@@ -59,7 +59,7 @@ public class DomainService {
         existsData = isExistsColumnFamily(dataColumnFamily);
 
         if (changeMode == ChangeMode.REMOVAL) {
-            remove();
+//            remove();
         }
 
         validate();

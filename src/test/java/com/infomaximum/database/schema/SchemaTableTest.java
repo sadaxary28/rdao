@@ -1,6 +1,7 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.runtime.FieldAlreadyExistsException;
 import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import com.infomaximum.database.exception.runtime.TableRemoveException;
 import com.infomaximum.database.schema.table.*;
@@ -186,8 +187,73 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 .isExactlyInstanceOf(TableRemoveException.class);
     }
 
+    //Добавление полей_____________________________________________
+    @Test
+    @DisplayName("Добавляет поле в таблицу")
+    void createTableFieldTest() throws DatabaseException {
+        Table generalTable = createGeneralTable();
+        TField newField = new TField("newField", Long.class);
+        schema.createField(newField, generalTable);
 
-    private void createExchangeFolderTable() throws DatabaseException {
+        List<TField> newFields = new ArrayList<>(generalTable.getFields());
+        newFields.add(newField);
+        generalTable = new Table(generalTable.getName(), generalTable.getNamespace(), newFields, generalTable.getHashIndexes());
+        assertThatSchemaContainsTable(generalTable);
+    }
+
+    @Test
+    @DisplayName("Ошибка добавления поля в таблицу, которое зависит от не существующей таблицы")
+    void failCreateFieldBecauseForeignTableDoesntExist() throws DatabaseException {
+        createGeneralTable();
+        TField newFieldWithDependence = new TField("newFieldWithDependence", new TableReference("ExchangeFolder",
+                "com.infomaximum.exchange"));
+        Assertions.assertThatThrownBy(() -> schema.createField(newFieldWithDependence, "general", "com.infomaximum.rocksdb"))
+                .isExactlyInstanceOf(TableNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Ошибка имя поля уже существует")
+    void failCreateFieldWithSameName() throws DatabaseException {
+        createGeneralTable();
+        TField newFieldWithDependence = new TField("value", Double.class);
+        Assertions.assertThatThrownBy(() -> schema.createField(newFieldWithDependence, "general", "com.infomaximum.rocksdb"))
+                .isExactlyInstanceOf(FieldAlreadyExistsException.class);
+    }
+
+    //Переименование полей_____________________________________________
+    @Test
+    @DisplayName("Переименование таблицы")
+    void dropTableFieldTest() throws DatabaseException {
+        Table generalTable = createExchangeFolderTable();
+        schema.renameField("state", "newValue", "ExchangeFolder", "com.infomaximum.exchange");
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("uuid", String.class));
+            add(new TField("email", String.class));
+            add(new TField("date", Instant.class));
+            add(new TField("newValue", String.class));
+            add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
+        }};
+        generalTable = new Table(generalTable.getName(), generalTable.getNamespace(), fields, generalTable.getHashIndexes());
+
+        assertThatSchemaContainsTable(generalTable);
+    }
+
+    private Table createGeneralTable() throws DatabaseException {
+        Schema.resolve(GeneralReadable.class);
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("value", String.class));
+        }};
+        List<THashIndex> hashIndexes = new ArrayList<THashIndex>() {{
+            add(new THashIndex("value"));
+        }};
+        Table table = new Table("general", "com.infomaximum.rocksdb", fields, hashIndexes);
+        schema.createTable(table);
+        return schema.getTable("general", "com.infomaximum.rocksdb");
+    }
+
+    private Table createExchangeFolderTable() throws DatabaseException {
         Schema.resolve(ExchangeFolderReadable.class);
 
         List<TField> fields = new ArrayList<TField>() {{
@@ -202,6 +268,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
         }};
         Table table = new Table("ExchangeFolder", "com.infomaximum.exchange", fields, hashIndexes);
         schema.createTable(table);
+        return schema.getTable("ExchangeFolder", "com.infomaximum.exchange");
     }
 
     private void createStoreFolderTable() throws DatabaseException {

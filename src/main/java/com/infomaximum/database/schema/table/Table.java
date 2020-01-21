@@ -1,6 +1,7 @@
 package com.infomaximum.database.schema.table;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,23 +43,23 @@ public class Table {
     }
 
     public List<TField> getFields() {
-        return fields;
+        return Collections.unmodifiableList(fields);
     }
 
     public List<THashIndex> getHashIndexes() {
-        return hashIndexes;
+        return Collections.unmodifiableList(hashIndexes);
     }
 
     public List<TPrefixIndex> getPrefixIndexes() {
-        return prefixIndexes;
+        return Collections.unmodifiableList(prefixIndexes);
     }
 
     public List<TIntervalIndex> getIntervalIndexes() {
-        return intervalIndexes;
+        return Collections.unmodifiableList(intervalIndexes);
     }
 
     public List<TRangeIndex> getRangeIndexes() {
-        return rangeIndexes;
+        return Collections.unmodifiableList(rangeIndexes);
     }
 
     @Override

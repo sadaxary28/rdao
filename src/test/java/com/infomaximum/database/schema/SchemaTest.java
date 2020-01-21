@@ -60,8 +60,8 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(generalSE);
 
         assertColumnFamilies("com.infomaximum.rocksdb.general", "com.infomaximum.rocksdb.general.index");
-        DBField field = DBTableTestUtil.buildDBField(1, "value", Long.class, null);
-        DBTable expected = DBTableTestUtil.buildDBTable(1, "general", "com.infomaximum.rocksdb", new ArrayList<DBField>() {{
+        DBField field = DBTableTestUtil.buildDBField(0, "value", Long.class, null);
+        DBTable expected = DBTableTestUtil.buildDBTable(0, "general", "com.infomaximum.rocksdb", new ArrayList<DBField>() {{
                     add(field);
                 }});
         expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field));
@@ -76,13 +76,13 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(exchangeFolder);
 
         assertColumnFamilies("com.infomaximum.exchange.ExchangeFolder", "com.infomaximum.exchange.ExchangeFolder.index");
-        DBField field1 = DBTableTestUtil.buildDBField(1, "uuid", String.class, null);
-        DBField field2 = DBTableTestUtil.buildDBField(2, "email", String.class, null);
-        DBField field3 = DBTableTestUtil.buildDBField(3, "date", Instant.class, null);
-        DBField field4 = DBTableTestUtil.buildDBField(4, "state", String.class, null);
-        DBField field5 = DBTableTestUtil.buildDBField(5, "parent_id", Long.class, 1);
+        DBField field1 = DBTableTestUtil.buildDBField(0, "uuid", String.class, null);
+        DBField field2 = DBTableTestUtil.buildDBField(1, "email", String.class, null);
+        DBField field3 = DBTableTestUtil.buildDBField(2, "date", Instant.class, null);
+        DBField field4 = DBTableTestUtil.buildDBField(3, "state", String.class, null);
+        DBField field5 = DBTableTestUtil.buildDBField(4, "parent_id", Long.class, 0);
 
-        DBTable expected = DBTableTestUtil.buildDBTable(1, "ExchangeFolder", "com.infomaximum.exchange", new ArrayList<DBField>() {{
+        DBTable expected = DBTableTestUtil.buildDBTable(0, "ExchangeFolder", "com.infomaximum.exchange", new ArrayList<DBField>() {{
                     add(field1);
                     add(field2);
                     add(field3);
@@ -106,22 +106,22 @@ class SchemaTest extends DomainDataJ5Test {
         schema.createTable(storeFile);
 
         assertColumnFamilies("com.infomaximum.store.StoreFile", "com.infomaximum.store.StoreFile.index");
-        DBField field1 = DBTableTestUtil.buildDBField(1, "name", String.class, null);
-        DBField field2 = DBTableTestUtil.buildDBField(2, "type", String.class, null);
-        DBField field3 = DBTableTestUtil.buildDBField(3, "size", Long.class, null);
-        DBField field4 = DBTableTestUtil.buildDBField(4, "single", Boolean.class, null);
-        DBField field5 = DBTableTestUtil.buildDBField(5, "format", FormatType.class, null);
-        DBField field6 = DBTableTestUtil.buildDBField(6, "folder_id", Long.class, 2);
-        DBField field7 = DBTableTestUtil.buildDBField(7, "double", Double.class, null);
-        DBField field8 = DBTableTestUtil.buildDBField(8, "begin_time", Instant.class, null);
-        DBField field9 = DBTableTestUtil.buildDBField(9, "end_time", Instant.class, null);
-        DBField field10 = DBTableTestUtil.buildDBField(10, "begin", Long.class, null);
-        DBField field11 = DBTableTestUtil.buildDBField(11, "end", Long.class, null);
-        DBField field12 = DBTableTestUtil.buildDBField(12, "local_begin", LocalDateTime.class, null);
-        DBField field13 = DBTableTestUtil.buildDBField(13, "local_end", LocalDateTime.class, null);
-        DBField field14 = DBTableTestUtil.buildDBField(14, "data", byte[].class, null);
+        DBField field1 = DBTableTestUtil.buildDBField(0, "name", String.class, null);
+        DBField field2 = DBTableTestUtil.buildDBField(1, "type", String.class, null);
+        DBField field3 = DBTableTestUtil.buildDBField(2, "size", Long.class, null);
+        DBField field4 = DBTableTestUtil.buildDBField(3, "single", Boolean.class, null);
+        DBField field5 = DBTableTestUtil.buildDBField(4, "format", FormatType.class, null);
+        DBField field6 = DBTableTestUtil.buildDBField(5, "folder_id", Long.class, 1);
+        DBField field7 = DBTableTestUtil.buildDBField(6, "double", Double.class, null);
+        DBField field8 = DBTableTestUtil.buildDBField(7, "begin_time", Instant.class, null);
+        DBField field9 = DBTableTestUtil.buildDBField(8, "end_time", Instant.class, null);
+        DBField field10 = DBTableTestUtil.buildDBField(9, "begin", Long.class, null);
+        DBField field11 = DBTableTestUtil.buildDBField(10, "end", Long.class, null);
+        DBField field12 = DBTableTestUtil.buildDBField(11, "local_begin", LocalDateTime.class, null);
+        DBField field13 = DBTableTestUtil.buildDBField(12, "local_end", LocalDateTime.class, null);
+        DBField field14 = DBTableTestUtil.buildDBField(13, "data", byte[].class, null);
 
-        DBTable expected = DBTableTestUtil.buildDBTable(1, "StoreFile", "com.infomaximum.store", new ArrayList<DBField>() {{
+        DBTable expected = DBTableTestUtil.buildDBTable(0, "StoreFile", "com.infomaximum.store", new ArrayList<DBField>() {{
                     add(field1);
                     add(field2);
                     add(field3);
