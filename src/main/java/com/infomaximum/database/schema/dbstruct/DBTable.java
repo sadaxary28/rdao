@@ -121,6 +121,10 @@ public class DBTable extends DBObject {
         return -1;
     }
 
+    public boolean containField(String fieldName) throws SchemaException {
+        return findFieldIndex(fieldName) != -1;
+    }
+
     public int getFieldIndex(String fieldName) throws SchemaException {
         int i = findFieldIndex(fieldName);
         if (i == -1) {

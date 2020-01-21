@@ -222,8 +222,8 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     //Переименование полей_____________________________________________
     @Test
-    @DisplayName("Переименование таблицы")
-    void dropTableFieldTest() throws DatabaseException {
+    @DisplayName("Переименование поля таблицы")
+    void renameTableFieldTest() throws DatabaseException {
         Table generalTable = createExchangeFolderTable();
         schema.renameField("state", "newValue", "ExchangeFolder", "com.infomaximum.exchange");
 
@@ -235,8 +235,15 @@ public class SchemaTableTest extends DomainDataJ5Test {
             add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
         }};
         generalTable = new Table(generalTable.getName(), generalTable.getNamespace(), fields, generalTable.getHashIndexes());
-
         assertThatSchemaContainsTable(generalTable);
+    }
+
+    @Test
+    @DisplayName("Ошибка переименования поля таблицы. Поле с таким именем уже существует")
+    void failRenameTableFieldNameAlreadyExistsTest() throws DatabaseException {
+        createExchangeFolderTable();
+        Assertions.assertThatThrownBy(() -> schema.renameField("state", "email", "ExchangeFolder", "com.infomaximum.exchange"))
+                .isExactlyInstanceOf(FieldAlreadyExistsException.class);
     }
 
     private Table createGeneralTable() throws DatabaseException {
