@@ -368,12 +368,12 @@ public class Schema {
         }
     }
 
-    private void createIndex(THashIndex index, String tableName, String namespace) throws DatabaseException {
+    public void createIndex(THashIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         createIndex(index, table);
     }
 
-    private void createIndex(THashIndex index, DBTable dbTable) throws DatabaseException {
+    public void createIndex(THashIndex index, DBTable dbTable) throws DatabaseException {
         DBHashIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getHashIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
@@ -396,12 +396,12 @@ public class Schema {
         }
     }
 
-    private void createIndex(TPrefixIndex index, String tableName, String namespace) throws DatabaseException {
+    public void createIndex(TPrefixIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         createIndex(index, table);
     }
 
-    private void createIndex(TPrefixIndex index, DBTable dbTable) throws DatabaseException {
+    public void createIndex(TPrefixIndex index, DBTable dbTable) throws DatabaseException {
         DBPrefixIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getPrefixIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
@@ -424,7 +424,7 @@ public class Schema {
         }
     }
 
-    private void createIndex(TIntervalIndex index, DBTable dbTable) throws DatabaseException {
+    public void createIndex(TIntervalIndex index, DBTable dbTable) throws DatabaseException {
         DBIntervalIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
@@ -435,7 +435,7 @@ public class Schema {
         }
     }
 
-    private void createIndex(TIntervalIndex index, String tableName, String namespace) throws DatabaseException {
+    public void createIndex(TIntervalIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         createIndex(index, table);
     }
@@ -452,7 +452,7 @@ public class Schema {
         }
     }
 
-    private void createIndex(TRangeIndex index, DBTable table) throws DatabaseException {
+    public void createIndex(TRangeIndex index, DBTable table) throws DatabaseException {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, table);
         if (table.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             table.attachIndex(dbIndex);
@@ -463,7 +463,7 @@ public class Schema {
         }
     }
 
-    private void createIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
+    public void createIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         createIndex(index, table);
     }
