@@ -51,7 +51,7 @@ public class DBSchema {
     public DBTable getTable(String name, String namespace) throws SchemaException {
         int i = findTableIndex(name, namespace);
         if (i == -1) {
-            throw new TableNotFoundException(name);
+            throw new TableNotFoundException(namespace + "." + name);
         }
         return getTables().get(i);
     }

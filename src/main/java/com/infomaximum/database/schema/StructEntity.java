@@ -236,20 +236,18 @@ public class StructEntity {
 
     private List<com.infomaximum.database.schema.HashIndex> buildHashIndexes(Entity entity) {
         List<com.infomaximum.database.schema.HashIndex> result = new ArrayList<>(entity.hashIndexes().length);
-        for (com.infomaximum.database.anotation.HashIndex index: entity.hashIndexes()) {
-            result.add(new com.infomaximum.database.schema.HashIndex(index, this));
-        }
-
+        Set<Integer> singleFieldHashes = new HashSet<>();
         for (com.infomaximum.database.schema.Field field : fields) {
             if (!field.isForeign()) {
                 continue;
             }
-
-            if (result.stream().anyMatch(index -> index.sortedFields.size() == 1 && index.sortedFields.get(0) == field)) {
-                continue;
-            }
-
             result.add(buildForeignIndex(field));
+            singleFieldHashes.add(field.getNumber());
+        }
+        for (com.infomaximum.database.anotation.HashIndex index: entity.hashIndexes()) {
+            if (index.fields().length != 1 || !singleFieldHashes.contains(index.fields()[0])) {
+                result.add(new com.infomaximum.database.schema.HashIndex(index, this));
+            }
         }
         checkExclusiveAttendants(result);
         return Collections.unmodifiableList(result);

@@ -62,6 +62,19 @@ public class Table {
         return Collections.unmodifiableList(rangeIndexes);
     }
 
+    public boolean same(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Table table = (Table) o;
+        return Objects.equals(name, table.name) &&
+                Objects.equals(namespace, table.namespace) &&
+                Objects.equals(fields, table.fields) &&
+                hashIndexes == null ? table.hashIndexes == null : hashIndexes.containsAll(table.hashIndexes) &&
+                prefixIndexes == null ? table.prefixIndexes == null : prefixIndexes.containsAll(table.prefixIndexes) &&
+                intervalIndexes == null ? table.intervalIndexes == null : intervalIndexes.containsAll(table.intervalIndexes) &&
+                rangeIndexes == null ? table.rangeIndexes == null : rangeIndexes.containsAll(table.rangeIndexes);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

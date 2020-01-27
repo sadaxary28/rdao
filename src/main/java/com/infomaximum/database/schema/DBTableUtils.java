@@ -3,15 +3,55 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.runtime.SchemaException;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.schema.table.THashIndex;
-import com.infomaximum.database.schema.table.TIntervalIndex;
-import com.infomaximum.database.schema.table.TPrefixIndex;
-import com.infomaximum.database.schema.table.TRangeIndex;
+import com.infomaximum.database.schema.table.*;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 class DBTableUtils {
+
+    static Table buildTable(StructEntity structEntity) {
+        return new Table(structEntity.getName(),
+                structEntity.getNamespace(),
+                Arrays.stream(structEntity.getFields()).map(DBTableUtils::buildField).collect(Collectors.toList()),
+                structEntity.getHashIndexes().stream().map(DBTableUtils::buildIndex).collect(Collectors.toList()),
+                structEntity.getPrefixIndexes().stream().map(DBTableUtils::buildIndex).collect(Collectors.toList()),
+                structEntity.getIntervalIndexes().stream().map(DBTableUtils::buildIndex).collect(Collectors.toList()),
+                structEntity.getRangeIndexes().stream().map(DBTableUtils::buildIndex).collect(Collectors.toList()));
+    }
+
+    static TField buildField(Field field) {
+        if (field.isForeign()) {
+            return new TField(field.getName(), new TableReference(field.getForeignDependency().getName(), field.getForeignDependency().getNamespace()));
+        }
+        return new TField(field.getName(), field.getType());
+    }
+
+    static THashIndex buildIndex(HashIndex index) {
+        return new THashIndex(index.getFieldNames());
+    }
+
+    static TPrefixIndex buildIndex(PrefixIndex index) {
+        return new TPrefixIndex(index.getFieldNames());
+    }
+
+    static TIntervalIndex buildIndex(IntervalIndex index) {
+        if (index.getHashedFields() != null && !index.getHashedFields().isEmpty()) {
+            return new TIntervalIndex(index.getIndexedField().getName(), index.getHashedFields().stream().map(Field::getName).toArray(String[]::new));
+        }
+        return new TIntervalIndex(index.getIndexedField().getName());
+    }
+
+    static TRangeIndex buildIndex(RangeIndex index) {
+        if (index.getHashedFields() != null && !index.getHashedFields().isEmpty()) {
+            return new TRangeIndex(index.getBeginIndexedField().getName(),
+                    index.getEndIndexedField().getName(),
+                    index.getHashedFields().stream().map(Field::getName).toArray(String[]::new));
+        }
+        return new TRangeIndex(index.getBeginIndexedField().getName(),
+                index.getEndIndexedField().getName());
+    }
 
 //    static Table buildTable(DBTable table, DBSchema schema) throws SchemaException {
 //        return new Table(
@@ -118,7 +158,7 @@ class DBTableUtils {
         for (int i = 0; i < fieldNames.length; ++i) {
             result[i] = table.getField(fieldNames[i]);
         }
-        Arrays.sort(result, Comparator.comparing(DBObject::getId));
+        Arrays.sort(result, Comparator.comparing(DBField::getName));
         return result;
     }
 

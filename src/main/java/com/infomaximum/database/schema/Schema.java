@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Все методы по изменению схемы не транзакционны.
@@ -262,6 +263,31 @@ public class Schema {
             }
             if (!dbProvider.containsSequence(table.getDataColumnFamily())) {
                 throw new SequenceNotFoundException(table.getDataColumnFamily());
+            }
+        }
+    }
+
+    public void checkSubsystemIntegrity(Set<StructEntity> domains, String namespace) throws DatabaseException {
+        Set<String> domainNames = new HashSet<>(domains.size());
+        for (StructEntity domain : domains) {
+            domainNames.add(domain.getName());
+            Table table = getTable(domain.getName(), domain.getNamespace());
+            if (table == null) {
+                throw new TableNotFoundException("Table in schema for class " + domain.getObjectClass() + " doesn't exist");
+            }
+            Table domainTable = DBTableUtils.buildTable(domain);
+            if (!domainTable.same(table)) {
+                throw new InconsistentTableException("Domain table " + domainTable.getNamespace() + "." + domainTable.getName()
+                        + " doesn't equal to schema table. \nDomain table: " + domainTable + "\nSchema table: " + table);
+            }
+        }
+        List<DBTable> schemaTables = dbSchema.getTables()
+                .stream()
+                .filter(t -> t.getNamespace().equals(namespace))
+                .collect(Collectors.toList());
+        for (DBTable schemaTable : schemaTables) {
+            if (!domainNames.contains(schemaTable.getName())) {
+                throw new TableNotFoundException("Domain class " + schemaTable.getNamespace() + "." + schemaTable.getName() + " doesn't exists");
             }
         }
     }
