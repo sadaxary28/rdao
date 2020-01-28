@@ -23,7 +23,7 @@ public class Field {
         this.converter = buildPacker(field.packerType());
         if (field.foreignDependency() != Class.class) {
             if (parent.getObjectClass() != field.foreignDependency()) {
-                this.foreignDependency = Schema.ensureEntity(field.foreignDependency());
+                this.foreignDependency = Schema.resolve(field.foreignDependency());
             } else {
                 this.foreignDependency = parent;
             }

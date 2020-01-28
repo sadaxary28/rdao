@@ -2,6 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.BaseIntervalIndex;
+import com.infomaximum.database.schema.dbstruct.DBRangeIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -14,8 +15,8 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
     final long[] hashedValues;
     long indexedValue;
 
-    BaseIntervalIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
-        super(id, index.attendant);
+    BaseIntervalIndexKey(long id, long[] hashedValues, byte[] attendant) {
+        super(id, attendant);
         if (hashedValues == null) {
             throw new IllegalArgumentException();
         }
@@ -34,6 +35,12 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
         ByteBuffer buffer = TypeConvert.allocateBuffer(index.attendant.length + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
         fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
         return new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
+    }
+
+    public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue, final DBRangeIndex index) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.getAttendant().length + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
+        fillBuffer(index.getAttendant(), hashedValues, indexedValue, buffer);
+        return new KeyPattern(buffer.array(), index.getAttendant().length + ID_BYTE_SIZE * hashedValues.length);
     }
 
     public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue, final BaseIntervalIndex index) {

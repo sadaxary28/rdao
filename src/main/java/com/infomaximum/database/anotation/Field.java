@@ -15,6 +15,7 @@ public @interface Field {
     int number();
     String name();
     Class type();
+    @Deprecated
     Class packerType() default Class.class;
 
     Class foreignDependency() default Class.class;

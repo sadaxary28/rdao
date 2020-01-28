@@ -7,6 +7,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.TypeConverter;
+import com.infomaximum.database.schema.dbstruct.DBField;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -30,6 +31,13 @@ public class HashIndexUtils {
         for (int i = 0; i < sortedFields.size(); ++i) {
             Field field = sortedFields.get(i);
             destination[i] = buildHash(field.getType(), object.get(field.getNumber()), field.getConverter());
+        }
+    }
+
+    public static void setHashValues(final DBField[] sortedFields, final DomainObject object, long[] destination) throws DatabaseException {
+        for (int i = 0; i < sortedFields.length; ++i) {
+            DBField field = sortedFields[i];
+            destination[i] = buildHash(field.getType(), object.get(field.getId()), null);
         }
     }
 

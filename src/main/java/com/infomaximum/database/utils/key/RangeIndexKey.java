@@ -3,6 +3,7 @@ package com.infomaximum.database.utils.key;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.BaseIntervalIndex;
 import com.infomaximum.database.schema.RangeIndex;
+import com.infomaximum.database.schema.dbstruct.DBRangeIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.nio.ByteBuffer;
@@ -22,7 +23,11 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
     private Type type;
 
     public RangeIndexKey(long id, long[] hashedValues, BaseIntervalIndex index) {
-        super(id, hashedValues, index);
+        super(id, hashedValues, index.attendant);
+    }
+
+    public RangeIndexKey(long id, long[] hashedValues, DBRangeIndex index) {
+        super(id, hashedValues, index.getAttendant());
     }
 
     public void setIndexedValue(long value) {

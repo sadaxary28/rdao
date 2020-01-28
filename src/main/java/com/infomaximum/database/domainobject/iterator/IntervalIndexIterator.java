@@ -7,7 +7,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.schema.*;
+import com.infomaximum.database.schema.BaseIntervalIndex;
+import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 
 import java.util.*;

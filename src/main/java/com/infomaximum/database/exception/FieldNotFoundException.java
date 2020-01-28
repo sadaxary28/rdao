@@ -1,5 +1,7 @@
 package com.infomaximum.database.exception;
 
+import com.infomaximum.database.exception.runtime.SchemaException;
+
 public class FieldNotFoundException extends SchemaException {
 
     public FieldNotFoundException(String fieldName, String tableName) {

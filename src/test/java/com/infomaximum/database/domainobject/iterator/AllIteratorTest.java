@@ -1,11 +1,11 @@
 package com.infomaximum.database.domainobject.iterator;
 
 import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;

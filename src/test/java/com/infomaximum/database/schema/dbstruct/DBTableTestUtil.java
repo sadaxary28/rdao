@@ -1,7 +1,7 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.schema.newschema.Schema;
+import com.infomaximum.database.schema.Schema;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import org.assertj.core.api.Assertions;
 
@@ -18,20 +18,20 @@ public class DBTableTestUtil {
         return new DBField(id, name, type, foreignTableId);
     }
 
-    public static DBHashIndex buildDBHashIndex(int... fieldIds) {
+    public static DBHashIndex buildDBHashIndex(DBField... fieldIds) {
         return new DBHashIndex(fieldIds);
     }
 
 
-    public static DBPrefixIndex buildDBPrefixIndex(int... fieldIds) {
+    public static DBPrefixIndex buildDBPrefixIndex(DBField... fieldIds) {
         return new DBPrefixIndex(fieldIds);
     }
 
-    public static DBRangeIndex buildDBRangeIndex(int beginFieldId, int endFieldId, int... hashFieldIds) {
+    public static DBRangeIndex buildDBRangeIndex(DBField beginFieldId, DBField endFieldId, DBField... hashFieldIds) {
         return new DBRangeIndex(beginFieldId, endFieldId, hashFieldIds);
     }
 
-    public static DBIntervalIndex buildDBIntervalIndex(int indexedFieldId, int... hashFieldIds) {
+    public static DBIntervalIndex buildDBIntervalIndex(DBField indexedFieldId, DBField... hashFieldIds) {
         return new DBIntervalIndex(indexedFieldId, hashFieldIds);
     }
 
@@ -43,14 +43,13 @@ public class DBTableTestUtil {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
             Assertions.assertThat(actual.getDataColumnFamily()).isEqualTo(expected.getDataColumnFamily());
             Assertions.assertThat(actual.getIndexColumnFamily()).isEqualTo(expected.getIndexColumnFamily());
-            Assertions.assertThat(actual.getFields()).hasSameSizeAs(expected.getFields());
+            Assertions.assertThat(actual.getSortedFields()).hasSameSizeAs(expected.getSortedFields());
             Assertions.assertThat(actual.getHashIndexes()).hasSameSizeAs(expected.getHashIndexes());
             Assertions.assertThat(actual.getIntervalIndexes()).hasSameSizeAs(expected.getIntervalIndexes());
             Assertions.assertThat(actual.getPrefixIndexes()).hasSameSizeAs(expected.getPrefixIndexes());
             Assertions.assertThat(actual.getRangeIndexes()).hasSameSizeAs(expected.getRangeIndexes());
-            Assertions.assertThat(actual.getReferencingForeignFields()).hasSameSizeAs(expected.getReferencingForeignFields());
 
-            expected.getFields().forEach(expectedField -> {
+            expected.getSortedFields().forEach(expectedField -> {
                 assertField(expectedField, actual.getField(expectedField.getName()));
             });
 

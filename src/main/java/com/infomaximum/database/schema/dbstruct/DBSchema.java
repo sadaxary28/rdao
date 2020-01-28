@@ -1,7 +1,7 @@
-package com.infomaximum.database.schema.newschema.dbstruct;
+package com.infomaximum.database.schema.dbstruct;
 
-import com.infomaximum.database.exception.SchemaException;
-import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import net.minidev.json.JSONArray;
 
 import java.util.List;
@@ -42,10 +42,16 @@ public class DBSchema {
         return -1;
     }
 
+    public DBTable getTableById(int id) throws SchemaException {
+        return tables.stream().filter(table ->  table.getId() == id)
+                .findAny()
+                .orElseThrow(() -> new TableNotFoundException("Table with id: " + id + " doesn't found"));
+    }
+
     public DBTable getTable(String name, String namespace) throws SchemaException {
         int i = findTableIndex(name, namespace);
         if (i == -1) {
-            throw new TableNotFoundException(name);
+            throw new TableNotFoundException(namespace + "." + name);
         }
         return getTables().get(i);
     }
@@ -74,7 +80,7 @@ public class DBSchema {
         return items
                 .map(DBObject::getId)
                 .max(Integer::compare)
-                .orElse(0) + 1;
+                .orElse(-1) + 1;
     }
 
     static <T extends DBObject> void checkUniqueId(List<T> objects) throws SchemaException {

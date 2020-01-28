@@ -1,10 +1,15 @@
 package com.infomaximum.database.maintenance;
 
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.InconsistentDatabaseException;
+import com.infomaximum.database.schema.dbstruct.DBTable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,39 +60,29 @@ public class SchemaService {
         if (namespace == null || namespace.isEmpty()) {
             throw new IllegalArgumentException();
         }
-
-        validateConsistentNames();
-
-        for (StructEntity domain : schema.getDomains()) {
-            new DomainService(dbProvider, schema.getDbSchema())
-                    .setChangeMode(changeModeMode)
-                    .setValidationMode(isValidationMode)
-                    .setDomain(domain)
-                    .execute();
-        }
-
+        schema.checkIntegrity();
         validate();
     }
 
     private void validate() throws DatabaseException {
         if (isValidationMode) {
-            validateUnknownColumnFamilies();
+//            validateUnknownColumnFamilies(); todo make validation!!!!!!
         }
     }
 
     private void validateConsistentNames() throws InconsistentDatabaseException {
         final String namespacePrefix = namespace + StructEntity.NAMESPACE_SEPARATOR;
         Set<String> processedNames = new HashSet<>();
-        for (StructEntity domain : schema.getDomains()) {
-            if (processedNames.contains(domain.getColumnFamily())) {
-                throw new InconsistentDatabaseException("Column family " + domain.getColumnFamily() + " into " + domain.getObjectClass() + " already exists.");
+        for (DBTable domain : schema.getDbSchema().getTables()) {
+            if (processedNames.contains(domain.getDataColumnFamily())) {
+                throw new InconsistentDatabaseException("Column family " + domain.getNamespace() + " into " + domain.getName() + " already exists.");
             }
 
-            if (!domain.getColumnFamily().startsWith(namespacePrefix)) {
-                throw new InconsistentDatabaseException("Namespace " + namespace + " is not consistent with " + domain.getObjectClass());
+            if (!domain.getDataColumnFamily().startsWith(namespacePrefix)) {
+                throw new InconsistentDatabaseException("Namespace " + namespace + " is not consistent with " + domain.getName());
             }
 
-            processedNames.add(domain.getColumnFamily());
+            processedNames.add(domain.getNamespace());
         }
 
         for (String value : ignoringNamespaces) {
@@ -114,5 +109,57 @@ public class SchemaService {
         if (!columnFamilies.isEmpty()) {
             throw new InconsistentDatabaseException("Namespace " + namespace + " contains unknown column families " + String.join(", ", columnFamilies) + ".");
         }
+    }
+
+    public static void install(Set<Class<? extends DomainObject>> domainClasses, DBProvider dbProvider) throws DatabaseException {
+        Schema schema;
+        if (Schema.exists(dbProvider)) {
+            schema = Schema.read(dbProvider);
+        } else {
+            schema = Schema.create(dbProvider);
+        }
+        Set<StructEntity> modifiableDomains = domainClasses.stream().map(SchemaService::getNewEntity).collect(Collectors.toSet());
+        if (modifiableDomains.stream().noneMatch(schema::existTable)) {
+            createTables(schema, modifiableDomains);
+        }
+        if (modifiableDomains.stream().anyMatch(d -> !schema.existTable(d))) {
+            throw new SchemaException("Inconsistent schema error. Schema doesn't contain table: " + modifiableDomains.stream().filter(d -> !schema.existTable(d))
+                    .map(StructEntity::getColumnFamily)
+                    .findAny()
+                    .orElse(null));
+        }
+        schema.checkIntegrity();
+    }
+
+    private static StructEntity getNewEntity(Class<? extends DomainObject> domain) {
+        Class<? extends DomainObject> annotationClass = StructEntity.getAnnotationClass(domain);
+        return new StructEntity(annotationClass);
+    }
+
+    private static void createTables(Schema schema, Set<StructEntity> modifiableDomains) throws DatabaseException {
+        Set<StructEntity> notCreatedTables = new HashSet<>();
+        for (StructEntity domain : modifiableDomains) {
+            if (isForeignDependenciesCreated(schema, domain)) {
+                schema.createTable(domain);
+            } else {
+                notCreatedTables.add(domain);
+            }
+        }
+        if (notCreatedTables.size() == 0) {
+            return;
+        }
+        if (notCreatedTables.size() == modifiableDomains.size()) {
+            throw new TableNotFoundException(notCreatedTables.stream().findFirst().get().getName());
+        }
+        createTables(schema, notCreatedTables);
+    }
+
+    private static boolean isForeignDependenciesCreated(Schema schema, StructEntity domain) {
+        for (Field field : domain.getFields()) {
+            if (field.isForeign() && field.getForeignDependency() != domain && !schema.existTable(field.getForeignDependency())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

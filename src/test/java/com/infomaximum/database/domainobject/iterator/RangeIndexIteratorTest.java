@@ -8,7 +8,6 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
 import com.infomaximum.database.schema.Schema;
-import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.utils.InstantUtils;
 import com.infomaximum.database.utils.LocalDateTimeUtils;
 import com.infomaximum.domain.ExchangeFolderEditable;
@@ -143,7 +142,6 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
     @Test
     public void insertAndFindLocalDateTimeWithHashIndex() throws Exception {
-        createDomain(ExchangeFolderEditable.class);
         domainObjectSource.executeTransactional(transaction -> {
             ExchangeFolderEditable s = transaction.create(ExchangeFolderEditable.class);
             s.setUuid("1");
