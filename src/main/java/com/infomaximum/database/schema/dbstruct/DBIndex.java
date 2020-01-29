@@ -52,7 +52,7 @@ public abstract class DBIndex extends DBObject {
         }
 
         for (int i = 1; i < fields.length; ++i) {
-            if (fields[i - 1].getName().compareToIgnoreCase(fields[i].getName()) > 0) {
+            if (fields[i - 1].getId() >= fields[i].getId()) {
                 throw new IllegalArgumentException("wrong sorting");
             }
         }
