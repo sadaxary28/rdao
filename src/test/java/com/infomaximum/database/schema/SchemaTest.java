@@ -90,7 +90,7 @@ class SchemaTest extends DomainDataJ5Test {
                     add(field5);
                 }});
         expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field5));
-        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field1, field2));
+        expected.attachIndex(DBTableTestUtil.buildDBHashIndex(field2, field1));
         DBTableTestUtil.assertThatContains(rocksDBProvider, expected);
     }
 
