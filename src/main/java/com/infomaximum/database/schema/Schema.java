@@ -9,7 +9,6 @@ import com.infomaximum.database.schema.table.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TableUtils;
 import com.infomaximum.database.utils.TypeConvert;
-import com.infomaximum.database.utils.key.FieldKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +82,8 @@ public class Schema {
         String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
         String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
         validateSchema(version, schemaJson);
-        return DBSchema.fromStrings(version, schemaJson);
+        DBSchema dbSchema = DBSchema.fromStrings(version, schemaJson);
+        return TempFix.fixSchemaIfNeed(dbSchema, dbProvider, Schema::saveSchema);
     }
 
     private static void validateSchema(String version, String schemaJson) throws DatabaseException {

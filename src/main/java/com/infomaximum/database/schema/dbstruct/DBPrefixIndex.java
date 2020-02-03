@@ -5,6 +5,7 @@ import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 import net.minidev.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class DBPrefixIndex extends DBIndex {
@@ -12,8 +13,11 @@ public class DBPrefixIndex extends DBIndex {
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("prf");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
+    private final DBField[] tempFields; //todo V.Bukharkin remove it
+
     private DBPrefixIndex(int id, DBField[] fields) {
         super(id, fields);
+        tempFields = fields;
     }
 
     public DBPrefixIndex(DBField[] fields) {
@@ -38,5 +42,13 @@ public class DBPrefixIndex extends DBIndex {
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_FIELD_IDS, JsonUtils.toJsonArray(getFieldIds()));
         return object;
+    }
+
+    public DBPrefixIndex getTempFixed() {
+        if (getId() < 1) {
+            throw new RuntimeException("Bad error");
+        }
+        setId(getId() - 1);
+        return new DBPrefixIndex(getId(), tempFields);
     }
 }

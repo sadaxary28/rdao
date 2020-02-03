@@ -13,7 +13,7 @@ public class DBField extends DBObject {
 
     private String name;
     private final Class<? extends Serializable> type;
-    private final Integer foreignTableId;
+    private Integer foreignTableId; //todo V.Bukharkin return back final
 
     DBField(int id, String name, Class<? extends Serializable> type, Integer foreignTableId) {
         super(id);
@@ -66,6 +66,16 @@ public class DBField extends DBObject {
             return (Class<? extends Serializable>) Class.forName(type);
         } catch (ClassNotFoundException e) {
             throw new SchemaException(e);
+        }
+    }
+
+    public void tempFix() {
+        if (getId() < 1) {
+            throw new RuntimeException("Bad error");
+        }
+        setId(getId() - 1);
+        if (foreignTableId != null) {
+            foreignTableId = foreignTableId-1;
         }
     }
 }

@@ -6,6 +6,7 @@ import com.infomaximum.database.utils.TypeConvert;
 import net.minidev.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class DBIntervalIndex extends DBIndex {
@@ -17,12 +18,17 @@ public class DBIntervalIndex extends DBIndex {
     private final int indexedFieldId;
     private final int[] hashFieldIds;
 
+    private final DBField[] tempHashFields; //todo V.Bukharkin remove it
+    private final DBField tempIndexedField; //todo V.Bukharkin remove it
+
     private DBIntervalIndex(int id, DBField indexedFieldId, DBField[] hashFieldIds) {
         super(id, concatenate(indexedFieldId, hashFieldIds));
         checkSorting(hashFieldIds);
 
         this.indexedFieldId = indexedFieldId.getId();
         this.hashFieldIds = Arrays.stream(hashFieldIds).mapToInt(DBObject::getId).toArray();
+        tempHashFields = hashFieldIds;
+        tempIndexedField = indexedFieldId;
     }
 
     public DBIntervalIndex(DBField indexedFieldId, DBField[] hashFieldIds) {
@@ -63,5 +69,14 @@ public class DBIntervalIndex extends DBIndex {
         DBField[] fieldIds = Arrays.copyOf(hashFieldIds, hashFieldIds.length + 1);
         fieldIds[fieldIds.length - 1] = indexedFieldId;
         return fieldIds;
+    }
+
+    public DBIntervalIndex getTempFixed() {
+        if (getId() < 1) {
+            throw new RuntimeException("Bad error");
+        }
+        setId(getId() - 1);
+        Arrays.sort(tempHashFields, Comparator.comparing(DBField::getName));
+        return new DBIntervalIndex(getId(), tempIndexedField, tempHashFields);
     }
 }

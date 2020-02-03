@@ -13,17 +13,6 @@ import java.util.stream.Stream;
 
 public class DBTable extends DBObject {
 
-    public static class Reference {
-
-        public final int tableId;
-        public final int hashIndexId;
-
-        Reference(int tableId, int hashIndexId) {
-            this.tableId = tableId;
-            this.hashIndexId = hashIndexId;
-        }
-    }
-
     private static final String JSON_PROP_NAME = "name";
     private static final String JSON_PROP_NAMESPACE = "namespace";
     private static final String JSON_PROP_FIELDS = "fields";
@@ -268,5 +257,29 @@ public class DBTable extends DBObject {
         object.put(JSON_PROP_INTERVAL_INDEXES, JsonUtils.toJsonArray(intervalIndexes));
         object.put(JSON_PROP_RANGE_INDEXES, JsonUtils.toJsonArray(rangeIndexes));
         return object;
+    }
+
+    public void tempFix() {
+        if (getId() < 1) {
+            throw new RuntimeException("Bad error");
+        }
+        setId(getId() - 1);
+        sortedFields.forEach(DBField::tempFix);
+
+        List<DBHashIndex> hi = hashIndexes.stream().map(DBHashIndex::getTempFixed).collect(Collectors.toList());
+        hashIndexes.clear();
+        hashIndexes.addAll(hi);
+
+        List<DBPrefixIndex> pi = prefixIndexes.stream().map(DBPrefixIndex::getTempFixed).collect(Collectors.toList());
+        prefixIndexes.clear();
+        prefixIndexes.addAll(pi);
+
+        List<DBIntervalIndex> ii = intervalIndexes.stream().map(DBIntervalIndex::getTempFixed).collect(Collectors.toList());
+        intervalIndexes.clear();
+        intervalIndexes.addAll(ii);
+
+        List<DBRangeIndex> ri = rangeIndexes.stream().map(DBRangeIndex::getTempFixed).collect(Collectors.toList());
+        rangeIndexes.clear();
+        rangeIndexes.addAll(ri);
     }
 }
