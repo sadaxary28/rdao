@@ -190,13 +190,17 @@ public class Schema {
     }
 
     public boolean dropTable(String name, String namespace) throws DatabaseException {
+        return dropTable(name, namespace, ActionMode.VALIDATE);
+    }
+
+    public boolean dropTable(String name, String namespace, ActionMode actionMode) throws DatabaseException {
         int i = dbSchema.findTableIndex(name, namespace);
         if (i == -1) {
             return false;
         }
 
         DBTable table = dbSchema.getTables().remove(i);
-        if (hasDependenceOfOtherTable(table.getId())) {
+        if (actionMode == ActionMode.VALIDATE && hasDependenceOfOtherTable(table.getId())) {
             throw new TableRemoveException("Can't remove table: " + namespace + "." + name + ", there are dependencies on the table");
         }
         dbProvider.dropColumnFamily(table.getDataColumnFamily());
@@ -206,6 +210,14 @@ public class Schema {
         removeObjTable(name, namespace);
 
         saveSchema();
+        return true;
+    }
+
+    public boolean dropTablesByNamespace(String namespace) throws DatabaseException {
+        List<DBTable> tables = dbSchema.getTablesByNamespace(namespace);
+        for (DBTable table : tables) {
+            dropTable(table.getName(), table.getNamespace(), ActionMode.FORCE);
+        }
         return true;
     }
 

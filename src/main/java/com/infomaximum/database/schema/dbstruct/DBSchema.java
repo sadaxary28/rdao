@@ -5,6 +5,7 @@ import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import net.minidev.json.JSONArray;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DBSchema {
@@ -46,6 +47,10 @@ public class DBSchema {
         return tables.stream().filter(table ->  table.getId() == id)
                 .findAny()
                 .orElseThrow(() -> new TableNotFoundException("Table with id: " + id + " doesn't found"));
+    }
+
+    public List<DBTable> getTablesByNamespace(String namespace) throws SchemaException {
+        return tables.stream().filter(table ->  table.getNamespace().equals(namespace)).collect(Collectors.toList());
     }
 
     public DBTable getTable(String name, String namespace) throws SchemaException {

@@ -2,11 +2,14 @@ package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.runtime.SchemaException;
 import net.minidev.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
 public class DBField extends DBObject {
 
+    private final static Logger log = LoggerFactory.getLogger(DBField.class);
     private static final String JSON_PROP_NAME = "name";
     private static final String JSON_PROP_TYPE = "type";
     private static final String JSON_PROP_FOREIGN_TABLE_ID = "foreign_table_id";
@@ -65,7 +68,9 @@ public class DBField extends DBObject {
         try {
             return (Class<? extends Serializable>) Class.forName(type);
         } catch (ClassNotFoundException e) {
-            throw new SchemaException(e);
+            log.warn("Class not found for type: " + type);
+            return String.class; //todo V.Bukharkin change it
+//            throw new SchemaException(e);
         }
     }
 
