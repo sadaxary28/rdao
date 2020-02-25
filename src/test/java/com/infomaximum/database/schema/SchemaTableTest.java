@@ -1,8 +1,7 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.domainobject.filter.Filter;
-import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.*;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.FieldAlreadyExistsException;
@@ -292,7 +291,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 table.getIntervalIndexes(),
                 table.getRangeIndexes());
         assertThatSchemaContainsTable(expected);
-        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "name").appendField(StoreFileReadable.FIELD_SIZE, 12L));
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName").appendField(StoreFileReadable.FIELD_SIZE, 12L));
     }
 
     @Test
@@ -303,7 +302,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
         THashIndex removingHashIndex = new THashIndex("name");
         schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
-        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "name"));
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
 
         schema.createIndex(removingHashIndex, "StoreFile", "com.infomaximum.store");
         List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
@@ -317,6 +316,112 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 table.getIntervalIndexes(),
                 table.getRangeIndexes());
         assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+    }
+
+    @Test
+    @DisplayName("Удаляет hash index из таблицы и заного его добавляет")
+    void removeAndAttachPrefixIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TPrefixIndex removingIndex = new TPrefixIndex("name");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TPrefixIndex> expectedHashes = new ArrayList<>(table.getPrefixIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                expectedHashes,
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getPrefixIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                expectedHashes,
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+    }
+
+    @Test
+    @DisplayName("Удаляет interval index из таблицы и заного его добавляет")
+    void removeAndAttachIntervalIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TIntervalIndex removingIndex = new TIntervalIndex("size");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TIntervalIndex> expectedHashes = new ArrayList<>(table.getIntervalIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                expectedHashes,
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 1L, 13L));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getIntervalIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                expectedHashes,
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 1L, 13L));
+    }
+
+    @Test
+    @DisplayName("Удаляет range index из таблицы и заного его добавляет")
+    void removeAndAttachRangeIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TRangeIndex removingIndex = new TRangeIndex("begin", "end");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TRangeIndex> expectedHashes = new ArrayList<>(table.getRangeIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                expectedHashes);
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 9L, 14L));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getRangeIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                expectedHashes);
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 9L, 14L));
     }
 
     //Переименование полей_____________________________________________
@@ -448,18 +553,24 @@ public class SchemaTableTest extends DomainDataJ5Test {
         domainObjectSource.executeTransactional(transaction -> {
             StoreFileEditable storeFileEditable = transaction.create(StoreFileEditable.class);
             storeFileEditable.setSize(12L);
+            storeFileEditable.setBegin(12L);
+            storeFileEditable.setEnd(14L);
             storeFileEditable.setFileName("FileName");
             storeFileEditable.setDouble(12.4);
             transaction.save(storeFileEditable);
 
             storeFileEditable = transaction.create(StoreFileEditable.class);
             storeFileEditable.setSize(11L);
+            storeFileEditable.setBegin(1L);
+            storeFileEditable.setEnd(2L);
             storeFileEditable.setFileName("FileName2");
             storeFileEditable.setDouble(13.4);
             transaction.save(storeFileEditable);
 
             storeFileEditable = transaction.create(StoreFileEditable.class);
             storeFileEditable.setSize(1L);
+            storeFileEditable.setBegin(10L);
+            storeFileEditable.setEnd(13L);
             storeFileEditable.setFileName("FileName");
             storeFileEditable.setDouble(13.123);
             transaction.save(storeFileEditable);
@@ -490,6 +601,14 @@ public class SchemaTableTest extends DomainDataJ5Test {
         domainObjectSource.executeTransactional(transaction -> {
             try(IteratorEntity<T> it = transaction.find(dbEntity, filter)) {
                 Assertions.assertThat(it.hasNext()).isFalse();
+            }
+        });
+    }
+
+    private <T extends DomainObject> void assertThatHasAnyRecords(Class<T> dbEntity, Filter filter) throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<T> it = transaction.find(dbEntity, filter)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
             }
         });
     }

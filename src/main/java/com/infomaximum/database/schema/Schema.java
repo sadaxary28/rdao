@@ -531,6 +531,33 @@ public class Schema {
         return true;
     }
 
+    public boolean dropIndex(TPrefixIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(TIntervalIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
     private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
         for (T dbIndex : indexes) {
             if (predicate.test(dbIndex)) {
