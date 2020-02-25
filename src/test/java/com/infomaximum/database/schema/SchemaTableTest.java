@@ -283,7 +283,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
         schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
 
         List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
-        expectedHashes.remove(removingHashIndex);
+        expectedHashes.remove(new THashIndex("name", "size"));
         Table expected = new Table(table.getName(),
                 table.getNamespace(),
                 table.getFields(),
@@ -292,8 +292,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 table.getIntervalIndexes(),
                 table.getRangeIndexes());
         assertThatSchemaContainsTable(expected);
-        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "name").appendField(StoreFileReadable.FIELD_SIZE, "size"));
-//        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "name").appendField(StoreFileReadable.FIELD_SIZE, 12L));
     }
 
     @Test
