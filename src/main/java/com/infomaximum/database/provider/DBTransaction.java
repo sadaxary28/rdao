@@ -24,6 +24,8 @@ public interface DBTransaction extends AutoCloseable {
      */
     void singleDeleteRange(String columnFamily, byte[] beginKey, byte[] endKey) throws DatabaseException;
 
+    void singleDeleteRange(String columnFamily, KeyPattern keyPattern) throws DatabaseException;
+
     void commit() throws DatabaseException;
     void rollback() throws DatabaseException;
 

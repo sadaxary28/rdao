@@ -513,15 +513,28 @@ public class Schema {
             return true;
         }
         DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
         table.dropIndex(targetIndex);
-        return dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(THashIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        if (index.getFields().length == 1 && table.getField(index.getFields()[0]).isForeignKey()) {
+            return true;
+        }
+        DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
     }
 
     private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
         for (T dbIndex : indexes) {
             if (predicate.test(dbIndex)) {
                 dropIndexData(dbIndex, table);
-                saveSchema();
                 return true;
             }
         }
@@ -533,6 +546,7 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -541,6 +555,7 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -549,6 +564,7 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -574,10 +590,7 @@ public class Schema {
 
     private void dropIndexData(DBIndex index, DBTable table) throws DatabaseException {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
-            byte[] beginKey = TypeConvert.pack(index.getId());
-            byte[] endKey = TypeConvert.pack(index.getId() + 1);
-
-            transaction.singleDeleteRange(table.getIndexColumnFamily(), beginKey, endKey);
+            transaction.singleDeleteRange(table.getIndexColumnFamily(), new KeyPattern(index.getAttendant()));
             transaction.commit();
         }
     }
