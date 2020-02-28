@@ -89,7 +89,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     @Test
     @DisplayName("Создает таблицу с полями с зависимостями и всеми индексами")
-    void createTableWithDependenciesAndIndexesTest() throws DatabaseException {
+    void createTableWithDependenciesAndIndexesTest() throws Exception {
         createExchangeFolderTable();
         Schema.resolve(StoreFileReadable.class);
 
@@ -218,6 +218,81 @@ public class SchemaTableTest extends DomainDataJ5Test {
         createGeneralTable();
         TField newFieldWithDependence = new TField("value", Double.class);
         Assertions.assertThatThrownBy(() -> schema.createField(newFieldWithDependence, "general", "com.infomaximum.rocksdb"))
+                .isExactlyInstanceOf(FieldAlreadyExistsException.class);
+    }
+
+    //Удаление полей_____________________________________________
+    @Test
+    @DisplayName("Удаляет поле")
+    void removeField() throws Exception {
+        Table table = createExchangeFolderTable();
+        schema.dropField("email", table.getName(), table.getNamespace());
+
+        List<TField> expectedFields = new ArrayList<>(table.getFields());
+        expectedFields.remove(new TField("email", String.class));
+        List<THashIndex> hashIndexes = new ArrayList<>(table.getHashIndexes());
+        hashIndexes.remove(new THashIndex("email", "uuid"));
+        Table expectedTable = new Table(table.getName(), table.getNamespace(), expectedFields, hashIndexes, table.getPrefixIndexes(), table.getIntervalIndexes(), table.getRangeIndexes());
+
+        assertThatSchemaContainsTable(expectedTable);
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<ExchangeFolderReadable> it = transaction.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
+                while (it.hasNext()) {
+                    ExchangeFolderReadable ef = it.next();
+                    Assertions.assertThat(ef.getUserEmail()).isNull();
+                }
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Удаляет зависимое поле")
+    void removeForeignDependencyField() throws Exception {
+        Table table = createExchangeFolderTable();
+        schema.dropField("parent_id", table.getName(), table.getNamespace());
+
+        List<TField> expectedFields = new ArrayList<>(table.getFields());
+        expectedFields.remove(new TField("parent_id", new TableReference(table.getName(), table.getNamespace())));
+        List<THashIndex> hashIndexes = new ArrayList<>(table.getHashIndexes());
+        hashIndexes.remove(new THashIndex("parent_id"));
+        Table expectedTable = new Table(table.getName(), table.getNamespace(), expectedFields, hashIndexes, table.getPrefixIndexes(), table.getIntervalIndexes(), table.getRangeIndexes());
+
+        assertThatSchemaContainsTable(expectedTable);
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<ExchangeFolderReadable> it = transaction.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
+                while (it.hasNext()) {
+                    ExchangeFolderReadable ef = it.next();
+                    Assertions.assertThat(ef.getParentId()).isNull();
+                }
+            }
+        });
+    }
+
+    //Переименование полей_____________________________________________
+    @Test
+    @DisplayName("Переименование поля таблицы")
+    void renameTableFieldTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
+        schema.renameField("state", "newValue", "ExchangeFolder", "com.infomaximum.exchange");
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("uuid", String.class));
+            add(new TField("email", String.class));
+            add(new TField("date", Instant.class));
+            add(new TField("newValue", String.class));
+            add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
+        }};
+        exchangeFolderTable = new Table(exchangeFolderTable.getName(), exchangeFolderTable.getNamespace(), fields, exchangeFolderTable.getHashIndexes());
+        assertThatSchemaContainsTable(exchangeFolderTable);
+    }
+
+    @Test
+    @DisplayName("Ошибка переименования поля таблицы. Поле с таким именем уже существует")
+    void failRenameTableFieldNameAlreadyExistsTest() throws Exception {
+        createExchangeFolderTable();
+        Assertions.assertThatThrownBy(() -> schema.renameField("state", "email", "ExchangeFolder", "com.infomaximum.exchange"))
                 .isExactlyInstanceOf(FieldAlreadyExistsException.class);
     }
 
@@ -424,32 +499,6 @@ public class SchemaTableTest extends DomainDataJ5Test {
         assertThatHasAnyRecords(StoreFileReadable.class, new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 9L, 14L));
     }
 
-    //Переименование полей_____________________________________________
-    @Test
-    @DisplayName("Переименование поля таблицы")
-    void renameTableFieldTest() throws DatabaseException {
-        Table generalTable = createExchangeFolderTable();
-        schema.renameField("state", "newValue", "ExchangeFolder", "com.infomaximum.exchange");
-
-        List<TField> fields = new ArrayList<TField>() {{
-            add(new TField("uuid", String.class));
-            add(new TField("email", String.class));
-            add(new TField("date", Instant.class));
-            add(new TField("newValue", String.class));
-            add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
-        }};
-        generalTable = new Table(generalTable.getName(), generalTable.getNamespace(), fields, generalTable.getHashIndexes());
-        assertThatSchemaContainsTable(generalTable);
-    }
-
-    @Test
-    @DisplayName("Ошибка переименования поля таблицы. Поле с таким именем уже существует")
-    void failRenameTableFieldNameAlreadyExistsTest() throws DatabaseException {
-        createExchangeFolderTable();
-        Assertions.assertThatThrownBy(() -> schema.renameField("state", "email", "ExchangeFolder", "com.infomaximum.exchange"))
-                .isExactlyInstanceOf(FieldAlreadyExistsException.class);
-    }
-
     private Table createGeneralTable() throws Exception {
         Schema.resolve(GeneralReadable.class);
 
@@ -477,7 +526,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
         return schema.getTable("general", "com.infomaximum.rocksdb");
     }
 
-    private Table createExchangeFolderTable() throws DatabaseException {
+    private Table createExchangeFolderTable() throws Exception {
         Schema.resolve(ExchangeFolderReadable.class);
 
         List<TField> fields = new ArrayList<TField>() {{
@@ -492,6 +541,31 @@ public class SchemaTableTest extends DomainDataJ5Test {
         }};
         Table table = new Table("ExchangeFolder", "com.infomaximum.exchange", fields, hashIndexes);
         schema.createTable(table);
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable exchangeFolderEditable1 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable1.setUuid("uuid1");
+            exchangeFolderEditable1.setUserEmail("email1");
+            exchangeFolderEditable1.setSyncDate(Instant.now());
+            exchangeFolderEditable1.setSyncState("adsf");
+            transaction.save(exchangeFolderEditable1);
+
+            ExchangeFolderEditable exchangeFolderEditable2 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable2.setUuid("uuid2");
+            exchangeFolderEditable2.setUserEmail("email2");
+            exchangeFolderEditable2.setSyncDate(Instant.now());
+            exchangeFolderEditable2.setSyncState("adsf2");
+            exchangeFolderEditable2.setParentId(1L);
+            transaction.save(exchangeFolderEditable2);
+
+            ExchangeFolderEditable exchangeFolderEditable3 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable3.setUuid("uuid3");
+            exchangeFolderEditable3.setUserEmail("email3");
+            exchangeFolderEditable3.setSyncDate(Instant.now());
+            exchangeFolderEditable3.setSyncState("adsf3");
+            exchangeFolderEditable3.setParentId(2L);
+            transaction.save(exchangeFolderEditable3);
+        });
+
         return schema.getTable("ExchangeFolder", "com.infomaximum.exchange");
     }
 

@@ -24,7 +24,7 @@ public class DBRangeIndex extends DBIndex {
     private final DBField tempBeginField; //todo V.Bukharkin remove it
     private final DBField tempEndField; //todo V.Bukharkin remove it
 
-    private DBRangeIndex(int id, DBField beginField, DBField endField, DBField[] hashFields) {
+    DBRangeIndex(int id, DBField beginField, DBField endField, DBField[] hashFields) {
         super(id, concatenate(beginField, endField, hashFields));
         checkSorting(hashFields);
 

@@ -21,7 +21,7 @@ public class DBIntervalIndex extends DBIndex {
     private final DBField[] tempHashFields; //todo V.Bukharkin remove it
     private final DBField tempIndexedField; //todo V.Bukharkin remove it
 
-    private DBIntervalIndex(int id, DBField indexedFieldId, DBField[] hashFieldIds) {
+    DBIntervalIndex(int id, DBField indexedFieldId, DBField[] hashFieldIds) {
         super(id, concatenate(indexedFieldId, hashFieldIds));
         checkSorting(hashFieldIds);
 

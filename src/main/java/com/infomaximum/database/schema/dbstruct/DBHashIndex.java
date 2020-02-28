@@ -16,7 +16,7 @@ public class DBHashIndex extends DBIndex {
 
     private final DBField[] tempFields; //todo V.Bukharkin remove it
 
-    private DBHashIndex(int id, DBField[] fields) {
+    DBHashIndex(int id, DBField[] fields) {
         super(id, fields);
         checkSorting(fields);
         tempFields = fields;

@@ -15,7 +15,7 @@ public class DBPrefixIndex extends DBIndex {
 
     private final DBField[] tempFields; //todo V.Bukharkin remove it
 
-    private DBPrefixIndex(int id, DBField[] fields) {
+    DBPrefixIndex(int id, DBField[] fields) {
         super(id, fields);
         tempFields = fields;
     }

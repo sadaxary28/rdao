@@ -9,6 +9,7 @@ import com.infomaximum.database.schema.table.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TableUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.FieldKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -354,36 +355,35 @@ public class Schema {
         createField(tableField, dbTable);
     }
 
-//    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
-//        DBTable table = dbSchema.getTable(tableName, namespace);
-//        int i = table.findFieldIndex(fieldName);
-//        if (i == -1) {
-//            return false;
-//        }
-//
-//        DBField field = table.getSortedFields().get(i);
-//        dropIndexesByField(field, table.getHashIndexes(), table);
-//        dropIndexesByField(field, table.getPrefixIndexes(), table);
-//        dropIndexesByField(field, table.getIntervalIndexes(), table);
-//        dropIndexesByField(field, table.getRangeIndexes(), table);
-//
-//        dropFieldData(field, table);
-//
-//        table.dropField(i);
-//
-//        saveSchema();
-//        return true;
-//    }
+    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        int i = table.findFieldIndex(fieldName);
+        if (i == -1) {
+            return false;
+        }
 
-//    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
-//        for (int i = indexes.size() - 1; i > -1; --i) {
-//            T index = indexes.get(i);
-//            if (index.fieldContains(field.getId())) {
-//                dropIndexData(index, table);
-//                indexes.remove(i);
-//            }
-//        }
-//    }
+        DBField field = table.getSortedFields().get(i);
+        dropIndexesByField(field, table.getHashIndexes(), table);
+        dropIndexesByField(field, table.getPrefixIndexes(), table);
+        dropIndexesByField(field, table.getIntervalIndexes(), table);
+        dropIndexesByField(field, table.getRangeIndexes(), table);
+
+        dropFieldData(field, table);
+        table.dropField(i);
+        saveSchema();
+        return true;
+    }
+
+    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
+        Iterator<T> it = indexes.iterator();
+        while (it.hasNext()) {
+            T index = it.next();
+            if (index.fieldContains(field.getId())) {
+                dropIndexData(index, table);
+                it.remove();
+            }
+        }
+    }
 
     public void renameField(String oldName, String newName, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
@@ -598,22 +598,20 @@ public class Schema {
     private void saveSchema() throws DatabaseException {
         saveSchema(dbSchema, dbProvider);
     }
-//
-//    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
-//        try (DBTransaction transaction = dbProvider.beginTransaction()) {
-//            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
-//                KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
-//                        new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getId()))
-//                });
-//
-//                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
-//                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
-//                }
-//            }
-//
-//            transaction.commit();
-//        }
-//    }
+
+    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
+        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+            KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
+                    new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getName()))
+            });
+            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
+                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
+                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
+                }
+            }
+            transaction.commit();
+        }
+    }
 
     private void dropIndexData(DBIndex index, DBTable table) throws DatabaseException {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
