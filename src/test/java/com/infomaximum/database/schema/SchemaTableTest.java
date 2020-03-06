@@ -289,6 +289,26 @@ public class SchemaTableTest extends DomainDataJ5Test {
     }
 
     @Test
+    @DisplayName("Переименование поля таблицы у которого есть индекс")
+    void renameTableFieldWithIndexTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
+        schema.renameField("email", "znew", "ExchangeFolder", "com.infomaximum.exchange");
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("uuid", String.class));
+            add(new TField("znew", String.class));
+            add(new TField("date", Instant.class));
+            add(new TField("state", String.class));
+            add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
+        }};
+        List<THashIndex> expectedHashIndexes = new ArrayList<>(exchangeFolderTable.getHashIndexes());
+        expectedHashIndexes.remove(1);
+        expectedHashIndexes.add(new THashIndex("uuid", "znew"));
+        exchangeFolderTable = new Table(exchangeFolderTable.getName(), exchangeFolderTable.getNamespace(), fields, expectedHashIndexes);
+        assertThatSchemaContainsTable(exchangeFolderTable);
+    }
+
+    @Test
     @DisplayName("Ошибка переименования поля таблицы. Поле с таким именем уже существует")
     void failRenameTableFieldNameAlreadyExistsTest() throws Exception {
         createExchangeFolderTable();

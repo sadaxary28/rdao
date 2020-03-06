@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Все методы по изменению схемы не транзакционны.
@@ -363,10 +364,7 @@ public class Schema {
         }
 
         DBField field = table.getSortedFields().get(i);
-        dropIndexesByField(field, table.getHashIndexes(), table);
-        dropIndexesByField(field, table.getPrefixIndexes(), table);
-        dropIndexesByField(field, table.getIntervalIndexes(), table);
-        dropIndexesByField(field, table.getRangeIndexes(), table);
+        dropIndexesByField(field, table.getIndexesStream(), table);
 
         dropFieldData(field, table);
         table.dropField(i);
@@ -374,15 +372,22 @@ public class Schema {
         return true;
     }
 
-    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
+    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
+        List<T> removedIndexes = new ArrayList<>();
         Iterator<T> it = indexes.iterator();
         while (it.hasNext()) {
             T index = it.next();
             if (index.fieldContains(field.getId())) {
+                removedIndexes.add(index);
                 dropIndexData(index, table);
                 it.remove();
             }
         }
+        return removedIndexes;
+    }
+
+    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, Stream<T> indexes, DBTable table) throws DatabaseException {
+        return dropIndexesByField(field, indexes.collect(Collectors.toList()), table);
     }
 
     public void renameField(String oldName, String newName, String tableName, String namespace) throws DatabaseException {
@@ -390,7 +395,31 @@ public class Schema {
         if (table.containField(newName)) {
             throw new FieldAlreadyExistsException(newName, tableName, namespace);
         }
-        table.getField(oldName).setName(newName);
+        DBField field = table.getField(oldName);
+        List<DBHashIndex> droppedHashIndexes = dropIndexesByField(field, table.getHashIndexes(), table);
+        List<DBPrefixIndex> droppedPrefixIndexes = dropIndexesByField(field, table.getPrefixIndexes(), table);
+        List<DBIntervalIndex> droppedIntervalIndexes = dropIndexesByField(field, table.getIntervalIndexes(), table);
+        List<DBRangeIndex> droppedRangeIndexes = dropIndexesByField(field, table.getRangeIndexes(), table);
+        for (DBHashIndex index : droppedHashIndexes) {
+            String[] fields = Arrays.stream(index.getFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new THashIndex(fields), tableName, namespace);
+        }
+        for (DBPrefixIndex index : droppedPrefixIndexes) {
+            String[] fields = Arrays.stream(index.getFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TPrefixIndex(fields), tableName, namespace);
+        }
+        for (DBIntervalIndex index : droppedIntervalIndexes) {
+            String indexField = table.getField(index.getIndexedFieldId()).getName();
+            String[] hashFields = Arrays.stream(index.getHashFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TIntervalIndex(indexField, hashFields), tableName, namespace);
+        }
+        for (DBRangeIndex index : droppedRangeIndexes) {
+            String beginField = table.getField(index.getBeginFieldId()).getName();
+            String endField = table.getField(index.getEndFieldId()).getName();
+            String[] hashFields = Arrays.stream(index.getHashFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TRangeIndex(beginField, endField, hashFields), tableName, namespace);
+        }
+        field.setName(newName);
         saveSchema();
     }
 
@@ -483,7 +512,7 @@ public class Schema {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(index, table, dbProvider);
+            IndexService.doRangeIndex(index, table, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(index);
@@ -494,7 +523,7 @@ public class Schema {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, table);
         if (table.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             table.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(dbIndex, table, dbProvider);
+            IndexService.doRangeIndex(dbIndex, table, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(dbIndex);
