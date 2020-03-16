@@ -362,9 +362,15 @@ public class Schema {
         if (i == -1) {
             return false;
         }
-
         DBField field = table.getSortedFields().get(i);
-        dropIndexesByField(field, table.getIndexesStream(), table);
+        List<DBHashIndex> dbHashIndexes = dropIndexesByField(field, table.getHashIndexes(), table);
+        List<DBPrefixIndex> dbPrefixIndexes = dropIndexesByField(field, table.getPrefixIndexes(), table);
+        List<DBIntervalIndex> dbIntervalIndexes = dropIndexesByField(field, table.getIntervalIndexes(), table);
+        List<DBRangeIndex> dbRangeIndexes = dropIndexesByField(field, table.getRangeIndexes(), table);
+        dbHashIndexes.forEach(table::dropIndex);
+        dbPrefixIndexes.forEach(table::dropIndex);
+        dbIntervalIndexes.forEach(table::dropIndex);
+        dbRangeIndexes.forEach(table::dropIndex);
 
         dropFieldData(field, table);
         table.dropField(i);
