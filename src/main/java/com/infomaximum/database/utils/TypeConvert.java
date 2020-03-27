@@ -104,8 +104,16 @@ public class TypeConvert {
     }
 
     public static int pack(long[] values, byte[] dst, int offset) {
-        for (int i = 0; i < values.length; ++i) {
-            TypeConvert.pack(values[i], dst, offset);
+        for (long value : values) {
+            TypeConvert.pack(value, dst, offset);
+            offset += Long.BYTES;
+        }
+        return offset;
+    }
+
+    public static int pack(int[] values, byte[] dst, int offset) {
+        for (int value : values) {
+            TypeConvert.pack(value, dst, offset);
             offset += Long.BYTES;
         }
         return offset;
@@ -140,7 +148,7 @@ public class TypeConvert {
     }
 
     public static byte[] packCRC32(String value) {
-        byte bytes[] = TypeConvert.pack(value);
+        byte[] bytes = TypeConvert.pack(value);
         CRC32 checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
         return TypeConvert.pack(UnsignedInteger.valueOf(checksum.getValue()).intValue());

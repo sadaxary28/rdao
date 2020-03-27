@@ -1,13 +1,14 @@
 package com.infomaximum.database.schema;
 
+import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.runtime.FieldAlreadyExistsException;
 import com.infomaximum.database.exception.runtime.TableNotFoundException;
 import com.infomaximum.database.exception.runtime.TableRemoveException;
 import com.infomaximum.database.schema.table.*;
-import com.infomaximum.domain.ExchangeFolderReadable;
-import com.infomaximum.domain.GeneralReadable;
-import com.infomaximum.domain.StoreFileReadable;
+import com.infomaximum.domain.*;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -80,7 +81,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
         List<THashIndex> expectedHashIndexes = new ArrayList<THashIndex>() {{
             add(new THashIndex("parent_id"));
-            add(new THashIndex("uuid", "email"));
+            add(new THashIndex("email", "uuid"));
         }};
         Table expected = new Table("ExchangeFolder", "com.infomaximum.exchange", fields, expectedHashIndexes);
         assertThatSchemaContainsTable(expected);
@@ -88,7 +89,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     @Test
     @DisplayName("Создает таблицу с полями с зависимостями и всеми индексами")
-    void createTableWithDependenciesAndIndexesTest() throws DatabaseException {
+    void createTableWithDependenciesAndIndexesTest() throws Exception {
         createExchangeFolderTable();
         Schema.resolve(StoreFileReadable.class);
 
@@ -166,7 +167,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
     //Удаление таблицы_____________________________________________
     @Test
     @DisplayName("Удаляет простую таблицу")
-    void removeTableTest() throws DatabaseException {
+    void removeTableTest() throws Exception {
         createExchangeFolderTable();
         createStoreFolderTable();
 
@@ -179,7 +180,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     @Test
     @DisplayName("Ошибка при удалени таблицы, на которую ссылается другая таблица")
-    void failBecauseRemoveDependencedTableTest() throws DatabaseException {
+    void failBecauseRemoveDependencedTableTest() throws Exception {
         createExchangeFolderTable();
         createStoreFolderTable();
 
@@ -190,7 +191,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
     //Добавление полей_____________________________________________
     @Test
     @DisplayName("Добавляет поле в таблицу")
-    void createTableFieldTest() throws DatabaseException {
+    void createTableFieldTest() throws Exception {
         Table generalTable = createGeneralTable();
         TField newField = new TField("newField", Long.class);
         schema.createField(newField, generalTable);
@@ -203,7 +204,7 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     @Test
     @DisplayName("Ошибка добавления поля в таблицу, которое зависит от не существующей таблицы")
-    void failCreateFieldBecauseForeignTableDoesntExist() throws DatabaseException {
+    void failCreateFieldBecauseForeignTableDoesntExist() throws Exception {
         createGeneralTable();
         TField newFieldWithDependence = new TField("newFieldWithDependence", new TableReference("ExchangeFolder",
                 "com.infomaximum.exchange"));
@@ -213,18 +214,67 @@ public class SchemaTableTest extends DomainDataJ5Test {
 
     @Test
     @DisplayName("Ошибка имя поля уже существует")
-    void failCreateFieldWithSameName() throws DatabaseException {
+    void failCreateFieldWithSameName() throws Exception {
         createGeneralTable();
         TField newFieldWithDependence = new TField("value", Double.class);
         Assertions.assertThatThrownBy(() -> schema.createField(newFieldWithDependence, "general", "com.infomaximum.rocksdb"))
                 .isExactlyInstanceOf(FieldAlreadyExistsException.class);
     }
 
+    //Удаление полей_____________________________________________
+    @Test
+    @DisplayName("Удаляет поле")
+    void removeField() throws Exception {
+        Table table = createExchangeFolderTable();
+        schema.dropField("email", table.getName(), table.getNamespace());
+
+        List<TField> expectedFields = new ArrayList<>(table.getFields());
+        expectedFields.remove(new TField("email", String.class));
+        List<THashIndex> hashIndexes = new ArrayList<>(table.getHashIndexes());
+        hashIndexes.remove(new THashIndex("email", "uuid"));
+        Table expectedTable = new Table(table.getName(), table.getNamespace(), expectedFields, hashIndexes, table.getPrefixIndexes(), table.getIntervalIndexes(), table.getRangeIndexes());
+
+        assertThatSchemaContainsTable(expectedTable);
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<ExchangeFolderReadable> it = transaction.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
+                while (it.hasNext()) {
+                    ExchangeFolderReadable ef = it.next();
+                    Assertions.assertThat(ef.getUserEmail()).isNull();
+                }
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Удаляет зависимое поле")
+    void removeForeignDependencyField() throws Exception {
+        Table table = createExchangeFolderTable();
+        schema.dropField("parent_id", table.getName(), table.getNamespace());
+
+        List<TField> expectedFields = new ArrayList<>(table.getFields());
+        expectedFields.remove(new TField("parent_id", new TableReference(table.getName(), table.getNamespace())));
+        List<THashIndex> hashIndexes = new ArrayList<>(table.getHashIndexes());
+        hashIndexes.remove(new THashIndex("parent_id"));
+        Table expectedTable = new Table(table.getName(), table.getNamespace(), expectedFields, hashIndexes, table.getPrefixIndexes(), table.getIntervalIndexes(), table.getRangeIndexes());
+
+        assertThatSchemaContainsTable(expectedTable);
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<ExchangeFolderReadable> it = transaction.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
+                while (it.hasNext()) {
+                    ExchangeFolderReadable ef = it.next();
+                    Assertions.assertThat(ef.getParentId()).isNull();
+                }
+            }
+        });
+    }
+
     //Переименование полей_____________________________________________
     @Test
     @DisplayName("Переименование поля таблицы")
-    void renameTableFieldTest() throws DatabaseException {
-        Table generalTable = createExchangeFolderTable();
+    void renameTableFieldTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
         schema.renameField("state", "newValue", "ExchangeFolder", "com.infomaximum.exchange");
 
         List<TField> fields = new ArrayList<TField>() {{
@@ -234,33 +284,269 @@ public class SchemaTableTest extends DomainDataJ5Test {
             add(new TField("newValue", String.class));
             add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
         }};
-        generalTable = new Table(generalTable.getName(), generalTable.getNamespace(), fields, generalTable.getHashIndexes());
-        assertThatSchemaContainsTable(generalTable);
+        exchangeFolderTable = new Table(exchangeFolderTable.getName(), exchangeFolderTable.getNamespace(), fields, exchangeFolderTable.getHashIndexes());
+        assertThatSchemaContainsTable(exchangeFolderTable);
+    }
+
+    @Test
+    @DisplayName("Переименование поля таблицы у которого есть индекс")
+    void renameTableFieldWithIndexTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
+        schema.renameField("email", "znew", "ExchangeFolder", "com.infomaximum.exchange");
+
+        List<TField> fields = new ArrayList<TField>() {{
+            add(new TField("uuid", String.class));
+            add(new TField("znew", String.class));
+            add(new TField("date", Instant.class));
+            add(new TField("state", String.class));
+            add(new TField("parent_id", new TableReference("ExchangeFolder", "com.infomaximum.exchange")));
+        }};
+        List<THashIndex> expectedHashIndexes = new ArrayList<>(exchangeFolderTable.getHashIndexes());
+        expectedHashIndexes.remove(1);
+        expectedHashIndexes.add(new THashIndex("uuid", "znew"));
+        exchangeFolderTable = new Table(exchangeFolderTable.getName(), exchangeFolderTable.getNamespace(), fields, expectedHashIndexes);
+        assertThatSchemaContainsTable(exchangeFolderTable);
     }
 
     @Test
     @DisplayName("Ошибка переименования поля таблицы. Поле с таким именем уже существует")
-    void failRenameTableFieldNameAlreadyExistsTest() throws DatabaseException {
+    void failRenameTableFieldNameAlreadyExistsTest() throws Exception {
         createExchangeFolderTable();
         Assertions.assertThatThrownBy(() -> schema.renameField("state", "email", "ExchangeFolder", "com.infomaximum.exchange"))
                 .isExactlyInstanceOf(FieldAlreadyExistsException.class);
     }
 
-    private Table createGeneralTable() throws DatabaseException {
+    //Удаление индексов_____________________________________________
+    @Test
+    @DisplayName("Удаляет hash index из таблицы с одним хэшем")
+    void removeSimpleIndexTest() throws Exception {
+        Table table = createGeneralTable();
+
+        THashIndex removingHashIndex = new THashIndex("value");
+        schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
+
+        List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
+        expectedHashes.remove(removingHashIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                expectedHashes,
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(GeneralReadable.class, new HashFilter(GeneralEditable.FIELD_VALUE, 12L));
+    }
+
+    @Test
+    @DisplayName("Удаляет index'ы из таблицы")
+    void removeIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        THashIndex removingHashIndex = new THashIndex("name");
+        schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
+
+        List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
+        expectedHashes.remove(removingHashIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                expectedHashes,
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<StoreFileReadable> si = transaction.
+                    find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName")
+                            .appendField(StoreFileReadable.FIELD_SIZE, 12L))) {
+                Assertions.assertThat(si.hasNext()).isTrue();
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Удаляет hash index, состоящий из нескольких полей, из таблицы")
+    void removeMultiIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        THashIndex removingHashIndex = new THashIndex("size", "name");
+        schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
+
+        List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
+        expectedHashes.remove(new THashIndex("name", "size"));
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                expectedHashes,
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName").appendField(StoreFileReadable.FIELD_SIZE, 12L));
+    }
+
+    @Test
+    @DisplayName("Удаляет hash index из таблицы и заного его добавляет")
+    void removeAndAttachIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        THashIndex removingHashIndex = new THashIndex("name");
+        schema.dropIndex(removingHashIndex, table.getName(), table.getNamespace());
+        assertThatNoAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+
+        schema.createIndex(removingHashIndex, "StoreFile", "com.infomaximum.store");
+        List<THashIndex> expectedHashes = new ArrayList<>(table.getHashIndexes());
+        expectedHashes.remove(removingHashIndex);
+        expectedHashes.add(removingHashIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                expectedHashes,
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+    }
+
+    @Test
+    @DisplayName("Удаляет hash index из таблицы и заного его добавляет")
+    void removeAndAttachPrefixIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TPrefixIndex removingIndex = new TPrefixIndex("name");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TPrefixIndex> expectedHashes = new ArrayList<>(table.getPrefixIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                expectedHashes,
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getPrefixIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                expectedHashes,
+                table.getIntervalIndexes(),
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "FileName"));
+    }
+
+    @Test
+    @DisplayName("Удаляет interval index из таблицы и заного его добавляет")
+    void removeAndAttachIntervalIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TIntervalIndex removingIndex = new TIntervalIndex("size");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TIntervalIndex> expectedHashes = new ArrayList<>(table.getIntervalIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                expectedHashes,
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 1L, 13L));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getIntervalIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                expectedHashes,
+                table.getRangeIndexes());
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 1L, 13L));
+    }
+
+    @Test
+    @DisplayName("Удаляет range index из таблицы и заного его добавляет")
+    void removeAndAttachRangeIndexTest() throws Exception {
+        createExchangeFolderTable();
+        Table table = createStoreFolderTable();
+
+        TRangeIndex removingIndex = new TRangeIndex("begin", "end");
+        schema.dropIndex(removingIndex, table.getName(), table.getNamespace());
+        List<TRangeIndex> expectedHashes = new ArrayList<>(table.getRangeIndexes());
+        expectedHashes.remove(removingIndex);
+        Table expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                expectedHashes);
+        assertThatSchemaContainsTable(expected);
+        assertThatNoAnyRecords(StoreFileReadable.class, new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 9L, 14L));
+
+        schema.createIndex(removingIndex, "StoreFile", "com.infomaximum.store");
+        expectedHashes = new ArrayList<>(table.getRangeIndexes());
+        expectedHashes.remove(removingIndex);
+        expectedHashes.add(removingIndex);
+        expected = new Table(table.getName(),
+                table.getNamespace(),
+                table.getFields(),
+                table.getHashIndexes(),
+                table.getPrefixIndexes(),
+                table.getIntervalIndexes(),
+                expectedHashes);
+        assertThatSchemaContainsTable(expected);
+        assertThatHasAnyRecords(StoreFileReadable.class, new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 9L, 14L));
+    }
+
+    private Table createGeneralTable() throws Exception {
         Schema.resolve(GeneralReadable.class);
 
         List<TField> fields = new ArrayList<TField>() {{
-            add(new TField("value", String.class));
+            add(new TField("value", Long.class));
         }};
         List<THashIndex> hashIndexes = new ArrayList<THashIndex>() {{
             add(new THashIndex("value"));
         }};
         Table table = new Table("general", "com.infomaximum.rocksdb", fields, hashIndexes);
         schema.createTable(table);
+        domainObjectSource.executeTransactional(transaction -> {
+            GeneralEditable generalEditable = transaction.create(GeneralEditable.class);
+            generalEditable.setValue(12L);
+            transaction.save(generalEditable);
+
+            generalEditable = transaction.create(GeneralEditable.class);
+            generalEditable.setValue(111L);
+            transaction.save(generalEditable);
+
+            generalEditable = transaction.create(GeneralEditable.class);
+            generalEditable.setValue(12L);
+            transaction.save(generalEditable);
+        });
         return schema.getTable("general", "com.infomaximum.rocksdb");
     }
 
-    private Table createExchangeFolderTable() throws DatabaseException {
+    private Table createExchangeFolderTable() throws Exception {
         Schema.resolve(ExchangeFolderReadable.class);
 
         List<TField> fields = new ArrayList<TField>() {{
@@ -275,10 +561,35 @@ public class SchemaTableTest extends DomainDataJ5Test {
         }};
         Table table = new Table("ExchangeFolder", "com.infomaximum.exchange", fields, hashIndexes);
         schema.createTable(table);
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable exchangeFolderEditable1 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable1.setUuid("uuid1");
+            exchangeFolderEditable1.setUserEmail("email1");
+            exchangeFolderEditable1.setSyncDate(Instant.now());
+            exchangeFolderEditable1.setSyncState("adsf");
+            transaction.save(exchangeFolderEditable1);
+
+            ExchangeFolderEditable exchangeFolderEditable2 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable2.setUuid("uuid2");
+            exchangeFolderEditable2.setUserEmail("email2");
+            exchangeFolderEditable2.setSyncDate(Instant.now());
+            exchangeFolderEditable2.setSyncState("adsf2");
+            exchangeFolderEditable2.setParentId(1L);
+            transaction.save(exchangeFolderEditable2);
+
+            ExchangeFolderEditable exchangeFolderEditable3 = transaction.create(ExchangeFolderEditable.class);
+            exchangeFolderEditable3.setUuid("uuid3");
+            exchangeFolderEditable3.setUserEmail("email3");
+            exchangeFolderEditable3.setSyncDate(Instant.now());
+            exchangeFolderEditable3.setSyncState("adsf3");
+            exchangeFolderEditable3.setParentId(2L);
+            transaction.save(exchangeFolderEditable3);
+        });
+
         return schema.getTable("ExchangeFolder", "com.infomaximum.exchange");
     }
 
-    private void createStoreFolderTable() throws DatabaseException {
+    private Table createStoreFolderTable() throws Exception {
         Schema.resolve(StoreFileReadable.class);
 
         List<TField> fields = new ArrayList<TField>() {{
@@ -332,6 +643,33 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 rangeIndexes
         );
         schema.createTable(table);
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(12L);
+            storeFileEditable.setBegin(12L);
+            storeFileEditable.setEnd(14L);
+            storeFileEditable.setFileName("FileName");
+            storeFileEditable.setDouble(12.4);
+            transaction.save(storeFileEditable);
+
+            storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(11L);
+            storeFileEditable.setBegin(1L);
+            storeFileEditable.setEnd(2L);
+            storeFileEditable.setFileName("FileName2");
+            storeFileEditable.setDouble(13.4);
+            transaction.save(storeFileEditable);
+
+            storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(1L);
+            storeFileEditable.setBegin(10L);
+            storeFileEditable.setEnd(13L);
+            storeFileEditable.setFileName("FileName");
+            storeFileEditable.setDouble(13.123);
+            transaction.save(storeFileEditable);
+        });
+        return schema.getTable("StoreFile", "com.infomaximum.store");
     }
 
     private void assertThatSchemaContainsTable(Table expected) throws DatabaseException {
@@ -351,5 +689,21 @@ public class SchemaTableTest extends DomainDataJ5Test {
         String indexColumnFamily = namespace + "." + name + ".index";
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(dataColumnFamily)).isFalse();
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(indexColumnFamily)).isFalse();
+    }
+
+    private <T extends DomainObject> void assertThatNoAnyRecords(Class<T> dbEntity, Filter filter) throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<T> it = transaction.find(dbEntity, filter)) {
+                Assertions.assertThat(it.hasNext()).isFalse();
+            }
+        });
+    }
+
+    private <T extends DomainObject> void assertThatHasAnyRecords(Class<T> dbEntity, Filter filter) throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            try(IteratorEntity<T> it = transaction.find(dbEntity, filter)) {
+                Assertions.assertThat(it.hasNext()).isTrue();
+            }
+        });
     }
 }

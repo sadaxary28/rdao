@@ -9,6 +9,7 @@ import com.infomaximum.database.schema.table.*;
 import com.infomaximum.database.utils.IndexService;
 import com.infomaximum.database.utils.TableUtils;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.FieldKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Все методы по изменению схемы не транзакционны.
@@ -354,43 +356,76 @@ public class Schema {
         createField(tableField, dbTable);
     }
 
-//    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
-//        DBTable table = dbSchema.getTable(tableName, namespace);
-//        int i = table.findFieldIndex(fieldName);
-//        if (i == -1) {
-//            return false;
-//        }
-//
-//        DBField field = table.getSortedFields().get(i);
-//        dropIndexesByField(field, table.getHashIndexes(), table);
-//        dropIndexesByField(field, table.getPrefixIndexes(), table);
-//        dropIndexesByField(field, table.getIntervalIndexes(), table);
-//        dropIndexesByField(field, table.getRangeIndexes(), table);
-//
-//        dropFieldData(field, table);
-//
-//        table.dropField(i);
-//
-//        saveSchema();
-//        return true;
-//    }
+    public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        int i = table.findFieldIndex(fieldName);
+        if (i == -1) {
+            return false;
+        }
+        DBField field = table.getSortedFields().get(i);
+        List<DBHashIndex> dbHashIndexes = dropIndexesByField(field, table.getHashIndexes(), table);
+        List<DBPrefixIndex> dbPrefixIndexes = dropIndexesByField(field, table.getPrefixIndexes(), table);
+        List<DBIntervalIndex> dbIntervalIndexes = dropIndexesByField(field, table.getIntervalIndexes(), table);
+        List<DBRangeIndex> dbRangeIndexes = dropIndexesByField(field, table.getRangeIndexes(), table);
+        dbHashIndexes.forEach(table::dropIndex);
+        dbPrefixIndexes.forEach(table::dropIndex);
+        dbIntervalIndexes.forEach(table::dropIndex);
+        dbRangeIndexes.forEach(table::dropIndex);
 
-//    private <T extends DBIndex> void dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
-//        for (int i = indexes.size() - 1; i > -1; --i) {
-//            T index = indexes.get(i);
-//            if (index.fieldContains(field.getId())) {
-//                dropIndexData(index, table);
-//                indexes.remove(i);
-//            }
-//        }
-//    }
+        dropFieldData(field, table);
+        table.dropField(i);
+        saveSchema();
+        return true;
+    }
+
+    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
+        List<T> removedIndexes = new ArrayList<>();
+        Iterator<T> it = indexes.iterator();
+        while (it.hasNext()) {
+            T index = it.next();
+            if (index.fieldContains(field.getId())) {
+                removedIndexes.add(index);
+                dropIndexData(index, table);
+                it.remove();
+            }
+        }
+        return removedIndexes;
+    }
+
+    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, Stream<T> indexes, DBTable table) throws DatabaseException {
+        return dropIndexesByField(field, indexes.collect(Collectors.toList()), table);
+    }
 
     public void renameField(String oldName, String newName, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         if (table.containField(newName)) {
             throw new FieldAlreadyExistsException(newName, tableName, namespace);
         }
-        table.getField(oldName).setName(newName);
+        DBField field = table.getField(oldName);
+        List<DBHashIndex> droppedHashIndexes = dropIndexesByField(field, table.getHashIndexes(), table);
+        List<DBPrefixIndex> droppedPrefixIndexes = dropIndexesByField(field, table.getPrefixIndexes(), table);
+        List<DBIntervalIndex> droppedIntervalIndexes = dropIndexesByField(field, table.getIntervalIndexes(), table);
+        List<DBRangeIndex> droppedRangeIndexes = dropIndexesByField(field, table.getRangeIndexes(), table);
+        for (DBHashIndex index : droppedHashIndexes) {
+            String[] fields = Arrays.stream(index.getFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new THashIndex(fields), tableName, namespace);
+        }
+        for (DBPrefixIndex index : droppedPrefixIndexes) {
+            String[] fields = Arrays.stream(index.getFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TPrefixIndex(fields), tableName, namespace);
+        }
+        for (DBIntervalIndex index : droppedIntervalIndexes) {
+            String indexField = table.getField(index.getIndexedFieldId()).getName();
+            String[] hashFields = Arrays.stream(index.getHashFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TIntervalIndex(indexField, hashFields), tableName, namespace);
+        }
+        for (DBRangeIndex index : droppedRangeIndexes) {
+            String beginField = table.getField(index.getBeginFieldId()).getName();
+            String endField = table.getField(index.getEndFieldId()).getName();
+            String[] hashFields = Arrays.stream(index.getHashFieldIds()).mapToObj(table::getField).map(DBField::getName).toArray(String[]::new);
+            createIndex(new TRangeIndex(beginField, endField, hashFields), tableName, namespace);
+        }
+        field.setName(newName);
         saveSchema();
     }
 
@@ -483,7 +518,7 @@ public class Schema {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
         if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             dbTable.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(index, table, dbProvider);
+            IndexService.doRangeIndex(index, table, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(index);
@@ -494,7 +529,7 @@ public class Schema {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, table);
         if (table.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
             table.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(dbIndex, table, dbProvider);
+            IndexService.doRangeIndex(dbIndex, table, dbProvider);
             saveSchema();
         } else {
             throw new IndexAlreadyExistsException(dbIndex);
@@ -513,15 +548,55 @@ public class Schema {
             return true;
         }
         DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
         table.dropIndex(targetIndex);
-        return dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(THashIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        if (index.getFields().length == 1 && table.getField(index.getFields()[0]).isForeignKey()) {
+            return true;
+        }
+        DBHashIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getHashIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(TPrefixIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(TIntervalIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
+    }
+
+    public boolean dropIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(tableName, namespace);
+        DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
+        dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
+        table.dropIndex(targetIndex);
+        saveSchema();
+        return true;
     }
 
     private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
         for (T dbIndex : indexes) {
             if (predicate.test(dbIndex)) {
                 dropIndexData(dbIndex, table);
-                saveSchema();
                 return true;
             }
         }
@@ -533,6 +608,7 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBPrefixIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getPrefixIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -541,6 +617,7 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBIntervalIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getIntervalIndexes(), targetIndex::fieldsEquals, table);
     }
 
@@ -549,35 +626,31 @@ public class Schema {
         DBTable table = dbSchema.getTable(tableName, namespace);
         DBRangeIndex targetIndex = DBTableUtils.buildIndex(index, table);
         table.dropIndex(targetIndex);
+        saveSchema();
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
     }
 
     private void saveSchema() throws DatabaseException {
         saveSchema(dbSchema, dbProvider);
     }
-//
-//    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
-//        try (DBTransaction transaction = dbProvider.beginTransaction()) {
-//            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
-//                KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
-//                        new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getId()))
-//                });
-//
-//                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
-//                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
-//                }
-//            }
-//
-//            transaction.commit();
-//        }
-//    }
+
+    private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
+        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+            KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
+                    new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getName()))
+            });
+            try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
+                for (KeyValue keyValue = i.seek(pattern); keyValue != null; keyValue = i.next()) {
+                    transaction.singleDelete(table.getDataColumnFamily(), keyValue.getKey());
+                }
+            }
+            transaction.commit();
+        }
+    }
 
     private void dropIndexData(DBIndex index, DBTable table) throws DatabaseException {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
-            byte[] beginKey = TypeConvert.pack(index.getId());
-            byte[] endKey = TypeConvert.pack(index.getId() + 1);
-
-            transaction.singleDeleteRange(table.getIndexColumnFamily(), beginKey, endKey);
+            transaction.singleDeleteRange(table.getIndexColumnFamily(), new KeyPattern(index.getAttendant()));
             transaction.commit();
         }
     }

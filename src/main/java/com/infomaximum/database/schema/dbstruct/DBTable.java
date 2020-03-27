@@ -72,7 +72,12 @@ public class DBTable extends DBObject {
     }
 
     public void dropField(int id) {
+        for (int i = id + 1; i < sortedFields.size(); i++) {
+            DBField field = sortedFields.get(i);
+            field.setId(field.getId() - 1);
+        }
         sortedFields.remove(id);
+        decrementIndexFieldIdsAfterId(id);
     }
 
     public void dropIndex(DBHashIndex index) {
@@ -131,19 +136,19 @@ public class DBTable extends DBObject {
     }
 
     public List<DBHashIndex> getHashIndexes() {
-        return Collections.unmodifiableList(hashIndexes);
+        return hashIndexes;
     }
 
     public List<DBPrefixIndex> getPrefixIndexes() {
-        return Collections.unmodifiableList(prefixIndexes);
+        return prefixIndexes;
     }
 
     public List<DBIntervalIndex> getIntervalIndexes() {
-        return Collections.unmodifiableList(intervalIndexes);
+        return intervalIndexes;
     }
 
     public List<DBRangeIndex> getRangeIndexes() {
-        return Collections.unmodifiableList(rangeIndexes);
+        return rangeIndexes;
     }
 
     public Stream<? extends DBIndex> getIndexesStream() {
@@ -257,6 +262,62 @@ public class DBTable extends DBObject {
         object.put(JSON_PROP_INTERVAL_INDEXES, JsonUtils.toJsonArray(intervalIndexes));
         object.put(JSON_PROP_RANGE_INDEXES, JsonUtils.toJsonArray(rangeIndexes));
         return object;
+    }
+
+    private void decrementIndexFieldIdsAfterId(int id) {
+        for (int i = 0; i < hashIndexes.size(); i++) {
+            DBHashIndex index = hashIndexes.get(i);
+            if (Arrays.stream(index.getFieldIds()).anyMatch(fieldId -> fieldId > id)) {
+                DBField[] fields = Arrays.stream(index.getFieldIds()).mapToObj(fieldId -> {
+                    int realFieldId = fieldId > id ? fieldId - 1 : fieldId;
+                    return sortedFields.get(realFieldId);
+                }).toArray(DBField[]::new);
+                DBHashIndex newHashIndex = new DBHashIndex(index.getId(), fields);
+                hashIndexes.set(i, newHashIndex);
+            }
+        }
+
+        for (int i = 0; i < prefixIndexes.size(); i++) {
+            DBPrefixIndex index = prefixIndexes.get(i);
+            if (Arrays.stream(index.getFieldIds()).anyMatch(fieldId -> fieldId > id)) {
+                DBField[] fields = Arrays.stream(index.getFieldIds()).mapToObj(fieldId -> {
+                    int realFieldId = fieldId > id ? fieldId - 1 : fieldId;
+                    return sortedFields.get(realFieldId);
+                }).toArray(DBField[]::new);
+                DBPrefixIndex newIndex = new DBPrefixIndex(index.getId(), fields);
+                prefixIndexes.set(i, newIndex);
+            }
+        }
+
+        for (int i = 0; i < intervalIndexes.size(); i++) {
+            DBIntervalIndex index = intervalIndexes.get(i);
+            if (Arrays.stream(index.getFieldIds()).anyMatch(fieldId -> fieldId > id)) {
+                int realIndexedFieldId = index.getIndexedFieldId() > id ? index.getIndexedFieldId() - 1 : index.getIndexedFieldId();
+                DBField indexedField = sortedFields.get(realIndexedFieldId);
+                DBField[] hashedFieldIds = Arrays.stream(index.getHashFieldIds()).mapToObj(fieldId -> {
+                    int realFieldId = fieldId > id ? fieldId - 1 : fieldId;
+                    return sortedFields.get(realFieldId);
+                }).toArray(DBField[]::new);
+                DBIntervalIndex newIndex = new DBIntervalIndex(index.getId(), indexedField, hashedFieldIds);
+                intervalIndexes.set(i, newIndex);
+            }
+        }
+
+        for (int i = 0; i < rangeIndexes.size(); i++) {
+            DBRangeIndex index = rangeIndexes.get(i);
+            if (Arrays.stream(index.getFieldIds()).anyMatch(fieldId -> fieldId > id)) {
+                int realBeginFieldId = index.getBeginFieldId() > id ? index.getBeginFieldId() - 1 : index.getBeginFieldId();
+                int realEndFieldId = index.getEndFieldId() > id ? index.getEndFieldId() - 1 : index.getEndFieldId();
+                DBField beginField = sortedFields.get(realBeginFieldId);
+                DBField endField = sortedFields.get(realEndFieldId);
+                DBField[] hashedFieldIds = Arrays.stream(index.getHashFieldIds()).mapToObj(fieldId -> {
+                    int realFieldId = fieldId > id ? fieldId - 1 : fieldId;
+                    return sortedFields.get(realFieldId);
+                }).toArray(DBField[]::new);
+                DBRangeIndex newIndex = new DBRangeIndex(index.getId(), beginField, endField, hashedFieldIds);
+                rangeIndexes.set(i, newIndex);
+            }
+        }
     }
 
     public void tempFix() {

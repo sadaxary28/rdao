@@ -6,6 +6,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.SequenceNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.utils.ByteInterval;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -90,6 +92,15 @@ public class RocksDBTransaction implements DBTransaction {
         compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setRange(beginKey, endKey);
     }
 
+    @Override
+    public void singleDeleteRange(String columnFamily, KeyPattern keyPattern) throws DatabaseException {
+        ByteInterval deleteRange = deleteRange(columnFamily, keyPattern, transaction::delete);
+        deleteRange.validate();
+        if (deleteRange.getBegin() != null && deleteRange.getEnd() != null) {
+            compactingKeys.computeIfAbsent(columnFamily, s -> new RangeKey()).setRange(deleteRange.getBegin(), deleteRange.getEnd());
+        }
+    }
+
     private void delete(String columnFamily, byte[] key, BiConsumer<ColumnFamilyHandle, byte[]> deleteFunc) throws DatabaseException {
         ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
         try {
@@ -116,6 +127,27 @@ public class RocksDBTransaction implements DBTransaction {
         } catch (RocksDBException e) {
             throw new DatabaseException(e);
         }
+    }
+
+    private ByteInterval deleteRange(String columnFamily, KeyPattern keyPattern, BiConsumer<ColumnFamilyHandle, byte[]> deleteFunc) throws DatabaseException {
+        ColumnFamilyHandle columnFamilyHandle = rocksDBProvider.getColumnFamilyHandle(columnFamily);
+        ByteInterval result = new ByteInterval();
+        try (RocksIterator i = transaction.getIterator(rocksDBProvider.getReadOptions(), columnFamilyHandle)) {
+            for (i.seek(keyPattern.getPrefix()); i.isValid(); i.next()) {
+                byte[] key = i.key();
+                if (key == null || keyPattern.match(key) == KeyPattern.MATCH_RESULT_UNSUCCESS) {
+                    break;
+                }
+                result.setBeginIfAbsent(key);
+                result.setEnd(key);
+                deleteFunc.accept(columnFamilyHandle, key);
+            }
+
+            i.status();
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
+        }
+        return result;
     }
 
     @Override

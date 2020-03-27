@@ -106,7 +106,7 @@ public class IndexService {
         });
     }
 
-    public static void doIntervalIndex(RangeIndex index, StructEntity table, DBProvider dbProvider) throws DatabaseException {
+    public static void doRangeIndex(RangeIndex index, StructEntity table, DBProvider dbProvider) throws DatabaseException {
         final Set<Integer> indexingFields = index.sortedFields.stream().map(Field::getNumber).collect(Collectors.toSet());
         final List<Field> hashedFields = index.getHashedFields();
         final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.size()], index);
@@ -121,7 +121,7 @@ public class IndexService {
         });
     }
 
-    public static void doIntervalIndex(DBRangeIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
+    public static void doRangeIndex(DBRangeIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
         final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
         final DBField[] hashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
         final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.length], index);
