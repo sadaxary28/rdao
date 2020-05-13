@@ -13,8 +13,8 @@ public class SchemaServiceTest extends DomainDataTest {
 
     @Test
     public void validateCoherentData() throws Exception {
-        createDomain(StoreFileEditable.class);
         createDomain(ExchangeFolderEditable.class);
+        createDomain(StoreFileEditable.class);
 
         final int recordCount = 100 * 1000;
 
