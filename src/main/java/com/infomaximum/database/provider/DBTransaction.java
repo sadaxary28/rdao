@@ -29,6 +29,8 @@ public interface DBTransaction extends AutoCloseable {
     void commit() throws DatabaseException;
     void rollback() throws DatabaseException;
 
+    void compactRange() throws DatabaseException;
+
     @Override
     void close() throws DatabaseException;
 }

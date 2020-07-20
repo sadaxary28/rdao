@@ -174,6 +174,15 @@ public class RocksDBTransaction implements DBTransaction {
     }
 
     @Override
+    public void compactRange() throws DatabaseException {
+        try {
+            rocksDBProvider.getRocksDB().compactRange();
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+    @Override
     public void close() throws DatabaseException {
         transaction.close();
     }
