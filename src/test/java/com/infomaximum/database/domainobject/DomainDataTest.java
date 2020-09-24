@@ -24,8 +24,8 @@ public abstract class DomainDataTest extends RocksDataTest {
         super.init();
 
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
         Schema.create(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider);
     }
 
     @After

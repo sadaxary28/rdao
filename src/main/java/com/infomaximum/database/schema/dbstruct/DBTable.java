@@ -75,6 +75,7 @@ public class DBTable extends DBObject {
     }
 
     public void dropField(int id) {
+        fieldNameFieldMap.remove(sortedFields.get(id).getName());
         for (int i = id + 1; i < sortedFields.size(); i++) {
             DBField field = sortedFields.get(i);
             field.setId(field.getId() - 1);
@@ -106,6 +107,7 @@ public class DBTable extends DBObject {
     public DBField newField(String name, Class<? extends Serializable> type, Integer foreignTableId) {
         DBField field = new DBField(DBSchema.nextId(sortedFields), name, type, foreignTableId);
         sortedFields.add(field);
+        fieldNameFieldMap.put(field.getName(), field);
         return field;
     }
 

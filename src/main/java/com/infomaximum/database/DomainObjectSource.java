@@ -37,6 +37,10 @@ public class DomainObjectSource {
         return new Transaction(dbProvider.beginTransaction(), dbSchema);
     }
 
+    public RecordIterator select(String table, String namespace) throws DatabaseException {
+        return new DataReadCommand(dbProvider, dbSchema).select(table, namespace);
+    }
+
 //    public DBIterator createIterator(String columnFamily) throws DatabaseException {
 //
 //        return dbProvider.createIterator(columnFamily);

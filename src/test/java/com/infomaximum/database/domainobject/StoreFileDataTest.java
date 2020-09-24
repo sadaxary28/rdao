@@ -16,6 +16,7 @@ import java.util.List;
 public abstract class StoreFileDataTest extends DomainDataTest {
 
     protected Schema schema;
+    protected com.infomaximum.database.DomainObjectSource newDomainObjectSource;
 
     @Before
     public void init() throws Exception {
@@ -23,6 +24,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         schema = Schema.read(rocksDBProvider);
         createDomain(ExchangeFolderReadable.class);
         createDomain(StoreFileReadable.class);
+        newDomainObjectSource = new com.infomaximum.database.DomainObjectSource(rocksDBProvider);
     }
 
     protected void testFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws DatabaseException {

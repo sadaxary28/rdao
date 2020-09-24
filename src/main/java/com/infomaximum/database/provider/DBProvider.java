@@ -2,7 +2,7 @@ package com.infomaximum.database.provider;
 
 import com.infomaximum.database.exception.DatabaseException;
 
-public interface DBProvider {
+public interface DBProvider extends DBDataReader {
 
     DBIterator createIterator(String columnFamily) throws DatabaseException;
     DBTransaction beginTransaction() throws DatabaseException;
