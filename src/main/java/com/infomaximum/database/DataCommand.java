@@ -27,7 +27,7 @@ public class DataCommand {
 
     public RecordIterator select(String table, String namespace, Set<String> fields) throws DatabaseException {
         DBTable dbTable = schema.getTable(table, namespace);
-        return new AllIterator(dbTable, toFieldArray(fields, dbTable), dataCommand);
+        return new AllIterator(dbTable, dataCommand);
     }
 
     public RecordIterator select(String table, String namespace, Set<String> fields, HashFilter filter) throws DatabaseException {

@@ -32,6 +32,8 @@ public class DBTable extends DBObject {
     private final List<DBIntervalIndex> intervalIndexes;
     private final List<DBRangeIndex> rangeIndexes;
 
+    private final Map<String, DBField> fieldNameFieldMap;
+
     private DBTable(int id, String name, String namespace, List<DBField> sortedFields,
                     List<DBHashIndex> hashIndexes, List<DBPrefixIndex> prefixIndexes,
                     List<DBIntervalIndex> intervalIndexes, List<DBRangeIndex> rangeIndexes) {
@@ -45,6 +47,7 @@ public class DBTable extends DBObject {
         this.prefixIndexes = prefixIndexes;
         this.intervalIndexes = intervalIndexes;
         this.rangeIndexes = rangeIndexes;
+        this.fieldNameFieldMap = sortedFields.stream().collect(Collectors.toMap(DBField::getName, dbField -> dbField));
     }
 
     DBTable(int id, String name, String namespace, List<DBField> sortedFields) {
@@ -107,12 +110,8 @@ public class DBTable extends DBObject {
     }
 
     public int findFieldIndex(String fieldName) {
-        for (int i = 0; i < sortedFields.size(); ++i) {
-            if (sortedFields.get(i).getName().equals(fieldName)) {
-                return i;
-            }
-        }
-        return -1;
+        DBField field = fieldNameFieldMap.get(fieldName);
+        return field != null ? field.getId() : -1;
     }
 
     public boolean containField(String fieldName) throws SchemaException {
