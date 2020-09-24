@@ -3,7 +3,7 @@ package com.infomaximum.database.exception;
 /**
  * Created by kris on 06.09.17.
  */
-public class DatabaseException extends Exception {
+public class DatabaseException extends RuntimeException {
 
     public DatabaseException(String message) {
         super(message);

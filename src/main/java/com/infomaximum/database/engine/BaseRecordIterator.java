@@ -5,7 +5,6 @@ import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
-import com.infomaximum.database.exception.runtime.DatabaseRuntimeException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
@@ -32,14 +31,14 @@ public abstract class BaseRecordIterator implements RecordIterator {
         }
     }
 
-    protected Record nextRecord(DBTable table, NextState state, DBIterator dbIterator) throws DatabaseRuntimeException, DatabaseException {
+    protected Record nextRecord(DBTable table, NextState state, DBIterator dbIterator) throws DatabaseException {
         if (state.isEmpty()) {
             throw new NoSuchElementException();
         }
         return readObject(table, state, dbIterator);
     }
 
-    protected NextState seek(KeyPattern pattern, DBIterator iterator) throws DatabaseRuntimeException, DatabaseException {
+    protected NextState seek(KeyPattern pattern, DBIterator iterator) throws DatabaseException {
         KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return new NextState(-1);

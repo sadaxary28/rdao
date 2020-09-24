@@ -2,7 +2,7 @@ package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.domainobject.filter.HashFilter;
-import com.infomaximum.database.exception.runtime.IndexNotFoundException;
+import com.infomaximum.database.exception.IndexNotFoundException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;

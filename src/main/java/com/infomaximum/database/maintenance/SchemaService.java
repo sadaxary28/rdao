@@ -1,8 +1,8 @@
 package com.infomaximum.database.maintenance;
 
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.runtime.SchemaException;
-import com.infomaximum.database.exception.runtime.TableNotFoundException;
+import com.infomaximum.database.exception.SchemaException;
+import com.infomaximum.database.exception.TableNotFoundException;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;

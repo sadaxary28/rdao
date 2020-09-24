@@ -1,7 +1,7 @@
 package com.infomaximum.database.schema;
 
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
-import com.infomaximum.database.exception.runtime.StructEntityException;
+import com.infomaximum.database.exception.IllegalTypeException;
+import com.infomaximum.database.exception.StructEntityException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.io.Serializable;

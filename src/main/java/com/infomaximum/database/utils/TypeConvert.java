@@ -3,7 +3,7 @@ package com.infomaximum.database.utils;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedInteger;
-import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
+import com.infomaximum.database.exception.UnsupportedTypeException;
 import com.infomaximum.database.schema.TypeConverter;
 
 import java.io.Serializable;

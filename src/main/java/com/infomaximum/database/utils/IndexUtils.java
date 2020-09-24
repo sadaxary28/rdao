@@ -1,6 +1,6 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.StructEntity;
 import com.infomaximum.database.schema.dbstruct.DBField;

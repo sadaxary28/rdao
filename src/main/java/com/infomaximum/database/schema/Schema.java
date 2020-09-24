@@ -2,7 +2,6 @@ package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.*;
-import com.infomaximum.database.exception.runtime.*;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.schema.table.*;

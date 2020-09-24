@@ -1,6 +1,6 @@
 package com.infomaximum.database;
 
-import com.infomaximum.database.exception.runtime.DatabaseRuntimeException;
+import com.infomaximum.database.exception.DatabaseException;
 
 import java.util.Iterator;
 
@@ -9,11 +9,11 @@ public interface DataIterator<T> extends AutoCloseable, Iterator<T> {
 //    void reuseReturningRecord(boolean value);
 
     @Override
-    boolean hasNext() throws DatabaseRuntimeException;
+    boolean hasNext() throws DatabaseException;
 
     @Override
-    T next() throws DatabaseRuntimeException;
+    T next() throws DatabaseException;
 
     @Override
-    void close() throws DatabaseRuntimeException;
+    void close() throws DatabaseException;
 }

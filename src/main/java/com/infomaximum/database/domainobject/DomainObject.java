@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject;
 
-import com.infomaximum.database.exception.runtime.FieldValueNotFoundException;
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.FieldValueNotFoundException;
+import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;

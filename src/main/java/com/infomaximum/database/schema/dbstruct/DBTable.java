@@ -1,7 +1,7 @@
 package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.FieldNotFoundException;
-import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
 

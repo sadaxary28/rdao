@@ -1,4 +1,4 @@
-package com.infomaximum.database.exception.runtime;
+package com.infomaximum.database.exception;
 
 public class TableNotFoundException extends SchemaException {
 

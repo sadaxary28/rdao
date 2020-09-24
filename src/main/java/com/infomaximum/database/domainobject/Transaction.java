@@ -7,7 +7,7 @@ import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
-import com.infomaximum.database.exception.runtime.ClosedObjectException;
+import com.infomaximum.database.exception.ClosedObjectException;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.HashIndexUtils;

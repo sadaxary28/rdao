@@ -1,4 +1,4 @@
-package com.infomaximum.database.exception.runtime;
+package com.infomaximum.database.exception;
 
 /**
  * Created by kris on 07.09.17.

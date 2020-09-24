@@ -1,7 +1,7 @@
 package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.exception.runtime.KeyCorruptedException;
+import com.infomaximum.database.exception.KeyCorruptedException;
 import com.infomaximum.database.schema.HashIndex;
 import com.infomaximum.database.schema.dbstruct.DBHashIndex;
 import com.infomaximum.database.utils.TypeConvert;

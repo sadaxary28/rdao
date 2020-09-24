@@ -13,7 +13,7 @@ import com.infomaximum.database.utils.key.FieldKey;
 
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
 
 import java.lang.reflect.Constructor;

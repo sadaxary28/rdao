@@ -3,7 +3,7 @@ package com.infomaximum.database.engine;
 import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
-import com.infomaximum.database.exception.runtime.DatabaseRuntimeException;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBDataReader;
 import com.infomaximum.database.schema.dbstruct.DBField;
 import com.infomaximum.database.schema.dbstruct.DBTable;
@@ -20,19 +20,19 @@ public class RangeIterator implements RecordIterator {
 //    }
 
     @Override
-    public boolean hasNext() throws DatabaseRuntimeException {
+    public boolean hasNext() throws DatabaseException {
         // TODO realize
         return false;
     }
 
     @Override
-    public Record next() throws DatabaseRuntimeException {
+    public Record next() throws DatabaseException {
         // TODO realize
         return null;
     }
 
     @Override
-    public void close() throws DatabaseRuntimeException {
+    public void close() throws DatabaseException {
         // TODO realize
     }
 }

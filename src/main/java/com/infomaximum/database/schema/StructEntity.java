@@ -2,9 +2,9 @@ package com.infomaximum.database.schema;
 
 import com.infomaximum.database.anotation.*;
 import com.infomaximum.database.domainobject.DomainObject;
-import com.infomaximum.database.exception.runtime.FieldNotFoundException;
-import com.infomaximum.database.exception.runtime.IndexNotFoundException;
-import com.infomaximum.database.exception.runtime.StructEntityException;
+import com.infomaximum.database.exception.FieldNotFoundException;
+import com.infomaximum.database.exception.IndexNotFoundException;
+import com.infomaximum.database.exception.StructEntityException;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 

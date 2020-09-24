@@ -1,6 +1,6 @@
 package com.infomaximum.database.schema.dbstruct;
 
-import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.SchemaException;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;

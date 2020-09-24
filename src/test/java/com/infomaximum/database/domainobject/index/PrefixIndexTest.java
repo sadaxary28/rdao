@@ -1,7 +1,7 @@
 package com.infomaximum.database.domainobject.index;
 
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
-import com.infomaximum.database.exception.runtime.IndexNotFoundException;
+import com.infomaximum.database.exception.IndexNotFoundException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;

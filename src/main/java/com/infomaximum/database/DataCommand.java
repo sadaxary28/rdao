@@ -1,7 +1,7 @@
 package com.infomaximum.database;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.runtime.SchemaException;
+import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.provider.DBDataCommand;
 import com.infomaximum.database.schema.dbstruct.DBField;
 import com.infomaximum.database.schema.dbstruct.DBSchema;

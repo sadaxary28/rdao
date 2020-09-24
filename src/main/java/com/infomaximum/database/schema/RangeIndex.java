@@ -1,6 +1,6 @@
 package com.infomaximum.database.schema;
 
-import com.infomaximum.database.exception.runtime.IllegalTypeException;
+import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.utils.IntervalIndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
 

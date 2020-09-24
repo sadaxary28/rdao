@@ -1,6 +1,6 @@
 package com.infomaximum.database.utils;
 
-import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
+import com.infomaximum.database.exception.UnsupportedTypeException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

@@ -4,7 +4,7 @@ import com.google.common.primitives.UnsignedInts;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.runtime.UnsupportedTypeException;
+import com.infomaximum.database.exception.UnsupportedTypeException;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.TypeConverter;
 import com.infomaximum.database.schema.dbstruct.DBField;
