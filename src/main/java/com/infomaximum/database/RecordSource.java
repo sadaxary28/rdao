@@ -5,7 +5,7 @@ import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.dbstruct.DBSchema;
 
-public class DomainObjectSource {
+public class RecordSource {
 
     private final DBProvider dbProvider;
     private final DBSchema dbSchema;
@@ -21,7 +21,7 @@ public class DomainObjectSource {
         void action(final Transaction transaction) throws Exception;
     }
 
-    public DomainObjectSource(DBProvider dbProvider) throws DatabaseException {
+    public RecordSource(DBProvider dbProvider) throws DatabaseException {
         this.dbProvider = dbProvider;
         this.dbSchema = Schema.read(dbProvider).getDbSchema();
     }

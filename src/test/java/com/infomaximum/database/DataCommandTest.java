@@ -18,7 +18,7 @@ public class DataCommandTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         Collection<? extends DomainObject> expected = initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        try (RecordIterator iterator = newDomainObjectSource.select("StoreFile", "com.infomaximum.store")){
+        try (RecordIterator iterator = recordSource.select("StoreFile", "com.infomaximum.store")){
             List<Record> actual = new ArrayList<>();
             while (iterator.hasNext()) {
                 actual.add(iterator.next());

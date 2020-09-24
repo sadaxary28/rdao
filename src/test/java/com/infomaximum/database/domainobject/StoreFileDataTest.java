@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject;
 
 import com.google.common.primitives.Longs;
+import com.infomaximum.database.RecordSource;
 import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
@@ -16,7 +17,7 @@ import java.util.List;
 public abstract class StoreFileDataTest extends DomainDataTest {
 
     protected Schema schema;
-    protected com.infomaximum.database.DomainObjectSource newDomainObjectSource;
+    protected RecordSource recordSource;
 
     @Before
     public void init() throws Exception {
@@ -24,7 +25,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         schema = Schema.read(rocksDBProvider);
         createDomain(ExchangeFolderReadable.class);
         createDomain(StoreFileReadable.class);
-        newDomainObjectSource = new com.infomaximum.database.DomainObjectSource(rocksDBProvider);
+        recordSource = new RecordSource(rocksDBProvider);
     }
 
     protected void testFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws DatabaseException {
