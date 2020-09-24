@@ -7,9 +7,9 @@ import com.infomaximum.database.schema.Schema;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.rocksdb.RocksDataBaseBuilder;
 import com.infomaximum.rocksdb.RocksDataTest;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Set;
 
@@ -19,7 +19,7 @@ public abstract class DomainDataTest extends RocksDataTest {
 
     protected DomainObjectSource domainObjectSource;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         super.init();
 
@@ -28,7 +28,7 @@ public abstract class DomainDataTest extends RocksDataTest {
         domainObjectSource = new DomainObjectSource(rocksDBProvider);
     }
 
-    @After
+    @AfterEach
     public void destroy() throws Exception {
         if (rocksDBProvider != null) {
             rocksDBProvider.close();
@@ -55,12 +55,9 @@ public abstract class DomainDataTest extends RocksDataTest {
             if (loadingFields.contains(field.getNumber())) {
                 continue;
             }
-            try {
+            Assertions.assertThrows(FieldValueNotFoundException.class, () -> {
                 target.get(field.getNumber());
-                Assert.fail();
-            } catch (FieldValueNotFoundException e) {
-                Assert.assertTrue(true);
-            }
+            });
         }
     }
 }

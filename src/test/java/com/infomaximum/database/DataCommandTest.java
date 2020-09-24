@@ -6,7 +6,7 @@ import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
@@ -15,6 +15,20 @@ public class DataCommandTest extends StoreFileDataTest {
 
     @Test
     public void selectAllIterator() throws Exception {
+        final int insertedRecordCount = 10;
+        Collection<? extends DomainObject> expected = initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+        try (RecordIterator iterator = recordSource.select("StoreFile", "com.infomaximum.store")){
+            List<Record> actual = new ArrayList<>();
+            while (iterator.hasNext()) {
+                actual.add(iterator.next());
+            }
+            assertContainsExactlyDomainObjects(actual, expected);
+        }
+    }
+
+    @Test()
+    public void selectAllIteratorNoneObjects() throws Exception {
         final int insertedRecordCount = 10;
         Collection<? extends DomainObject> expected = initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 

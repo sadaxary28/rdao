@@ -8,8 +8,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderReadable;
 import com.infomaximum.domain.StoreFileReadable;
-import org.junit.Assert;
-import org.junit.Before;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
     protected Schema schema;
     protected RecordSource recordSource;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         super.init();
         schema = Schema.read(rocksDBProvider);
@@ -53,6 +53,6 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         temp.sort(Long::compareTo);
         foundIds.sort(Long::compareTo);
 
-        Assert.assertEquals(temp, foundIds);
+        Assertions.assertThat(temp).isEqualTo(foundIds);
     }
 }
