@@ -25,27 +25,15 @@ public class AllIterator extends BaseRecordIterator {
 
     @Override
     public Record next() throws DatabaseException {
-        try {
-            return nextRecord(table, state, iterator);
-        } catch (DatabaseException e) {
-            throw new DatabaseException(e);
-        }
+        return nextRecord(table, state, iterator);
     }
 
     @Override
     public void close() throws DatabaseException {
-        try {
-            iterator.close();
-        } catch (DatabaseException e) {
-            throw new DatabaseException(e);
-        }
+        iterator.close();
     }
 
     private NextState initializeState() throws DatabaseException {
-        try {
-            return seek(null, iterator);
-        } catch (DatabaseException e) {
-            throw new DatabaseException(e);
-        }
+        return seek(null, iterator);
     }
 }

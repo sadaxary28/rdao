@@ -30,9 +30,9 @@ public class DataReadCommand {
         return new AllIterator(dbTable, dataReader);
     }
 
-    public RecordIterator select(String table, String namespace, Set<String> fields, HashFilter filter) throws DatabaseException {
+    public RecordIterator select(String table, String namespace, HashFilter filter) throws DatabaseException {
         DBTable dbTable = schema.getTable(table, namespace);
-        return new HashIterator(dbTable, toFieldArray(fields, dbTable), filter, dataReader);
+        return new HashIterator(dbTable, filter, dataReader);
     }
 
     public RecordIterator select(String table, String namespace, Set<String> fields, PrefixFilter filter) throws DatabaseException {
