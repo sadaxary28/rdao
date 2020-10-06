@@ -12,9 +12,7 @@ import com.infomaximum.database.schema.dbstruct.DBTable;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.database.utils.key.HashIndexKey;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class HashIterator extends BaseIndexRecordIterator {
@@ -24,26 +22,7 @@ public class HashIterator extends BaseIndexRecordIterator {
 
     public HashIterator(DBTable table, HashFilter filter, DBDataReader dataReader) {
         super(table, dataReader);
-
-        Map<Integer, Object> filters = filter.getValues();
-        final DBHashIndex index = table.getIndex(filter);
-
-        List<DBField> filterFields = new ArrayList<>();
-
-        long[] values = new long[index.getFieldIds().length];
-        for (int i = 0; i < index.getFieldIds().length; ++i) {
-            DBField field = table.getField(index.getFieldIds()[i]);
-            Object value = filters.get(field.getId());
-            checkValueType(value, field);
-
-            values[i] = HashIndexUtils.buildHash(field.getType(), value, null);
-            if (HashIndexUtils.toLongCastable(field.getType())) {
-                continue;
-            }
-            filterFields.add(field);
-            filterFieldsValue.put(field, value);
-        }
-        this.indexKeyValue = indexIterator.seek(HashIndexKey.buildKeyPattern(index, values));
+        this.indexKeyValue = seekByFilter(table, filter);
 
         nextImpl();
     }
@@ -67,6 +46,25 @@ public class HashIterator extends BaseIndexRecordIterator {
         return filterFieldsValue.entrySet()
                 .stream()
                 .allMatch(fieldEntry -> HashIndexUtils.equals(fieldEntry.getKey().getType(), fieldEntry.getValue(), record.getValues()[fieldEntry.getKey().getId()]));
+    }
+
+    private KeyValue seekByFilter(DBTable table, HashFilter filter) {
+        Map<Integer, Object> filters = filter.getValues();
+        final DBHashIndex index = table.getIndex(filter);
+
+        long[] values = new long[index.getFieldIds().length];
+        for (int i = 0; i < index.getFieldIds().length; ++i) {
+            DBField field = table.getField(index.getFieldIds()[i]);
+            Object value = filters.get(field.getId());
+            checkValueType(value, field);
+
+            values[i] = HashIndexUtils.buildHash(field.getType(), value, null);
+            if (HashIndexUtils.toLongCastable(field.getType())) {
+                continue;
+            }
+            filterFieldsValue.put(field, value);
+        }
+        return indexIterator.seek(HashIndexKey.buildKeyPattern(index, values));
     }
 
     private void checkValueType(Object value, DBField field) {
