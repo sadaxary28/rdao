@@ -2,7 +2,6 @@ package com.infomaximum.database.engine;
 
 import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
-import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
 import com.infomaximum.database.provider.DBIterator;
@@ -35,7 +34,7 @@ public abstract class BaseRecordIterator implements RecordIterator {
         if (state.isEmpty()) {
             throw new NoSuchElementException();
         }
-        return readObject(table, state, dbIterator);
+        return readRecord(table, state, dbIterator);
     }
 
     protected NextState seek(KeyPattern pattern, DBIterator iterator) throws DatabaseException {
@@ -52,7 +51,20 @@ public abstract class BaseRecordIterator implements RecordIterator {
         return new NextState(objId);
     }
 
-    private <T extends DomainObject> Record readObject(DBTable table, NextState state, DBIterator iterator) throws DatabaseException {
+    public Record seekRecord(DBTable table, DBIterator iterator, KeyPattern pattern) throws DatabaseException {
+        KeyValue keyValue = iterator.seek(pattern);
+        if (keyValue == null) {
+            return null;
+        }
+
+        if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
+            return null;
+        }
+
+        return readRecord(table, FieldKey.unpackId(keyValue.getKey()), iterator);
+    }
+
+    private Record readRecord(DBTable table, NextState state, DBIterator iterator) throws DatabaseException {
         long recordId = state.nextId;
         List<DBField> fields = table.getSortedFields();
         Object[] values = new Object[fields.size()];
@@ -70,6 +82,24 @@ public abstract class BaseRecordIterator implements RecordIterator {
             values[field.getId()] = TypeConvert.unpack(field.getType(), keyValue.getValue(), null);
         }
         state.nextId = -1;
+        return new Record(recordId, values);
+    }
+
+    private Record readRecord(DBTable table, long recordId, DBIterator iterator) throws DatabaseException {
+        List<DBField> fields = table.getSortedFields();
+        Object[] values = new Object[fields.size()];
+        KeyValue keyValue;
+        while ((keyValue = iterator.next()) != null) {
+            long id = FieldKey.unpackId(keyValue.getKey());
+            if (id != recordId) {
+                if (!FieldKey.unpackBeginningObject(keyValue.getKey())) {
+                    throw new UnexpectedEndObjectException(recordId, id, FieldKey.unpackFieldName(keyValue.getKey()));
+                }
+                return new Record(recordId, values);
+            }
+            DBField field = table.getField(FieldKey.unpackFieldName(keyValue.getKey()));
+            values[field.getId()] = TypeConvert.unpack(field.getType(), keyValue.getValue(), null);
+        }
         return new Record(recordId, values);
     }
 }

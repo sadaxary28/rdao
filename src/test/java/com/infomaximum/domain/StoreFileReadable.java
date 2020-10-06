@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_FILE_NAME}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_SIZE, StoreFileReadable.FIELD_FILE_NAME}),
+                @HashIndex(fields = {StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_SINGLE}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_FORMAT}),
                 @HashIndex(fields = {StoreFileReadable.FIELD_LOCAL_BEGIN})
         },

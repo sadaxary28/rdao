@@ -1,6 +1,8 @@
 package com.infomaximum.database.schema.dbstruct;
 
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.exception.FieldNotFoundException;
+import com.infomaximum.database.exception.IndexNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.schema.StructEntity;
 import net.minidev.json.JSONObject;
@@ -174,6 +176,15 @@ public class DBTable extends DBObject {
 
     public void attachIndex(DBRangeIndex index) {
         attachIndex(index, rangeIndexes);
+    }
+
+    public DBHashIndex getIndex(HashFilter filter) {
+        Set<Integer> indexedFieldIds = filter.getValues().keySet();
+        return hashIndexes.stream()
+                .filter(index -> index.getFieldIds().length == indexedFieldIds.size()
+                        && Arrays.stream(index.getFieldIds()).allMatch(indexedFieldIds::contains))
+                .findAny()
+                .orElseThrow(() -> new IndexNotFoundException(indexedFieldIds, this));
     }
 
     void checkIntegrity() throws SchemaException {

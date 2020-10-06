@@ -1,5 +1,6 @@
 package com.infomaximum.database;
 
+import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.schema.Schema;
@@ -39,6 +40,10 @@ public class RecordSource {
 
     public RecordIterator select(String table, String namespace) throws DatabaseException {
         return new DataReadCommand(dbProvider, dbSchema).select(table, namespace);
+    }
+
+    public RecordIterator select(String table, String namespace, HashFilter filter) throws DatabaseException {
+        return new DataReadCommand(dbProvider, dbSchema).select(table, namespace, filter);
     }
 
 //    public DBIterator createIterator(String columnFamily) throws DatabaseException {

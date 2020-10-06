@@ -77,6 +77,13 @@ public class HashIndexKey extends IndexKey {
         return new KeyPattern(buffer);
     }
 
+    public static KeyPattern buildKeyPattern(final DBHashIndex index, final long[] fieldValues) {
+        byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(index.getAttendant().length + ID_BYTE_SIZE * fieldValues.length,
+                index.getAttendant());
+        TypeConvert.pack(fieldValues, buffer, index.getAttendant().length);
+        return new KeyPattern(buffer);
+    }
+
     public static KeyPattern buildKeyPattern(final HashIndex index, final long fieldValue) {
         byte[] buffer = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + ID_BYTE_SIZE,
                 index.attendant);
