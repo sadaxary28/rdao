@@ -99,8 +99,4 @@ public class DBSchema {
             }
         }
     }
-
-    public void tempFix() {
-        tables.forEach(DBTable::tempFix);
-    }
 }

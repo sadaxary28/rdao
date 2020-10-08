@@ -14,12 +14,9 @@ public class DBHashIndex extends DBIndex {
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("hsh");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    private final DBField[] tempFields; //todo V.Bukharkin remove it
-
     DBHashIndex(int id, DBField[] fields) {
         super(id, fields);
         checkSorting(fields);
-        tempFields = fields;
     }
 
     public DBHashIndex(DBField[] fields) {
@@ -46,14 +43,5 @@ public class DBHashIndex extends DBIndex {
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_FIELD_IDS, JsonUtils.toJsonArray(getFieldIds()));
         return object;
-    }
-
-    public DBHashIndex getTempFixed() {
-        if (getId() < 1) {
-            throw new RuntimeException("Bad error");
-        }
-        setId(getId() - 1);
-        Arrays.sort(tempFields, Comparator.comparing(DBField::getName));
-        return new DBHashIndex(getId(), tempFields);
     }
 }

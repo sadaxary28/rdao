@@ -83,8 +83,7 @@ public class Schema {
         String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
         String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
         validateSchema(version, schemaJson);
-        DBSchema dbSchema = DBSchema.fromStrings(version, schemaJson);
-        return TempFix.fixSchemaIfNeed(dbSchema, dbProvider, Schema::saveSchema);
+        return DBSchema.fromStrings(version, schemaJson);
     }
 
     private static void validateSchema(String version, String schemaJson) throws DatabaseException {
