@@ -1,5 +1,7 @@
-package com.infomaximum.database.domainobject.iterator;
+package com.infomaximum.database.domainobject.engine;
 
+import com.infomaximum.database.Record;
+import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.IntervalFilter;
@@ -8,7 +10,7 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -314,69 +316,52 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         });
 
         try (Transaction transaction = domainObjectSource.buildTransaction()) {
-            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
-                    new IntervalFilter(StoreFileReadable.FIELD_SIZE, 10L, 20L)
-                            .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
+            try (RecordIterator iterator = recordSource
+                    .select("StoreFile", "com.infomaximum.store",
+                            new IntervalFilter(StoreFileReadable.FIELD_SIZE, 10L, 20L)
+                                    .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
                 List<Long> ids = new ArrayList<>();
-                while (i.hasNext()) {
+                while (iterator.hasNext()) {
                     StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
                     s.setSize(15);
                     transaction.save(s);
 
-                    StoreFileReadable item = i.next();
+                    Record item = iterator.next();
                     ids.add(item.getId());
                 }
 
                 Assert.assertEquals(Arrays.asList(1L, 2L), ids);
             }
         }
-
-        /*try (Transaction transaction = domainObjectSource.buildTransaction()) {
-            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class,
-                    new IntervalFilter(StoreFileReadable.FIELD_SIZE, 10L, 50L)
-                            .appendHashedField(StoreFileEditable.FIELD_FILE_NAME, name))) {
-                List<Long> ids = new ArrayList<>();
-                while (i.hasNext()) {
-                    StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
-                    s.setFileName("another name");
-                    transaction.save(s);
-
-                    StoreFileReadable item = i.next();
-                    ids.add(item.getId());
-                }
-
-                Assert.assertEquals(Arrays.asList(1L, 2L, 3L), ids);
-            }
-        }*/
     }
 
-    @Test
-    public void removeAndFind() throws Exception {
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-            obj.setSize(1);
-            transaction.save(obj);
-
-            obj = transaction.create(StoreFileEditable.class);
-            obj.setSize(20);
-            transaction.save(obj);
-
-            obj = transaction.create(StoreFileEditable.class);
-            obj.setSize(1);
-            transaction.save(obj);
-        });
-
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-            transaction.remove(transaction.get(StoreFileEditable.class, 2));
-
-            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
-            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
-        });
-
-        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
-        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
-    }
+//    @Test
+//    public void removeAndFind() throws Exception {
+//        domainObjectSource.executeTransactional(transaction -> {
+//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+//            obj.setSize(1);
+//            transaction.save(obj);
+//
+//            obj = transaction.create(StoreFileEditable.class);
+//            obj.setSize(20);
+//            transaction.save(obj);
+//
+//            obj = transaction.create(StoreFileEditable.class);
+//            obj.setSize(1);
+//            transaction.save(obj);
+//        });
+//
+//        domainObjectSource.executeTransactional(transaction -> {
+//            transaction.remove(transaction.get(StoreFileEditable.class, 1));
+//            transaction.remove(transaction.get(StoreFileEditable.class, 2));
+//
+//            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+//            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+//        });
+//
+//        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+//        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+//    }
 
     protected void assertValueEquals(List<Double> expected, Integer fieldName, Double begin, Double end) throws DatabaseException {
         assertValueEquals(expected, new IntervalFilter(fieldName, begin, end));
@@ -413,22 +398,24 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
     }
 
     private <T> List<T> getValues(IntervalFilter filter) throws DatabaseException {
-        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
+        try (RecordIterator iterator = recordSource
+                .select("StoreFile", "com.infomaximum.store",  filter)) {
             List<T> result = new ArrayList<>();
             while (iterator.hasNext()) {
-                StoreFileReadable storeFile = iterator.next();
+                Record storeFile = iterator.next();
 
-                result.add((T) storeFile.get(filter.getIndexedFieldId()));
+                result.add((T) storeFile.getValues()[filter.getIndexedFieldId()]);
             }
             return result;
         }
     }
 
     private List<Long> getIds(IntervalFilter filter) throws DatabaseException {
-        try (IteratorEntity<StoreFileReadable> iterator = domainObjectSource.find(StoreFileReadable.class, filter)) {
+        try (RecordIterator iterator = recordSource
+                .select("StoreFile", "com.infomaximum.store", filter)) {
             List<Long> result = new ArrayList<>();
             while (iterator.hasNext()) {
-                StoreFileReadable storeFile = iterator.next();
+                Record storeFile = iterator.next();
 
                 result.add(storeFile.getId());
             }

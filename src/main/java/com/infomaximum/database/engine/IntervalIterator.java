@@ -1,38 +1,37 @@
 package com.infomaximum.database.engine;
 
-import com.infomaximum.database.Record;
-import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.filter.IntervalFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBDataReader;
-import com.infomaximum.database.schema.dbstruct.DBField;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.dbstruct.DBBaseIntervalIndex;
 import com.infomaximum.database.schema.dbstruct.DBTable;
+import com.infomaximum.database.utils.key.IntervalIndexKey;
 
-public class IntervalIterator implements RecordIterator {
+public class IntervalIterator extends BaseIntervalRecordIterator<IntervalFilter> {
 
-    public IntervalIterator(DBTable table, DBField[] selectingFields, IntervalFilter filter, DBDataReader dataReader) {
-        // TODO realize
-    }
-
-//    @Override
-//    public void reuseReturningRecord(boolean value) {
-//        // TODO realize
-//    }
-
-    @Override
-    public boolean hasNext() throws DatabaseException {
-        // TODO realize
-        return false;
+    public IntervalIterator(DBTable table, IntervalFilter filter, DBDataReader dataReader) {
+        super(table, filter, filter.getSortDirection(), dataReader);
     }
 
     @Override
-    public Record next() throws DatabaseException {
-        // TODO realize
-        return null;
+    DBBaseIntervalIndex getIndex(IntervalFilter filter, DBTable table) {
+        return table.getIndex(filter);
     }
 
     @Override
-    public void close() throws DatabaseException {
-        // TODO realize
+    KeyValue seek(DBIterator indexIterator, KeyPattern pattern) throws DatabaseException {
+        return indexIterator.seek(pattern);
+    }
+
+    @Override
+    int matchKey(long id, byte[] key) {
+        long indexedBeginValue = IntervalIndexKey.unpackIndexedValue(key);
+        if (indexedBeginValue < filterBeginValue || indexedBeginValue > filterEndValue) {
+            return KeyPattern.MATCH_RESULT_UNSUCCESS;
+        }
+        return KeyPattern.MATCH_RESULT_SUCCESS;
     }
 }

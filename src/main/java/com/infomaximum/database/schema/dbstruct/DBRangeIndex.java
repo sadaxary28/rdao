@@ -1,5 +1,6 @@
 package com.infomaximum.database.schema.dbstruct;
 
+import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
@@ -8,7 +9,7 @@ import net.minidev.json.JSONObject;
 import java.util.Arrays;
 import java.util.List;
 
-public class DBRangeIndex extends DBIndex {
+public class DBRangeIndex extends DBBaseIntervalIndex {
 
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("rng");
     private static final String JSON_PROP_BEGIN_FIELD_ID = "begin_field_id";
@@ -17,15 +18,13 @@ public class DBRangeIndex extends DBIndex {
 
     private final int beginFieldId;
     private final int endFieldId;
-    private final int[] hashFieldIds;
 
     DBRangeIndex(int id, DBField beginField, DBField endField, DBField[] hashFields) {
-        super(id, concatenate(beginField, endField, hashFields));
+        super(id, concatenate(beginField, endField, hashFields), Arrays.stream(hashFields).mapToInt(DBField::getId).toArray());
         checkSorting(hashFields);
 
         this.beginFieldId = beginField.getId();
         this.endFieldId = endField.getId();
-        this.hashFieldIds = Arrays.stream(hashFields).mapToInt(DBField::getId).toArray();
     }
 
     public DBRangeIndex(DBField beginField, DBField endField, DBField[] hashFields) {
@@ -38,10 +37,6 @@ public class DBRangeIndex extends DBIndex {
 
     public int getEndFieldId() {
         return endFieldId;
-    }
-
-    public int[] getHashFieldIds() {
-        return hashFieldIds;
     }
 
     @Override
@@ -64,8 +59,17 @@ public class DBRangeIndex extends DBIndex {
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_BEGIN_FIELD_ID, beginFieldId);
         object.put(JSON_PROP_END_FIELD_ID, endFieldId);
-        object.put(JSON_PROP_HASH_FIELD_IDS, JsonUtils.toJsonArray(hashFieldIds));
+        object.put(JSON_PROP_HASH_FIELD_IDS, JsonUtils.toJsonArray(getHashFieldIds()));
         return object;
+    }
+
+    @Override
+    public Class<?> checkIndexedFieldType(Class<?> expectedType, DBTable table) {
+        DBField field = table.getField(beginFieldId);
+        if (field.getType() != expectedType) {
+            throw new IllegalTypeException(field.getType(), expectedType);
+        }
+        return null;
     }
 
     private static DBField[] concatenate(DBField beginFieldId, DBField endFieldId, DBField[] hashFieldIds) {

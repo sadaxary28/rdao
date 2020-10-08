@@ -5,35 +5,35 @@ import java.time.LocalDateTime;
 
 public class IntervalFilter extends BaseIntervalFilter {
 
-    private final Integer indexedFieldNumber;
+    private final Integer indexedFieldId;
     private SortDirection sortDirection = SortDirection.ASC;
 
-    public IntervalFilter(Integer indexedFieldNumber, Double beginValue, Double endValue) {
+    public IntervalFilter(Integer indexedFieldId, Double beginValue, Double endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldNumber = indexedFieldNumber;
+        this.indexedFieldId = indexedFieldId;
     }
 
-    public IntervalFilter(Integer indexedFieldNumber, Long beginValue, Long endValue) {
+    public IntervalFilter(Integer indexedFieldId, Long beginValue, Long endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldNumber = indexedFieldNumber;
+        this.indexedFieldId = indexedFieldId;
     }
 
-    public IntervalFilter(Integer indexedFieldNumber, Instant beginValue, Instant endValue) {
+    public IntervalFilter(Integer indexedFieldId, Instant beginValue, Instant endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldNumber = indexedFieldNumber;
+        this.indexedFieldId = indexedFieldId;
     }
 
-    public IntervalFilter(Integer indexedFieldNumber, LocalDateTime beginValue, LocalDateTime endValue) {
+    public IntervalFilter(Integer indexedFieldId, LocalDateTime beginValue, LocalDateTime endValue) {
         super(beginValue, endValue);
 
-        this.indexedFieldNumber = indexedFieldNumber;
+        this.indexedFieldId = indexedFieldId;
     }
 
-    public Integer getIndexedFieldNumber() {
-        return indexedFieldNumber;
+    public Integer getIndexedFieldId() {
+        return indexedFieldId;
     }
 
     public SortDirection getSortDirection() {

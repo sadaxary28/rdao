@@ -1,5 +1,6 @@
 package com.infomaximum.database.schema.dbstruct;
 
+import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.utils.IndexUtils;
 import com.infomaximum.database.utils.TypeConvert;
@@ -8,22 +9,19 @@ import net.minidev.json.JSONObject;
 import java.util.Arrays;
 import java.util.List;
 
-public class DBIntervalIndex extends DBIndex {
+public class DBIntervalIndex extends DBBaseIntervalIndex {
 
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("int");
     private static final String JSON_PROP_INDEXED_FIELD_ID = "indexed_field_id";
     private static final String JSON_PROP_HASH_FIELD_IDS = "hash_field_ids";
 
     private final int indexedFieldId;
-    private final int[] hashFieldIds;
-
 
     DBIntervalIndex(int id, DBField indexedFieldId, DBField[] hashFieldIds) {
-        super(id, concatenate(indexedFieldId, hashFieldIds));
+        super(id, concatenate(indexedFieldId, hashFieldIds), Arrays.stream(hashFieldIds).mapToInt(DBObject::getId).toArray());
         checkSorting(hashFieldIds);
 
         this.indexedFieldId = indexedFieldId.getId();
-        this.hashFieldIds = Arrays.stream(hashFieldIds).mapToInt(DBObject::getId).toArray();
     }
 
     public DBIntervalIndex(DBField indexedFieldId, DBField[] hashFieldIds) {
@@ -34,9 +32,6 @@ public class DBIntervalIndex extends DBIndex {
         return indexedFieldId;
     }
 
-    public int[] getHashFieldIds() {
-        return hashFieldIds;
-    }
 
     @Override
     protected byte[] getIndexNameBytes() {
@@ -56,7 +51,7 @@ public class DBIntervalIndex extends DBIndex {
         JSONObject object = new JSONObject();
         object.put(JSON_PROP_ID, getId());
         object.put(JSON_PROP_INDEXED_FIELD_ID, indexedFieldId);
-        object.put(JSON_PROP_HASH_FIELD_IDS, JsonUtils.toJsonArray(hashFieldIds));
+        object.put(JSON_PROP_HASH_FIELD_IDS, JsonUtils.toJsonArray(getHashFieldIds()));
         return object;
     }
 
@@ -64,5 +59,14 @@ public class DBIntervalIndex extends DBIndex {
         DBField[] fieldIds = Arrays.copyOf(hashFieldIds, hashFieldIds.length + 1);
         fieldIds[fieldIds.length - 1] = indexedFieldId;
         return fieldIds;
+    }
+
+    @Override
+    public Class<?> checkIndexedFieldType(Class<?> expectedType, DBTable table) {
+        DBField field = table.getField(indexedFieldId);
+        if (field.getType() != expectedType) {
+            throw new IllegalTypeException(field.getType(), expectedType);
+        }
+        return null;
     }
 }

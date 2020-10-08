@@ -21,6 +21,5 @@ public class IndexNotFoundException extends DatabaseException {
                         .collect(Collectors.joining(", ")) +
                 " in " + table.getNamespace() + "." + table.getName());
     }
-
 }
 

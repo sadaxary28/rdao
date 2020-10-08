@@ -21,7 +21,7 @@ public class IntervalIndexIterator<E extends DomainObject> extends BaseIntervalI
 
     @Override
     BaseIntervalIndex getIndex(IntervalFilter filter, StructEntity entity) {
-        return entity.getIntervalIndex(filter.getHashedValues().keySet(), filter.getIndexedFieldNumber());
+        return entity.getIntervalIndex(filter.getHashedValues().keySet(), filter.getIndexedFieldId());
     }
 
     @Override

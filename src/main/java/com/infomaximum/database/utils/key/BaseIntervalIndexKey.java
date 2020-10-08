@@ -2,6 +2,7 @@ package com.infomaximum.database.utils.key;
 
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.BaseIntervalIndex;
+import com.infomaximum.database.schema.dbstruct.DBBaseIntervalIndex;
 import com.infomaximum.database.schema.dbstruct.DBRangeIndex;
 import com.infomaximum.database.utils.TypeConvert;
 
@@ -37,6 +38,12 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
         return new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
     }
 
+    public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue, final DBBaseIntervalIndex index) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.getAttendant().length + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
+        fillBuffer(index.getAttendant(), hashedValues, indexedValue, buffer);
+        return new KeyPattern(buffer.array(), index.getAttendant().length + ID_BYTE_SIZE * hashedValues.length);
+    }
+
     public static KeyPattern buildLeftBorder(long[] hashedValues, long indexedValue, final DBRangeIndex index) {
         ByteBuffer buffer = TypeConvert.allocateBuffer(index.getAttendant().length + ID_BYTE_SIZE * (hashedValues.length + 1) + Byte.BYTES);
         fillBuffer(index.getAttendant(), hashedValues, indexedValue, buffer);
@@ -48,6 +55,15 @@ public abstract class BaseIntervalIndexKey extends IndexKey {
         fillBuffer(index.attendant, hashedValues, indexedValue, buffer);
         buffer.putLong(0xffffffffffffffffL);
         KeyPattern pattern = new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
+        pattern.setForBackward(true);
+        return pattern;
+    }
+
+    public static KeyPattern buildRightBorder(long[] hashedValues, long indexedValue, final DBBaseIntervalIndex index) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.getAttendant().length + ID_BYTE_SIZE * (hashedValues.length + 2) + Byte.BYTES);
+        fillBuffer(index.getAttendant(), hashedValues, indexedValue, buffer);
+        buffer.putLong(0xffffffffffffffffL);
+        KeyPattern pattern = new KeyPattern(buffer.array(), index.getAttendant().length + ID_BYTE_SIZE * hashedValues.length);
         pattern.setForBackward(true);
         return pattern;
     }
