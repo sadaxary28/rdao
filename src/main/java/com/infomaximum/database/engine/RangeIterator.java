@@ -1,38 +1,66 @@
 package com.infomaximum.database.engine;
 
-import com.infomaximum.database.Record;
-import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
+import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBDataReader;
-import com.infomaximum.database.schema.dbstruct.DBField;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.dbstruct.DBBaseIntervalIndex;
 import com.infomaximum.database.schema.dbstruct.DBTable;
+import com.infomaximum.database.utils.RangeIndexUtils;
+import com.infomaximum.database.utils.key.RangeIndexKey;
 
-public class RangeIterator implements RecordIterator {
+import java.util.HashSet;
+import java.util.Set;
 
-    public RangeIterator(DBTable table, DBField[] selectingFields, RangeFilter filter, DBDataReader dataReader) {
-        // TODO realize
-    }
+public class RangeIterator extends BaseIntervalRecordIterator<RangeFilter> {
 
-//    @Override
-//    public void reuseReturningRecord(boolean value) {
-//        // TODO realize
-//    }
+    private Set<Long> processedIds/* = null*/; // не нужно инициализировать, т.к. matchKey вызывается из конструктора базового класса
 
-    @Override
-    public boolean hasNext() throws DatabaseException {
-        // TODO realize
-        return false;
+    public RangeIterator(DBTable table, RangeFilter filter, DBDataReader dataReader) {
+        super(table, filter, SortDirection.ASC, dataReader);
     }
 
     @Override
-    public Record next() throws DatabaseException {
-        // TODO realize
-        return null;
+    DBBaseIntervalIndex getIndex(RangeFilter filter, DBTable table) {
+        RangeFilter.IndexedField indexedField = filter.getIndexedField();
+        return table.getIndex(filter);
     }
 
     @Override
-    public void close() throws DatabaseException {
-        // TODO realize
+    KeyValue seek(DBIterator indexIterator, KeyPattern pattern) throws DatabaseException {
+        return RangeIndexUtils.seek(indexIterator, pattern, filterBeginValue);
+    }
+
+    @Override
+    int matchKey(long id, byte[] key) {
+
+        long indexedValue = RangeIndexKey.unpackIndexedValue(key);
+        if (indexedValue > filterEndValue) {
+            return KeyPattern.MATCH_RESULT_UNSUCCESS;
+        } else if (indexedValue == filterEndValue) {
+            if (filterBeginValue != filterEndValue) {
+                return KeyPattern.MATCH_RESULT_UNSUCCESS;
+            }
+
+            return RangeIndexKey.unpackType(key) == RangeIndexKey.Type.DOT ? KeyPattern.MATCH_RESULT_SUCCESS : KeyPattern.MATCH_RESULT_CONTINUE;
+        }
+
+        if (processedIds != null && processedIds.contains(id)) {
+            if (RangeIndexKey.unpackType(key) == RangeIndexKey.Type.END) {
+                processedIds.remove(id);
+            }
+            return KeyPattern.MATCH_RESULT_CONTINUE;
+        }
+
+        if (RangeIndexKey.unpackType(key) == RangeIndexKey.Type.BEGIN) {
+            if (processedIds == null) {
+                processedIds = new HashSet<>();
+            }
+            processedIds.add(id);
+        }
+        return KeyPattern.MATCH_RESULT_SUCCESS;
     }
 }

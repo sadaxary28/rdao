@@ -39,7 +39,6 @@ abstract class BaseIntervalRecordIterator<F extends BaseIntervalFilter> extends 
         List<DBField> filterFields = null;
         List<Object> filterValues = null;
 
-//        final List<DBField> hashedFields = index.getHashedFields();
         long[] values = new long[index.getHashFieldIds().length];
         for (int i = 0; i < index.getHashFieldIds().length; ++i) {
             DBField field = table.getField(index.getHashFieldIds()[i]);

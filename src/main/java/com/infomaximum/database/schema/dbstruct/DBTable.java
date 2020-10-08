@@ -3,6 +3,7 @@ package com.infomaximum.database.schema.dbstruct;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.filter.IntervalFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
+import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.IndexNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
@@ -207,6 +208,20 @@ public class DBTable extends DBObject {
                 .findAny()
                 .orElseThrow(() -> {
                     indexedFieldIds.add(filter.getIndexedFieldId());
+                    return new IndexNotFoundException(indexedFieldIds, this);
+                });
+    }
+
+    public DBRangeIndex getIndex(RangeFilter filter) {RangeFilter.IndexedField indexedField = filter.getIndexedField();
+        Set<Integer> indexedFieldIds = filter.getHashedValues().keySet();
+        return rangeIndexes.stream()
+                .filter(index -> index.getFieldIds().length == indexedFieldIds.size() + 2
+                        && index.getBeginFieldId() == indexedField.beginField && index.getEndFieldId() == indexedField.endField
+                        && Arrays.stream(index.getHashFieldIds()).allMatch(indexedFieldIds::contains))
+                .findAny()
+                .orElseThrow(() -> {
+                    indexedFieldIds.add(indexedField.beginField);
+                    indexedFieldIds.add(indexedField.endField);
                     return new IndexNotFoundException(indexedFieldIds, this);
                 });
     }

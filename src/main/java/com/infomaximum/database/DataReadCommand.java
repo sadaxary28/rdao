@@ -45,9 +45,9 @@ public class DataReadCommand {
         return new IntervalIterator(dbTable, filter, dataReader);
     }
 
-    public RecordIterator select(String table, String namespace, Set<String> fields, RangeFilter filter) throws DatabaseException {
+    public RecordIterator select(String table, String namespace, RangeFilter filter) throws DatabaseException {
         DBTable dbTable = schema.getTable(table, namespace);
-        return new RangeIterator(dbTable, toFieldArray(fields, dbTable), filter, dataReader);
+        return new RangeIterator(dbTable, filter, dataReader);
     }
 
     public RecordIterator select(String table, String namespace, Set<String> fields, IdFilter filter) throws DatabaseException {

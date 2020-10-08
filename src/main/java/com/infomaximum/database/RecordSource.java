@@ -3,6 +3,7 @@ package com.infomaximum.database;
 import com.infomaximum.database.domainobject.filter.HashFilter;
 import com.infomaximum.database.domainobject.filter.IntervalFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
+import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.schema.Schema;
@@ -53,6 +54,10 @@ public class RecordSource {
     }
 
     public RecordIterator select(String table, String namespace, IntervalFilter filter) throws DatabaseException {
+        return new DataReadCommand(dbProvider, dbSchema).select(table, namespace, filter);
+    }
+
+    public RecordIterator select(String table, String namespace, RangeFilter filter) throws DatabaseException {
         return new DataReadCommand(dbProvider, dbSchema).select(table, namespace, filter);
     }
 
