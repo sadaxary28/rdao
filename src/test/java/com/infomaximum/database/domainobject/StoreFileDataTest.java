@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject;
 
 import com.google.common.primitives.Longs;
+import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordSource;
 import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
@@ -12,7 +13,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public abstract class StoreFileDataTest extends DomainDataTest {
 
@@ -54,5 +57,24 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         foundIds.sort(Long::compareTo);
 
         Assertions.assertThat(temp).isEqualTo(foundIds);
+    }
+
+    protected  <T extends DomainObject> void assertContainsExactlyDomainObjects(Collection<Record> records, Collection<T> domainObjects) {
+        Assertions.assertThat(records).hasSameSizeAs(domainObjects);
+        for (Record record : records) {
+            T domainObject = domainObjects.stream().filter(t -> t.getId() == record.getId()).findAny().orElseThrow(() -> new NoSuchElementException(record.toString()));
+            for (int i = 0; i < record.getValues().length; i++) {
+                Assertions.assertThat(record.getValues()[i]).isEqualTo(domainObject.get(i));
+            }
+        }
+    }
+
+    protected <T extends DomainObject> void assertContainsExactlyDomainObjects(Collection<Record> records, T domainObject) {
+        Assertions.assertThat(records).hasSize(1);
+        for (Record record : records) {
+            for (int i = 0; i < record.getValues().length; i++) {
+                Assertions.assertThat(record.getValues()[i]).isEqualTo(domainObject.get(i));
+            }
+        }
     }
 }

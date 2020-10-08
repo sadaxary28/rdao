@@ -300,23 +300,4 @@ public class DataCommandTest extends StoreFileDataTest {
         });
         return result;
     }
-
-    private <T extends DomainObject> void assertContainsExactlyDomainObjects(Collection<Record> records, Collection<T> domainObjects) {
-        Assertions.assertThat(records).hasSameSizeAs(domainObjects);
-        for (Record record : records) {
-            T domainObject = domainObjects.stream().filter(t -> t.getId() == record.getId()).findAny().orElseThrow(() -> new NoSuchElementException(record.toString()));
-            for (int i = 0; i < record.getValues().length; i++) {
-                Assertions.assertThat(record.getValues()[i]).isEqualTo(domainObject.get(i));
-            }
-        }
-    }
-
-    private <T extends DomainObject> void assertContainsExactlyDomainObjects(Collection<Record> records, T domainObject) {
-        Assertions.assertThat(records).hasSize(1);
-        for (Record record : records) {
-            for (int i = 0; i < record.getValues().length; i++) {
-                Assertions.assertThat(record.getValues()[i]).isEqualTo(domainObject.get(i));
-            }
-        }
-    }
 }
