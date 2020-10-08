@@ -1,6 +1,7 @@
 package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.FieldNotFoundException;
 import com.infomaximum.database.exception.IndexNotFoundException;
 import com.infomaximum.database.exception.SchemaException;
@@ -181,6 +182,15 @@ public class DBTable extends DBObject {
     public DBHashIndex getIndex(HashFilter filter) {
         Set<Integer> indexedFieldIds = filter.getValues().keySet();
         return hashIndexes.stream()
+                .filter(index -> index.getFieldIds().length == indexedFieldIds.size()
+                        && Arrays.stream(index.getFieldIds()).allMatch(indexedFieldIds::contains))
+                .findAny()
+                .orElseThrow(() -> new IndexNotFoundException(indexedFieldIds, this));
+    }
+
+    public DBPrefixIndex getIndex(PrefixFilter filter) {
+        Set<Integer> indexedFieldIds = filter.getFieldNames();
+        return prefixIndexes.stream()
                 .filter(index -> index.getFieldIds().length == indexedFieldIds.size()
                         && Arrays.stream(index.getFieldIds()).allMatch(indexedFieldIds::contains))
                 .findAny()

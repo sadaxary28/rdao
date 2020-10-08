@@ -2,9 +2,11 @@ package com.infomaximum.database.domainobject;
 
 import com.google.common.primitives.Longs;
 import com.infomaximum.database.Record;
+import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.RecordSource;
 import com.infomaximum.database.domainobject.filter.Filter;
-import com.infomaximum.database.domainobject.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderReadable;
@@ -32,7 +34,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
     }
 
     protected void testFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws DatabaseException {
-        testFind(enumerable, filter, Longs.asList(expectedIds));
+        testFind(filter, Longs.asList(expectedIds));
     }
 
     protected void testFind(Filter filter, long... expectedIds) throws DatabaseException {
@@ -40,14 +42,10 @@ public abstract class StoreFileDataTest extends DomainDataTest {
     }
 
     protected void testFind(Filter filter, List<Long> expectedIds) throws DatabaseException {
-        testFind(domainObjectSource, filter, expectedIds);
-    }
-
-    protected void testFind(DataEnumerable enumerable, Filter filter, List<Long> expectedIds) throws DatabaseException {
         List<Long> temp = new ArrayList<>(expectedIds);
 
         List<Long> foundIds = new ArrayList<>(temp.size());
-        try (IteratorEntity<StoreFileReadable> iterator = enumerable.find(StoreFileReadable.class, filter)) {
+        try (RecordIterator iterator = getIteratorForFilter("StoreFile", "com.infomaximum.store", filter)) {
             while (iterator.hasNext()) {
                 foundIds.add(iterator.next().getId());
             }
@@ -76,5 +74,15 @@ public abstract class StoreFileDataTest extends DomainDataTest {
                 Assertions.assertThat(record.getValues()[i]).isEqualTo(domainObject.get(i));
             }
         }
+    }
+
+    private RecordIterator getIteratorForFilter(String tableName, String namespace, Filter filter) {
+        if (filter instanceof HashFilter) {
+            return recordSource.select(tableName, namespace, (HashFilter) filter);
+        }
+        if (filter instanceof PrefixFilter) {
+            return recordSource.select(tableName, namespace, (PrefixFilter) filter);
+        }
+        throw new UnsupportedOperationException();
     }
 }

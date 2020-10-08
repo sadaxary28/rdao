@@ -35,9 +35,9 @@ public class DataReadCommand {
         return new HashIterator(dbTable, filter, dataReader);
     }
 
-    public RecordIterator select(String table, String namespace, Set<String> fields, PrefixFilter filter) throws DatabaseException {
+    public RecordIterator select(String table, String namespace, PrefixFilter filter) throws DatabaseException {
         DBTable dbTable = schema.getTable(table, namespace);
-        return new PrefixIterator(dbTable, toFieldArray(fields, dbTable), filter, dataReader);
+        return new PrefixIterator(dbTable, filter, dataReader);
     }
 
     public RecordIterator select(String table, String namespace, Set<String> fields, IntervalFilter filter) throws DatabaseException {

@@ -78,6 +78,13 @@ public class PrefixIndexKey {
         return new KeyPattern(key);
     }
 
+    public static KeyPattern buildKeyPatternForFind(final String word, final DBPrefixIndex index) {
+        byte[] payload = TypeConvert.pack(word);
+        byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.getAttendant().length + payload.length, index.getAttendant());
+        System.arraycopy(payload, 0, key, index.getAttendant().length, payload.length);
+        return new KeyPattern(key);
+    }
+
     public static KeyPattern buildKeyPatternForEdit(final String lexeme, final PrefixIndex index) {
         byte[] payload = TypeConvert.pack(lexeme);
         byte[] key = KeyUtils.allocateAndPutIndexAttendant(index.attendant.length + payload.length + 1, index.attendant);
