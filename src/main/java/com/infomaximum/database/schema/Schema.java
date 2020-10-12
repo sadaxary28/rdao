@@ -346,6 +346,23 @@ public class Schema {
         return newField;
     }
 
+    private DBField insertField(int fieldId, TField tableField, DBTable dbTable) throws DatabaseException {
+        int i = dbTable.findFieldIndex(tableField.getName());
+        if (i != -1) {
+            throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName(), dbTable.getNamespace());
+        }
+
+        Integer fTableId = tableField.getForeignTable() != null
+                ? dbSchema.getTable(tableField.getForeignTable().getName(), tableField.getForeignTable().getNamespace()).getId()
+                : null;
+        DBField newField = dbTable.insertNewField(fieldId, tableField.getName(), tableField.getType(), fTableId);
+        if (newField.isForeignKey()) {
+            createIndex(new THashIndex(tableField.getName()), dbTable);
+        }
+        saveSchema();
+        return newField;
+    }
+
     public void createField(TField tableField, Table table) throws DatabaseException {
         DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
         createField(tableField, dbTable);
@@ -354,6 +371,16 @@ public class Schema {
     public void createField(TField tableField, String tableName, String tableNamespace) throws DatabaseException {
         DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
         createField(tableField, dbTable);
+    }
+
+    public void insertField(int fieldId, TField tableField, Table table) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
+        insertField(fieldId, tableField, dbTable);
+    }
+
+    public void insertField(int fieldId, TField tableField, String tableName, String tableNamespace) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
+        insertField(fieldId, tableField, dbTable);
     }
 
     public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
