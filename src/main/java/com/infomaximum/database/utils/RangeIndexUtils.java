@@ -1,12 +1,10 @@
 package com.infomaximum.database.utils;
 
 import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.provider.DBIterator;
-import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.RangeIndex;
 import com.infomaximum.database.schema.dbstruct.DBRangeIndex;
+import com.infomaximum.database.schema.dbstruct.DBTable;
 import com.infomaximum.database.utils.key.KeyUtils;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
@@ -92,6 +90,88 @@ public class RangeIndexUtils {
                 key.setIndexedValue(totalEnd);
                 key.setType(RangeIndexKey.Type.END);
                 transaction.put(index.columnFamily, key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+            }
+        }
+    }
+
+    public static void insertIndexedRange(DBRangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTable table, DBDataCommand dataCommand) throws DatabaseException {
+        if (!isIndexedRange(beginValue, endValue)) {
+            return;
+        }
+
+        final long totalBegin = IntervalIndexUtils.castToLong(beginValue);
+        final long totalEnd = IntervalIndexUtils.castToLong(endValue);
+        IntervalIndexUtils.checkInterval(totalBegin, totalEnd);
+
+        key.setBeginRangeValue(totalBegin);
+
+        try (DBIterator iterator = dataCommand.createIterator(table.getIndexColumnFamily())) {
+            // разобьем уже существующие интервалы по началу вставляемого
+            final KeyPattern pattern = RangeIndexKey.buildLeftBorder(key.getHashedValues(), totalBegin, index);
+            KeyValue keyValue = seek(iterator, pattern, totalBegin);
+            for (; keyValue != null; keyValue = stepForward(iterator, pattern)) {
+                long begin = RangeIndexKey.unpackIndexedValue(keyValue.getKey());
+                if (begin < totalBegin) {
+                    if (RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.BEGIN) {
+                        RangeIndexKey.setIndexedValue(totalBegin, keyValue.getKey());
+                        dataCommand.put(table.getIndexColumnFamily(), keyValue.getKey(), TypeConvert.EMPTY_BYTE_ARRAY);
+                    }
+                } else if (begin > totalBegin) {
+                    break;
+                }
+            }
+
+            // вставим начало вставляемого интервала
+            key.setIndexedValue(totalBegin);
+            key.setType(totalBegin != totalEnd ? RangeIndexKey.Type.BEGIN : RangeIndexKey.Type.DOT);
+            dataCommand.put(table.getIndexColumnFamily(), key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+
+            ArrayList<byte[]> prevKeys = new ArrayList<>();
+            // разобьем вставляемый интервал по уже существующим
+            for (long prevBegin = totalBegin; keyValue != null; keyValue = stepForward(iterator, pattern)) {
+                if (key.getId() == RangeIndexKey.unpackId(keyValue.getKey())) {
+                    continue;
+                }
+
+                long begin = RangeIndexKey.unpackIndexedValue(keyValue.getKey());
+                if (prevBegin != begin) {
+                    if (begin == totalEnd) {
+                        prevKeys.clear();
+                        break;
+                    } else if (begin > totalEnd) {
+                        for (; isEnd(keyValue); keyValue = stepForward(iterator, pattern)) {
+                            prevKeys.add(keyValue.getKey());
+                        }
+                        break;
+                    }
+
+                    key.setIndexedValue(begin);
+                    key.setType(RangeIndexKey.Type.BEGIN);
+                    dataCommand.put(table.getIndexColumnFamily(), key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+
+                    prevBegin = begin;
+                    prevKeys.clear();
+                }
+
+                if (RangeIndexKey.unpackType(keyValue.getKey()) == RangeIndexKey.Type.BEGIN) {
+                    prevKeys.add(keyValue.getKey());
+                }
+            }
+
+            // разобьем уже существующие интервалы по концу вставляемого
+            for (byte[] prevKey : prevKeys) {
+                if (RangeIndexKey.unpackType(prevKey) == RangeIndexKey.Type.END) {
+                    RangeIndexKey.setType(RangeIndexKey.Type.BEGIN, prevKey);
+                }
+                RangeIndexKey.setIndexedValue(totalEnd, prevKey);
+                dataCommand.put(table.getIndexColumnFamily(), prevKey, TypeConvert.EMPTY_BYTE_ARRAY);
+            }
+
+            // добавим конец вставляемого интервала
+            if (totalBegin != totalEnd) {
+                key.setIndexedValue(totalEnd);
+                key.setType(RangeIndexKey.Type.END);
+                dataCommand.put(table.getIndexColumnFamily(), key.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
             }
         }
     }

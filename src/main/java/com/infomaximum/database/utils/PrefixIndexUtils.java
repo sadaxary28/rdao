@@ -2,12 +2,15 @@ package com.infomaximum.database.utils;
 
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.provider.DBDataCommand;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.PrefixIndex;
+import com.infomaximum.database.schema.dbstruct.DBField;
 import com.infomaximum.database.schema.dbstruct.DBPrefixIndex;
+import com.infomaximum.database.schema.dbstruct.DBTable;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.Key;
 import com.infomaximum.database.utils.key.PrefixIndexKey;
@@ -35,6 +38,50 @@ public class PrefixIndexUtils {
     public static void diffIndexedLexemes(List<Field> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
                                           Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
         diffIndexedLexemes(fields, prevValues, newValues, outDeletingLexemes, outInsertingLexemes, Field::getNumber);
+    }
+
+    public static void diffIndexedLexemes(DBField[] fields, Object[] prevValues, Object[] newValues,
+                                          Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
+        outDeletingLexemes.clear();
+        outInsertingLexemes.clear();
+
+        SortedSet<String> prevLexemes = buildSortedSet();
+        SortedSet<String> newLexemes = buildSortedSet();
+
+        for (DBField field : fields) {
+            Object prevValue = prevValues[field.getId()];
+            String prevText = prevValue != null ? (String) prevValue : null;
+            PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
+
+            Object newValue = field.getId() < newValues.length ? newValues[field.getId()] : prevValue;
+            String newText = newValue != null ? (String) newValue : prevText;
+            PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
+        }
+
+        for (String newLexeme : newLexemes) {
+            if (!prevLexemes.contains(newLexeme)) {
+                outInsertingLexemes.add(newLexeme);
+            }
+        }
+
+        for (String prevLexeme : prevLexemes) {
+            if (!newLexemes.contains(prevLexeme)) {
+                outDeletingLexemes.add(prevLexeme);
+            }
+        }
+    }
+
+    public static void getIndexedLexemes(DBField[] fields, Object[] newValues, Collection<String> outInsertingLexemes) {
+        outInsertingLexemes.clear();
+
+        SortedSet<String> newLexemes = buildSortedSet();
+
+        for (DBField field : fields) {
+            Object newValue = field.getId() < newValues.length ? newValues[field.getId()] : null;
+            String newText = newValue != null ? (String) newValue : null;
+            PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
+        }
+        outInsertingLexemes.addAll(newLexemes);
     }
 
     public static <T> void diffIndexedLexemes(List<T> fields, Value<Serializable>[] prevValues, Value<Serializable>[] newValues,
@@ -278,6 +325,48 @@ public class PrefixIndexUtils {
                 }
 
                 transaction.put(index.columnFamily, key, idsValue);
+            }
+        }
+    }
+
+    public static void insertIndexedLexemes(DBPrefixIndex index, long id, Collection<String> lexemes, DBTable table, DBDataCommand dataCommand) throws DatabaseException {
+        if (lexemes.isEmpty()) {
+            return;
+        }
+
+        try (DBIterator iterator = dataCommand.createIterator(table.getIndexColumnFamily())) {
+            for (String lexeme : lexemes) {
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
+                byte[] key;
+                byte[] idsValue;
+                if (keyValue != null) {
+                    KeyValue prevKeyValue;
+                    do {
+                        long lastId = TypeConvert.unpackLong(keyValue.getValue(), keyValue.getValue().length - FieldKey.ID_BYTE_SIZE);
+                        if (id < lastId) {
+                            key = keyValue.getKey();
+                            idsValue = appendId(id, keyValue.getValue());
+                            break;
+                        }
+                        prevKeyValue = keyValue;
+                        keyValue = iterator.next();
+                        if (keyValue == null) {
+                            key = prevKeyValue.getKey();
+                            if (getIdCount(prevKeyValue.getValue()) < PREFERRED_MAX_ID_COUNT_PER_BLOCK) {
+                                idsValue = appendId(id, prevKeyValue.getValue());
+                            } else {
+                                PrefixIndexKey.incrementBlockNumber(key);
+                                idsValue = TypeConvert.pack(id);
+                            }
+                            break;
+                        }
+                    } while (true);
+                } else {
+                    key = new PrefixIndexKey(lexeme, index).pack();
+                    idsValue = TypeConvert.pack(id);
+                }
+
+                dataCommand.put(table.getIndexColumnFamily(), key, idsValue);
             }
         }
     }

@@ -141,6 +141,14 @@ public class DBTable extends DBObject {
         return sortedFields.get(id);
     }
 
+    public DBField[] getFields(int[] ids) throws SchemaException {
+        DBField[] fields = new DBField[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            fields[i] = sortedFields.get(ids[i]);
+        }
+        return fields;
+    }
+
     public List<DBHashIndex> getHashIndexes() {
         return hashIndexes;
     }
