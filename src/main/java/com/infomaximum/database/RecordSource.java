@@ -6,6 +6,7 @@ import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.domainobject.filter.RangeFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBProvider;
+import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.dbstruct.DBSchema;
 
@@ -19,26 +20,26 @@ public class RecordSource {
 
         /**
          * Реализация операции.
-         * @param transaction Контекст, в котором выполняется операция.
+         * @param dataCommand Контекст, в котором выполняется операция.
          * @throws Exception Если во время выполнения операции возникла ошибка.
          */
-        void action(final Transaction transaction) throws Exception;
+        void action(final DataCommand dataCommand) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Function<R> {
+
+        /**
+         * Реализация операции.
+         * @param dataCommand Контекст, в котором выполняется операция.
+         * @throws Exception Если во время выполнения операции возникла ошибка.
+         */
+        R apply(final DataCommand dataCommand) throws Exception;
     }
 
     public RecordSource(DBProvider dbProvider) throws DatabaseException {
         this.dbProvider = dbProvider;
         this.dbSchema = Schema.read(dbProvider).getDbSchema();
-    }
-
-    public void executeTransactional(final Monad operation) throws Exception {
-        try (Transaction transaction = buildTransaction()) {
-            operation.action(transaction);
-            transaction.commit();
-        }
-    }
-
-    public Transaction buildTransaction() throws DatabaseException {
-        return new Transaction(dbProvider.beginTransaction(), dbSchema);
     }
 
     public RecordIterator select(String table, String namespace) throws DatabaseException {
@@ -61,12 +62,22 @@ public class RecordSource {
         return new DataReadCommand(dbProvider, dbSchema).select(table, namespace, filter);
     }
 
-//    public DBIterator createIterator(String columnFamily) throws DatabaseException {
-//
-//        return dbProvider.createIterator(columnFamily);
-//    }
-//
-//    public boolean isMarkedForDeletion(StructEntity entity, long objId) {
-//        return false;
-//    }
+    public void executeTransactional(final Monad operation) throws Exception {
+        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+            operation.action(buildDataCommand(transaction));
+            transaction.commit();
+        }
+    }
+
+    public <R> R executeTransactional(final Function<R> function) throws Exception {
+        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+            R result = function.apply(buildDataCommand(transaction));
+            transaction.commit();
+            return result;
+        }
+    }
+
+    private DataCommand buildDataCommand(DBTransaction transaction) {
+        return new DataCommand(transaction, dbSchema);
+    }
 }

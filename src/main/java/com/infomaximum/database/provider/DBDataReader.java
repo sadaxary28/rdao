@@ -2,7 +2,7 @@ package com.infomaximum.database.provider;
 
 import com.infomaximum.database.exception.DatabaseException;
 
-public interface DBDataReader {
+public interface DBDataReader extends AutoCloseable {
 
     DBIterator createIterator(String columnFamily) throws DatabaseException;
     byte[] getValue(String columnFamily, byte[] key) throws DatabaseException;

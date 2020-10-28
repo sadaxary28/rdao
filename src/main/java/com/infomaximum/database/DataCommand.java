@@ -7,20 +7,16 @@ import com.infomaximum.database.exception.UnexpectedFieldValueException;
 import com.infomaximum.database.provider.DBDataCommand;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.dbstruct.*;
-import com.infomaximum.database.utils.HashIndexUtils;
-import com.infomaximum.database.utils.PrefixIndexUtils;
-import com.infomaximum.database.utils.RangeIndexUtils;
-import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.*;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public class DataCommand extends DataReadCommand{
+public class DataCommand extends DataReadCommand {
 
     private final DBDataCommand dataCommand;
 
@@ -33,10 +29,10 @@ public class DataCommand extends DataReadCommand{
         return dataCommand;
     }
 
-    public long insertRecord(String table, String namespace, String[] fields, Object[] values) throws DatabaseException {
-
-        // TODO realize
-        return 0;
+    public long insertRecord(String tableName, String namespace, String[] fields, Object[] values) throws DatabaseException {
+        return insertRecord(tableName,
+                namespace,
+                TableUtils.sortValuesByFieldOrder(tableName, namespace, fields, values, schema));
     }
 
     /**
@@ -186,7 +182,7 @@ public class DataCommand extends DataReadCommand{
         for (int i = 0; i < fields.length; ++i) {
             DBField field = fields[i];
 //            Object value = getValue(field, prevValues, newValues);
-            destination[i] = HashIndexUtils.buildHash(field.getType(), record.getValues()[i], null);
+            destination[i] = HashIndexUtils.buildHash(field.getType(), record.getValues()[field.getId()], null);
         }
     }
 

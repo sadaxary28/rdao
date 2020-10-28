@@ -31,6 +31,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         createDomain(ExchangeFolderReadable.class);
         createDomain(StoreFileReadable.class);
         recordSource = new RecordSource(rocksDBProvider);
+        schema = Schema.read(rocksDBProvider);
     }
 
     protected void testFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws DatabaseException {
