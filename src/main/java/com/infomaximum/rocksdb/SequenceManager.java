@@ -1,10 +1,10 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.SequenceAlreadyExistsException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.SequenceAlreadyExistsException;
 import com.infomaximum.database.utils.TypeConvert;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
@@ -76,7 +76,7 @@ public class SequenceManager {
 
     public class Sequence {
 
-        private final static int SIZE_CACHE = 10;
+        private final static int SIZE_CACHE = 10000;
 
         private final byte[] key;
         private final AtomicLong counter;
