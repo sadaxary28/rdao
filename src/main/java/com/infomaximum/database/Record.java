@@ -30,8 +30,25 @@ public class Record {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Record record = (Record) o;
-        return id == record.id &&
-                Arrays.equals(values, record.values);
+        if (id != record.id) {
+            return false;
+        }
+        if (values==record.values)
+            return true;
+        if (values==null || record.values==null)
+            return false;
+
+        int length = values.length;
+        if (record.values.length != length)
+            return false;
+
+        for (int i=0; i<length; i++) {
+            Object o1 = values[i];
+            Object o2 = record.values[i];
+            if (!(o1==null ? o2==null : o1 instanceof byte[] ? Arrays.equals((byte[]) o1, (byte[]) o2) : o1.equals(o2)))
+                return false;
+        }
+        return true;
     }
 
     @Override

@@ -85,9 +85,6 @@ public class DataCommand extends DataReadCommand {
             DBField field = table.getField(i);
 
             validateUpdatingValue(record, field, newValue, table);
-            if (newValue == null) {
-                continue;
-            }
 
             byte[] key = new FieldKey(record.getId(), TypeConvert.pack(field.getName())).pack();
             byte[] bValue = TypeConvert.pack(field.getType(), newValue, null);
@@ -154,7 +151,7 @@ public class DataCommand extends DataReadCommand {
     }
 
     private void createIndexedValue(DBIntervalIndex index, Record record, DBTable table) throws DatabaseException {
-        final DBField[] hashedFields = table.getFields(index.getFieldIds());
+        final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
         final DBField indexedField = table.getField(index.getIndexedFieldId());
         final IntervalIndexKey indexKey = new IntervalIndexKey(record.getId(), new long[hashedFields.length], index);
 
@@ -165,7 +162,7 @@ public class DataCommand extends DataReadCommand {
     }
 
     private void createIndexedValue(DBRangeIndex index, Record record, DBTable table) throws DatabaseException {
-        final DBField[] hashedFields = table.getFields(index.getFieldIds());
+        final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
         final RangeIndexKey indexKey = new RangeIndexKey(record.getId(), new long[hashedFields.length], index);
 
         // Add new value-index

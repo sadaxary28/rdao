@@ -19,6 +19,17 @@ public class DomainObjectSource extends DataEnumerable {
         void action(final Transaction transaction) throws Exception;
     }
 
+    @FunctionalInterface
+    public interface Function<R> {
+
+        /**
+         * Реализация операции.
+         * @param transaction Контекст, в котором выполняется операция.
+         * @throws Exception Если во время выполнения операции возникла ошибка.
+         */
+        R apply(final Transaction transaction) throws Exception;
+    }
+
     public DomainObjectSource(DBProvider dbProvider) {
         super(dbProvider);
     }
@@ -27,6 +38,14 @@ public class DomainObjectSource extends DataEnumerable {
         try (Transaction transaction = buildTransaction()) {
             operation.action(transaction);
             transaction.commit();
+        }
+    }
+
+    public <R> R executeFunctionTransactional(final Function<R> operation) throws Exception {
+        try (Transaction transaction = buildTransaction()) {
+            R result = operation.apply(transaction);
+            transaction.commit();
+            return result;
         }
     }
 

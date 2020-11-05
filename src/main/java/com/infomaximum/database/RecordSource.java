@@ -69,7 +69,7 @@ public class RecordSource {
         }
     }
 
-    public <R> R executeTransactional(final Function<R> function) throws Exception {
+    public <R> R executeFunctionTransactional(final Function<R> function) throws Exception {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
             R result = function.apply(buildDataCommand(transaction));
             transaction.commit();
