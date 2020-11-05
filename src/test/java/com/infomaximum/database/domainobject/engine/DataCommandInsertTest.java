@@ -156,7 +156,7 @@ public class DataCommandInsertTest extends StoreFileDataTest {
                 actual.add(i.next());
             }
         }
-        Assertions.assertThat(actual).containsAll(expected);
+        Assertions.assertThat(actual).as("TableName: %s, Namespace: %s, Filter: %s", table, namespace, filter.getClass().getName()).containsAll(expected);
     }
 
     private RecordIterator selectIterator(String table, String namespace, Filter filter) {
