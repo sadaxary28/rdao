@@ -78,6 +78,8 @@ public class DataCommandInsertTest extends StoreFileDataTest {
 
         LocalDateTime localBegin = LocalDateTime.ofEpochSecond(1604589065, 0, ZoneOffset.UTC);
         LocalDateTime localEnd = LocalDateTime.ofEpochSecond(1604599965, 0, ZoneOffset.UTC);
+        Instant beginTime = Instant.ofEpochSecond(1604589065);
+        Instant endTime = Instant.ofEpochSecond(1604599965);
         String[] fields = new String[]{"size",
                 "name",
                 "type",
@@ -98,8 +100,8 @@ public class DataCommandInsertTest extends StoreFileDataTest {
                 false,
                 folderId,
                 123.34,
-                Instant.now(),
-                Instant.now(),
+                beginTime,
+                endTime,
                 12L,
                 14L,
                 localBegin,
@@ -117,9 +119,184 @@ public class DataCommandInsertTest extends StoreFileDataTest {
                 new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, localBegin),
 
                 new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "na"),
-                new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "nam")
+                new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "nam"),
 
-                );
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L),
+                new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 120d, 124d),
+                new IntervalFilter(StoreFileReadable.FIELD_BEGIN_TIME, beginTime.minusMillis(10000), endTime),
+                new IntervalFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, localBegin.minusMinutes(1), localEnd),
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L).appendHashedField(StoreFileReadable.FIELD_FILE_NAME, "name"),
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId),
+
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 11L, 13L),
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 11L, 13L).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId),
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN_TIME, StoreFileReadable.FIELD_END_TIME), beginTime.minusMillis(10000), beginTime.plusMillis(1)).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId)
+        );
+    }
+
+    @Test
+    public void insertManyObjectsWithAllAndDependencyFields() throws Exception {
+        String tableName = "StoreFile";
+        String namespace = "com.infomaximum.store";
+        String[] folderFields = new String[] {"uuid"};
+        String[] folderFieldValues = new String[] {"uuid"};
+        long folderId = recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord("ExchangeFolder", "com.infomaximum.exchange", folderFields, folderFieldValues));
+
+        LocalDateTime localBegin = LocalDateTime.ofEpochSecond(1604589065, 0, ZoneOffset.UTC);
+        LocalDateTime localEnd = LocalDateTime.ofEpochSecond(1604599965, 0, ZoneOffset.UTC);
+        Instant beginTime = Instant.ofEpochSecond(1604589065);
+        Instant endTime = Instant.ofEpochSecond(1604599965);
+        String[] fields = new String[]{"size",
+                "name",
+                "type",
+                "data",
+                "single",
+                "folder_id",
+                "double",
+                "begin_time",
+                "end_time",
+                "begin",
+                "end",
+                "local_begin",
+                "local_end"};
+        Object[] values = new Object[]{3L,
+                "name",
+                "nameType",
+                "bytes".getBytes(),
+                false,
+                folderId,
+                123.34,
+                beginTime,
+                endTime,
+                12L,
+                14L,
+                localBegin,
+                localEnd,
+        };
+        long id = recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord(tableName, namespace, fields, values));
+        insertStoreFilesData(tableName, namespace);
+        assertThatDBContainsRecord(id, fields, values, tableName, namespace);
+        Record expected = buildRecord(id, fields, values, tableName, namespace);
+        assertThatFilteredRecordsContainsExactly(Collections.singletonList(expected), tableName, namespace,
+                new HashFilter(StoreFileReadable.FIELD_SIZE, 3L),
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "name"),
+                new HashFilter(StoreFileReadable.FIELD_SIZE, 3L).appendField(StoreFileReadable.FIELD_FILE_NAME, "name"),
+                new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, localBegin),
+                new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, localBegin),
+
+                new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "na"),
+                new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "nam"),
+
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L),
+                new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 120d, 124d),
+                new IntervalFilter(StoreFileReadable.FIELD_BEGIN_TIME, beginTime.minusMillis(10000), endTime),
+                new IntervalFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, localBegin.minusMinutes(1), localEnd),
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L).appendHashedField(StoreFileReadable.FIELD_FILE_NAME, "name"),
+                new IntervalFilter(StoreFileReadable.FIELD_SIZE, 2L, 4L).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId),
+
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 11L, 13L),
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 11L, 13L).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId),
+                new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN_TIME, StoreFileReadable.FIELD_END_TIME), beginTime.minusMillis(10000), beginTime.plusMillis(1)).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId)
+        );
+    }
+
+    private void insertStoreFilesData(String tableName, String namespace) throws Exception {
+        String[] folderFields = new String[] {"uuid"};
+        String[] folderFieldValues = new String[] {"uuid"};
+        long folderId = recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord("ExchangeFolder", "com.infomaximum.exchange", folderFields, folderFieldValues));
+
+        String[] fields = new String[]{"size",
+                "name",
+                "type",
+                "data",
+                "single",
+                "folder_id",
+                "double",
+                "begin_time",
+                "end_time",
+                "begin",
+                "end",
+                "local_begin",
+                "local_end"};
+        Object[] values = new Object[]{5L,
+                "name2",
+                "nameType2",
+                "bytes2".getBytes(),
+                true,
+                folderId,
+                13.34,
+                Instant.now(),
+                Instant.now(),
+                110L,
+                111L,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+        };
+        recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord(tableName, namespace, fields, values));
+
+        String[] fields2 = new String[]{"size",
+                "name",
+                "type",
+                "data",
+                "single",
+                "folder_id",
+                "double",
+                "begin_time",
+                "end_time",
+                "begin",
+                "end",
+                "local_begin",
+                "local_end"};
+        Object[] values2 = new Object[]{6L,
+                "name3",
+                "nameType3",
+                "bytes3".getBytes(),
+                true,
+                folderId,
+                1311.34,
+                Instant.now(),
+                Instant.now(),
+                10L,
+                11L,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+        };
+        recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord(tableName, namespace, fields2, values2));
+
+        String[] fields3 = new String[]{"size",
+                "name",
+                "type",
+                "data",
+                "single",
+                "folder_id",
+                "double",
+                "begin_time",
+                "end_time",
+                "begin",
+                "end",
+                "local_begin",
+                "local_end"};
+        Object[] values3 = new Object[]{7L,
+                "name4",
+                "nameType3",
+                "bytes3".getBytes(),
+                true,
+                folderId,
+                11.34,
+                Instant.now(),
+                Instant.now(),
+                25L,
+                45L,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+        };
+        recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord(tableName, namespace, fields3, values3));
 
     }
 
