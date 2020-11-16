@@ -16,7 +16,7 @@ public class DBField extends DBObject {
 
     private String name;
     private final Class<? extends Serializable> type;
-    private Integer foreignTableId; //todo V.Bukharkin return back final
+    private final Integer foreignTableId;
 
     DBField(int id, String name, Class<? extends Serializable> type, Integer foreignTableId) {
         super(id);

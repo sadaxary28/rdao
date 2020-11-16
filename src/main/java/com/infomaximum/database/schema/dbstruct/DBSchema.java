@@ -2,6 +2,7 @@ package com.infomaximum.database.schema.dbstruct;
 
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.utils.SchemaTableCache;
 import net.minidev.json.JSONArray;
 
 import java.util.List;
@@ -13,9 +14,12 @@ public class DBSchema {
     private final String version;
     private final List<DBTable> tables;
 
+    private final SchemaTableCache schemaTableCache;
+
     private DBSchema(String version, List<DBTable> tables) {
         this.version = version;
         this.tables = tables;
+        this.schemaTableCache = new SchemaTableCache(tables, this);
     }
 
     public String getVersion() {
@@ -29,6 +33,7 @@ public class DBSchema {
     public DBTable newTable(String name, String namespace, List<DBField> columns) {
         DBTable dbTable = new DBTable(nextId(tables), name, namespace, columns);
         tables.add(dbTable);
+        schemaTableCache.newTable(dbTable);
         return dbTable;
     }
 
@@ -44,9 +49,10 @@ public class DBSchema {
     }
 
     public DBTable getTableById(int id) throws SchemaException {
-        return tables.stream().filter(table ->  table.getId() == id)
-                .findAny()
-                .orElseThrow(() -> new TableNotFoundException("Table with id: " + id + " doesn't found"));
+        if (tables.size() <= id) {
+            throw new TableNotFoundException("Table with id: " + id + " doesn't found");
+        }
+        return tables.get(id);
     }
 
     public List<DBTable> getTablesByNamespace(String namespace) throws SchemaException {
@@ -54,11 +60,11 @@ public class DBSchema {
     }
 
     public DBTable getTable(String name, String namespace) throws SchemaException {
-        int i = findTableIndex(name, namespace);
-        if (i == -1) {
+        DBTable table = schemaTableCache.getTable(name, namespace);
+        if (table == null) {
             throw new TableNotFoundException(namespace + "." + name);
         }
-        return getTables().get(i);
+        return table;
     }
 
     public void checkIntegrity() throws SchemaException {

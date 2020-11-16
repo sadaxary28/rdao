@@ -4,6 +4,7 @@ import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.utils.TableUtils;
 import com.infomaximum.domain.StoreFileReadable;
 import org.assertj.core.api.Assertions;
@@ -200,6 +201,21 @@ public class DataCommandInsertTest extends StoreFileDataTest {
                 new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN, StoreFileReadable.FIELD_END), 11L, 13L).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId),
                 new RangeFilter(new RangeFilter.IndexedField(StoreFileReadable.FIELD_BEGIN_TIME, StoreFileReadable.FIELD_END_TIME), beginTime.minusMillis(10000), beginTime.plusMillis(1)).appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, folderId)
         );
+    }
+
+    @Test
+    public void failForeignDependencyExceptionNotExistingReferencingObject() throws Exception {
+        String tableName = "StoreFile";
+        String namespace = "com.infomaximum.store";
+
+        String[] fields = new String[]{"size",
+                "folder_id"};
+        Object[] values = new Object[]{3L,
+                3L
+        };
+        Assertions.assertThatThrownBy(() -> recordSource.executeFunctionTransactional(dataCommand ->
+                dataCommand.insertRecord(tableName, namespace, fields, values)))
+                .isInstanceOf(ForeignDependencyException.class);
     }
 
     private void insertStoreFilesData(String tableName, String namespace) throws Exception {

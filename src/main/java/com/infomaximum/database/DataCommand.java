@@ -1,10 +1,14 @@
 package com.infomaximum.database;
 
+import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.UnexpectedFieldValueException;
 import com.infomaximum.database.provider.DBDataCommand;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
+import com.infomaximum.database.provider.KeyValue;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.utils.*;
@@ -99,11 +103,38 @@ public class DataCommand extends DataReadCommand {
     }
 
     public void deleteRecord(String table, String namespace, long id) throws DatabaseException {
-        // TODO realize
+        validateForeignValues(obj);
+
+        String columnFamily = obj.getStructEntity().getColumnFamily();
+        deletingObjects.computeIfAbsent(columnFamily, s -> new Transaction.Objects(obj.getStructEntity())).add(obj);
     }
 
     public void clearTable(String table, String namespace) throws DatabaseException {
         // TODO realize
+    }
+
+    private void validateForeignValues(DBTable table, long id) throws DatabaseException {
+        if (!foreignFieldEnabled) {
+            return;
+        }
+
+        List<StructEntity.Reference> references = obj.getStructEntity().getReferencingForeignFields();
+        if (references.isEmpty()) {
+            return;
+        }
+
+        for (StructEntity.Reference ref : references) {
+            KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.fieldIndex, obj.getId());
+            try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+                KeyValue keyValue = i.seek(keyPattern);
+                if (keyValue != null) {
+                    long referencingId = HashIndexKey.unpackId(keyValue.getKey());
+                    if (!isMarkedForDeletion(Schema.getEntity(ref.objClass), referencingId)) {
+                        throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
+                    }
+                }
+            }
+        }
     }
 
     private static boolean anyChanged(List<Field> fields, Value<Serializable>[] newValues) {

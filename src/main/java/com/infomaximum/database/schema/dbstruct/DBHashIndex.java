@@ -14,12 +14,12 @@ public class DBHashIndex extends DBIndex {
     private final static byte[] INDEX_NAME_BYTES = TypeConvert.pack("hsh");
     private static final String JSON_PROP_FIELD_IDS = "field_ids";
 
-    DBHashIndex(int id, DBField[] fields) {
+    DBHashIndex(int id, DBField... fields) {
         super(id, fields);
         checkSorting(fields);
     }
 
-    public DBHashIndex(DBField[] fields) {
+    public DBHashIndex(DBField... fields) {
         this(-1, fields);
     }
 
