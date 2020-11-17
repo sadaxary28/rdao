@@ -1,10 +1,14 @@
 package com.infomaximum.database.schema.dbstruct;
 
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.FieldAlreadyExistsException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.schema.table.TableReference;
 import com.infomaximum.database.utils.SchemaTableCache;
 import net.minidev.json.JSONArray;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +41,10 @@ public class DBSchema {
         return dbTable;
     }
 
+    public void dropTable(String name, String namespace) {
+        schemaTableCache.removeTable(name, namespace);
+    }
+
     public int findTableIndex(String tableName, String tableNamespace) throws SchemaException {
         DBTable dbTable;
         for (int i = 0; i < tables.size(); ++i) {
@@ -65,6 +73,31 @@ public class DBSchema {
             throw new TableNotFoundException(namespace + "." + name);
         }
         return table;
+    }
+
+    public DBField createField(String fieldName,
+                                Class<? extends Serializable> fieldType,
+                                TableReference fieldForeignTable,
+                                String tableName,
+                                String tableNamespace) throws DatabaseException {
+        DBTable dbTable = getTable(tableName, tableNamespace);
+        int i = dbTable.findFieldIndex(fieldName);
+        if (i != -1) {
+            throw new FieldAlreadyExistsException(fieldName, dbTable.getName(), dbTable.getNamespace());
+        }
+
+        Integer fTableId = fieldForeignTable != null
+                ? getTable(fieldForeignTable.getName(), fieldForeignTable.getNamespace()).getId()
+                : null;
+        DBField dbField = dbTable.newField(fieldName, fieldType, fTableId);
+        schemaTableCache.createField(dbField, dbTable);
+        return dbField;
+    }
+
+    public void dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
+        DBTable table = getTable(tableName, namespace);
+        DBField field = table.getField(fieldName);
+        schemaTableCache.removeField(field, table);
     }
 
     public void checkIntegrity() throws SchemaException {

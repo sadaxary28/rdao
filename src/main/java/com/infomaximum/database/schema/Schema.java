@@ -91,7 +91,7 @@ public class Schema {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
         for (TField tableField : table.getFields()) {
-            createField(tableField, dbTable);
+            createField(tableField, table.getName(), table.getNamespace());
         }
         for (THashIndex index : table.getHashIndexes()) {
             createIndex(index, dbTable);
@@ -262,16 +262,20 @@ public class Schema {
 //    }
 
     public void createField(TField tableField, Table table) throws DatabaseException {
-        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
-        createField(tableField, dbTable);
+        createField(tableField, table.getName(), table.getNamespace());
     }
 
-    public void createField(TField tableField, String tableName, String tableNamespace) throws DatabaseException {
-        DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
-        createField(tableField, dbTable);
+    public DBField createField(TField tableField, String tableName, String namespace) throws DatabaseException {
+        DBField newField = dbSchema.createField(tableField.getName(), tableField.getType(), tableField.getForeignTable(), tableName, namespace);
+        if (newField.isForeignKey()) {
+            createIndex(new THashIndex(tableField.getName()), tableName, namespace);
+        }
+        saveSchema();
+        return newField;
     }
 
     public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
+        dbSchema.dropField(fieldName, tableName, namespace);
         DBTable table = dbSchema.getTable(tableName, namespace);
         int i = table.findFieldIndex(fieldName);
         if (i == -1) {
@@ -497,23 +501,6 @@ public class Schema {
         table.dropIndex(targetIndex);
         saveSchema();
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
-    }
-
-    private DBField createField(TField tableField, DBTable dbTable) throws DatabaseException {
-        int i = dbTable.findFieldIndex(tableField.getName());
-        if (i != -1) {
-            throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName(), dbTable.getNamespace());
-        }
-
-        Integer fTableId = tableField.getForeignTable() != null
-                ? dbSchema.getTable(tableField.getForeignTable().getName(), tableField.getForeignTable().getNamespace()).getId()
-                : null;
-        DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
-        if (newField.isForeignKey()) {
-            createIndex(new THashIndex(tableField.getName()), dbTable);
-        }
-        saveSchema();
-        return newField;
     }
 
     @Deprecated

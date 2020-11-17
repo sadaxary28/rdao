@@ -34,7 +34,7 @@ public class SchemaTableCache {
         putFieldReferences(table);
     }
 
-    public void newField(DBField field, DBTable table) {
+    public void createField(DBField field, DBTable table) {
         if (field.isForeignKey()) {
             putFieldReference(field, table);
         }
