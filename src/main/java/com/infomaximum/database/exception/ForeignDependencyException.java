@@ -42,4 +42,15 @@ public class ForeignDependencyException extends DatabaseException {
                 referencingClass.getName(), referencingId,
                 removingClass.getName(), removingId));
     }
+
+    public ForeignDependencyException(long removingId,
+                                      String removingTableName,
+                                      String removingNamespace,
+                                      long referencingId,
+                                      String referencingTableName,
+                                      String referencingNamespace) {
+        super(String.format("Object %s.%s.id = %d referenced to removing %s.%S.id = %d.",
+                referencingTableName, referencingNamespace, referencingId,
+                removingTableName, removingNamespace, removingId));
+    }
 }

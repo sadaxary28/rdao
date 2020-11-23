@@ -25,8 +25,16 @@ public abstract class BaseRecordIterator implements RecordIterator {
             this.nextId = recordId;
         }
 
+        public long getNextId() {
+            return nextId;
+        }
+
         public boolean isEmpty() {
             return nextId == -1;
+        }
+
+        public void reset() {
+            nextId = -1;
         }
     }
 
@@ -37,7 +45,7 @@ public abstract class BaseRecordIterator implements RecordIterator {
         return readRecord(table, state, dbIterator);
     }
 
-    protected NextState seek(KeyPattern pattern, DBIterator iterator) throws DatabaseException {
+    public static NextState seek(KeyPattern pattern, DBIterator iterator) throws DatabaseException {
         KeyValue keyValue = iterator.seek(pattern);
         if (keyValue == null) {
             return new NextState(-1);

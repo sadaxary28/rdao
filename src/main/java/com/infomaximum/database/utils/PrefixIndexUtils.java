@@ -287,6 +287,30 @@ public class PrefixIndexUtils {
         }
     }
 
+    public static void removeIndexedLexemes(DBPrefixIndex index, long id, Collection<String> lexemes, DBTable table, DBDataCommand dataCommand) throws DatabaseException {
+        if (lexemes.isEmpty()) {
+            return;
+        }
+
+        try (DBIterator iterator = dataCommand.createIterator(table.getIndexColumnFamily())) {
+            for (String lexeme : lexemes) {
+                KeyValue keyValue = iterator.seek(PrefixIndexKey.buildKeyPatternForEdit(lexeme, index));
+                while (keyValue != null) {
+                    byte[] newIds = removeId(id, keyValue.getValue());
+                    if (newIds != null) {
+                        if (newIds.length != 0) {
+                            dataCommand.put(table.getIndexColumnFamily(), keyValue.getKey(), newIds);
+                        } else {
+                            dataCommand.delete(table.getIndexColumnFamily(), keyValue.getKey());
+                        }
+                    }
+
+                    keyValue = iterator.next();
+                }
+            }
+        }
+    }
+
     public static void insertIndexedLexemes(PrefixIndex index, long id, Collection<String> lexemes, DBTransaction transaction) throws DatabaseException {
         if (lexemes.isEmpty()) {
             return;

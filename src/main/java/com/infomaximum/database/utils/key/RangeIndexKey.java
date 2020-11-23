@@ -97,6 +97,13 @@ public class RangeIndexKey extends BaseIntervalIndexKey {
         return new KeyPattern(buffer.array(), index.attendant.length + ID_BYTE_SIZE * hashedValues.length);
     }
 
+    public static KeyPattern buildBeginPattern(long[] hashedValues, long beginRangeValue, DBRangeIndex index) {
+        ByteBuffer buffer = TypeConvert.allocateBuffer(index.getAttendant().length + ID_BYTE_SIZE * hashedValues.length + (Byte.BYTES + Long.BYTES) * 2);
+        BaseIntervalIndexKey.fillBuffer(index.getAttendant(), hashedValues, beginRangeValue, buffer);
+        putBeginRange(beginRangeValue, Type.BEGIN, buffer);
+        return new KeyPattern(buffer.array(), index.getAttendant().length + ID_BYTE_SIZE * hashedValues.length);
+    }
+
     private static void putBeginRange(long beginRangeValue, Type type, ByteBuffer destination) {
         switch (type) {
             case BEGIN:

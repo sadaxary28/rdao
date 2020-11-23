@@ -25,7 +25,6 @@ public class RangeIterator extends BaseIntervalRecordIterator<RangeFilter> {
 
     @Override
     DBBaseIntervalIndex getIndex(RangeFilter filter, DBTable table) {
-        RangeFilter.IndexedField indexedField = filter.getIndexedField();
         return table.getIndex(filter);
     }
 

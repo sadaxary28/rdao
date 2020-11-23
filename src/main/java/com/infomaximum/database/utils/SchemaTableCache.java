@@ -53,6 +53,10 @@ public class SchemaTableCache {
         uuidForeignTableFieldReferences.remove(buildUuidTable(name, namespace));
     }
 
+    public Set<FieldReference> getTableReference(String name, String namespace) {
+        return uuidForeignTableFieldReferences.get(buildUuidTable(name, namespace));
+    }
+
     private String buildUuidTable(String tableName, String namespace) {
         return tableName + "." + namespace;
     }

@@ -290,6 +290,38 @@ public class RangeIndexUtils {
         }
     }
 
+    public static void removeIndexedRange(DBRangeIndex index,
+                                          RangeIndexKey key,
+                                          Object beginValue,
+                                          Object endValue,
+                                          DBTable table,
+                                          DBDataCommand dataCommand) throws DatabaseException {
+        if (!isIndexedRange(beginValue, endValue)) {
+            return;
+        }
+
+        final long begin = IntervalIndexUtils.castToLong(beginValue);
+        final long end = IntervalIndexUtils.castToLong(endValue);
+        IntervalIndexUtils.checkInterval(begin, end);
+
+        try (DBIterator iterator = dataCommand.createIterator(table.getIndexColumnFamily())) {
+            KeyValue keyValue = iterator.seek(RangeIndexKey.buildBeginPattern(key.getHashedValues(), begin, index));
+            while (keyValue != null) {
+                if (RangeIndexKey.unpackId(keyValue.getKey()) == key.getId()) {
+                    dataCommand.singleDelete(table.getIndexColumnFamily(), keyValue.getKey());
+
+                    if (RangeIndexKey.unpackType(keyValue.getKey()) != RangeIndexKey.Type.BEGIN) {
+                        break;
+                    }
+                } else if (RangeIndexKey.unpackIndexedValue(keyValue.getKey()) > end) {
+                    break;
+                }
+
+                keyValue = iterator.next();
+            }
+        }
+    }
+
     private static boolean isIndexedRange(Object beginValue, Object endValue) {
         return beginValue != null && endValue != null;
     }

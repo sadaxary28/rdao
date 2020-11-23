@@ -1,16 +1,13 @@
 package com.infomaximum.database;
 
-import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.exception.UnexpectedFieldValueException;
-import com.infomaximum.database.provider.DBDataCommand;
-import com.infomaximum.database.provider.DBIterator;
-import com.infomaximum.database.provider.KeyPattern;
-import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.dbstruct.*;
+import com.infomaximum.database.schema.table.FieldReference;
 import com.infomaximum.database.utils.*;
 import com.infomaximum.database.utils.key.FieldKey;
 import com.infomaximum.database.utils.key.HashIndexKey;
@@ -102,11 +99,35 @@ public class DataCommand extends DataReadCommand {
         // TODO realize
     }
 
-    public void deleteRecord(String table, String namespace, long id) throws DatabaseException {
-        validateForeignValues(obj);
+    public void deleteRecord(String tableName, String namespace, long id) throws DatabaseException {
+        DBTable table = schema.getTable(tableName, namespace);
+        validateForeignValues(table, id);
 
-        String columnFamily = obj.getStructEntity().getColumnFamily();
-        deletingObjects.computeIfAbsent(columnFamily, s -> new Transaction.Objects(obj.getStructEntity())).add(obj);
+        Record record = getById(tableName, namespace, id);
+        // delete hash-indexed values
+        for (DBHashIndex index : table.getHashIndexes()) {
+            removeIndexedValue(index, record, table);
+        }
+
+        // delete prefix-indexed values
+        for (DBPrefixIndex index : table.getPrefixIndexes()) {
+            removeIndexedValue(index, record, table);
+        }
+
+        // delete interval-indexed values
+        for (DBIntervalIndex index : table.getIntervalIndexes()) {
+            removeIndexedValue(index, record, table);
+        }
+
+        // delete range-indexed values
+        for (DBRangeIndex index : table.getRangeIndexes()) {
+            removeIndexedValue(index, record, table);
+        }
+
+        // delete self-object
+        dataCommand.singleDelete(table.getDataColumnFamily(),
+                FieldKey.buildKeyPrefix(record.getId())
+        );
     }
 
     public void clearTable(String table, String namespace) throws DatabaseException {
@@ -114,24 +135,17 @@ public class DataCommand extends DataReadCommand {
     }
 
     private void validateForeignValues(DBTable table, long id) throws DatabaseException {
-        if (!foreignFieldEnabled) {
-            return;
-        }
-
-        List<StructEntity.Reference> references = obj.getStructEntity().getReferencingForeignFields();
+        Set<FieldReference> references = schema.getTableReferences(table.getName(), table.getNamespace());
         if (references.isEmpty()) {
             return;
         }
-
-        for (StructEntity.Reference ref : references) {
-            KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.fieldIndex, obj.getId());
-            try (DBIterator i = transaction.createIterator(ref.fieldIndex.columnFamily)) {
+        for (FieldReference ref : references) {
+            KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.getHashIndex(), id);
+            try (DBIterator i = dataCommand.createIterator(ref.getNamespace() + ".index")) {
                 KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
-                    if (!isMarkedForDeletion(Schema.getEntity(ref.objClass), referencingId)) {
-                        throw new ForeignDependencyException(obj.getId(), obj.getStructEntity().getObjectClass(), referencingId, ref.objClass);
-                    }
+                    throw new ForeignDependencyException(id, table.getName(), table.getNamespace(), referencingId, ref.getName(), ref.getNamespace());
                 }
             }
         }
@@ -167,6 +181,13 @@ public class DataCommand extends DataReadCommand {
 //                transaction);
 //    }
 
+    private void removeIndexedValue(DBHashIndex index, Record record, DBTable table) throws DatabaseException {
+        final HashIndexKey indexKey = new HashIndexKey(record.getId(), index);
+
+        setHashValues(table.getFields(index.getFieldIds()), record, indexKey.getFieldValues());
+        dataCommand.singleDelete(table.getDataColumnFamily(), indexKey.pack());
+    }
+
     private void createIndexedValue(DBHashIndex index, Record record, DBTable table) throws DatabaseException {
         final HashIndexKey indexKey = new HashIndexKey(record.getId(), index);
 
@@ -175,10 +196,30 @@ public class DataCommand extends DataReadCommand {
         dataCommand.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
+    private void removeIndexedValue(DBPrefixIndex index, Record record, DBTable table) throws DatabaseException {
+        SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
+        for (int fieldId : index.getFieldIds()) {
+            PrefixIndexUtils.splitIndexingTextIntoLexemes((String) record.getValues()[fieldId], lexemes);
+        }
+
+        PrefixIndexUtils.removeIndexedLexemes(index, record.getId(), lexemes, table, dataCommand);
+    }
+
     private void createIndexedValue(DBPrefixIndex index, Record record, DBTable table) throws DatabaseException {
         List<String> insertingLexemes = new ArrayList<>();
         PrefixIndexUtils.getIndexedLexemes(table.getFields(index.getFieldIds()), record.getValues(), insertingLexemes);
         PrefixIndexUtils.insertIndexedLexemes(index, record.getId(), insertingLexemes, table, dataCommand);
+    }
+
+    private void removeIndexedValue(DBIntervalIndex index, Record record, DBTable table) throws DatabaseException {
+        final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
+        final DBField indexedField = table.getField(index.getIndexedFieldId());
+        final IntervalIndexKey indexKey = new IntervalIndexKey(record.getId(), new long[hashedFields.length], index);
+
+        setHashValues(hashedFields, record, indexKey.getHashedValues());
+        indexKey.setIndexedValue(record.getValues()[indexedField.getId()]);
+
+        dataCommand.singleDelete(table.getIndexColumnFamily(), indexKey.pack());
     }
 
     private void createIndexedValue(DBIntervalIndex index, Record record, DBTable table) throws DatabaseException {
@@ -190,6 +231,19 @@ public class DataCommand extends DataReadCommand {
         setHashValues(hashedFields, record, indexKey.getHashedValues());
         indexKey.setIndexedValue(record.getValues()[indexedField.getId()]);
         dataCommand.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+    }
+
+    private void removeIndexedValue(DBRangeIndex index, Record record, DBTable table) throws DatabaseException {
+        final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
+        final RangeIndexKey indexKey = new RangeIndexKey(record.getId(), new long[hashedFields.length], index);
+
+        setHashValues(hashedFields, record, indexKey.getHashedValues());
+        RangeIndexUtils.removeIndexedRange(index,
+                indexKey,
+                record.getValues()[index.getBeginFieldId()],
+                record.getValues()[index.getEndFieldId()],
+                table,
+                dataCommand);
     }
 
     private void createIndexedValue(DBRangeIndex index, Record record, DBTable table) throws DatabaseException {

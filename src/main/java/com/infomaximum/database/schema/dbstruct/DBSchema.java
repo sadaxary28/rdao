@@ -4,12 +4,14 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.FieldAlreadyExistsException;
 import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.exception.TableNotFoundException;
+import com.infomaximum.database.schema.table.FieldReference;
 import com.infomaximum.database.schema.table.TableReference;
 import com.infomaximum.database.utils.SchemaTableCache;
 import net.minidev.json.JSONArray;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -114,6 +116,10 @@ public class DBSchema {
 
     public String toTablesJsonString() {
         return JsonUtils.toJsonArray(tables).toJSONString();
+    }
+
+    public Set<FieldReference> getTableReferences(String tableName, String namespace) {
+        return schemaTableCache.getTableReference(tableName, namespace);
     }
 
     static int nextId(List<? extends DBObject> items) {

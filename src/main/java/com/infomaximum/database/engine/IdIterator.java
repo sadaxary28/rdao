@@ -1,17 +1,33 @@
 package com.infomaximum.database.engine;
 
 import com.infomaximum.database.Record;
-import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.filter.IdFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBDataReader;
-import com.infomaximum.database.schema.dbstruct.DBField;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.schema.dbstruct.DBTable;
+import com.infomaximum.database.utils.key.FieldKey;
 
-public class IdIterator implements RecordIterator {
+import java.util.NoSuchElementException;
 
-    public IdIterator(DBTable table, DBField[] selectingFields, IdFilter filter, DBDataReader dataReader) {
-        // TODO realize
+public class IdIterator extends BaseRecordIterator {
+
+    private final DBIterator iterator;
+    private final DBTable table;
+    private final NextState state;
+    private final long endId;
+
+    public IdIterator(DBTable table, IdFilter filter, DBDataReader dataReader) {
+        this.iterator = dataReader.createIterator(table.getDataColumnFamily());
+        this.table = table;
+        this.endId = filter.getToId();
+        KeyPattern dataKeyPattern = new KeyPattern(FieldKey.buildKeyPrefix(filter.getFromId()), 0);
+        state = initializeState(dataKeyPattern);
+        if (endReached()) {
+            state.reset();
+            close();
+        }
     }
 
 //    @Override
@@ -21,18 +37,33 @@ public class IdIterator implements RecordIterator {
 
     @Override
     public boolean hasNext() throws DatabaseException {
-        // TODO realize
-        return false;
+        return state.isEmpty();
     }
 
     @Override
     public Record next() throws DatabaseException {
-        // TODO realize
-        return null;
+        if (state.isEmpty()) {
+            throw new NoSuchElementException();
+        }
+
+        Record result = nextRecord(table, state, iterator);
+        if (endReached()) {
+            state.reset();
+            close();
+        }
+        return result;
     }
 
     @Override
     public void close() throws DatabaseException {
-        // TODO realize
+        iterator.close();
+    }
+
+    private NextState initializeState(KeyPattern keyPattern) throws DatabaseException {
+        return seek(keyPattern, iterator);
+    }
+
+    private boolean endReached() {
+        return state.isEmpty() || state.getNextId() > endId;
     }
 }

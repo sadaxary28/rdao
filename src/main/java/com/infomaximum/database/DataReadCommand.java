@@ -50,9 +50,16 @@ public class DataReadCommand {
         return new RangeIterator(dbTable, filter, dataReader);
     }
 
-    public RecordIterator select(String table, String namespace, Set<String> fields, IdFilter filter) throws DatabaseException {
+    public RecordIterator select(String table, String namespace, IdFilter filter) throws DatabaseException {
         DBTable dbTable = schema.getTable(table, namespace);
-        return new IdIterator(dbTable, toFieldArray(fields, dbTable), filter, dataReader);
+        return new IdIterator(dbTable, filter, dataReader);
+    }
+
+    public Record getById(String table, String namespace, long id) throws DatabaseException {
+        DBTable dbTable = schema.getTable(table, namespace);
+        try (IdIterator idIterator = new IdIterator(dbTable, new IdFilter(id, id), dataReader)){
+            return idIterator.hasNext() ? idIterator.next() : null;
+        }
     }
 
     private static DBField[] toFieldArray(Set<String> fieldNames, DBTable table) throws SchemaException {
