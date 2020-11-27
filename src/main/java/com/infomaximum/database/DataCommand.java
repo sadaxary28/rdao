@@ -1,11 +1,10 @@
 package com.infomaximum.database;
 
-import com.infomaximum.database.domainobject.Value;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
+import com.infomaximum.database.exception.InvalidValueException;
 import com.infomaximum.database.exception.UnexpectedFieldValueException;
 import com.infomaximum.database.provider.*;
-import com.infomaximum.database.schema.*;
 import com.infomaximum.database.schema.dbstruct.*;
 import com.infomaximum.database.schema.table.FieldReference;
 import com.infomaximum.database.utils.*;
@@ -14,7 +13,6 @@ import com.infomaximum.database.utils.key.HashIndexKey;
 import com.infomaximum.database.utils.key.IntervalIndexKey;
 import com.infomaximum.database.utils.key.RangeIndexKey;
 
-import java.io.Serializable;
 import java.util.*;
 
 public class DataCommand extends DataReadCommand {
@@ -43,7 +41,6 @@ public class DataCommand extends DataReadCommand {
      * @return id созданного объекта или -1, если объект не был создан
      */
     public long insertRecord(String tableName, String namespace, Object[] values) throws DatabaseException {
-
         if (values == null) {
             return -1;
         }
@@ -53,7 +50,6 @@ public class DataCommand extends DataReadCommand {
         }
         long id = dataCommand.nextId(table.getDataColumnFamily());
 
-//        final Value<Serializable>[] loadedValues = object.getLoadedValues();
         Record record = new Record(id, values);
         // update hash-indexed values
         for (DBHashIndex index : table.getHashIndexes()) {
@@ -95,8 +91,67 @@ public class DataCommand extends DataReadCommand {
         return id;
     }
 
-    public void updateRecord(String table, String namespace, long id, String[] fields, Object[] values) throws DatabaseException {
-        // TODO realize
+    public long updateRecord(String tableName, String namespace, long id, String[] fields, Object[] values) throws DatabaseException {
+        if (values == null) {
+            return -1;
+        }
+        if (id <= 0) {
+            throw new InvalidValueException("Invalid id=" + id);
+        }
+        Object[] newValues = TableUtils.sortValuesByFieldOrder(tableName, namespace, fields, values, schema);
+
+        DBTable table = schema.getTable(tableName, namespace);
+        if (newValues.length != table.getSortedFields().size()) {
+            throw new UnexpectedFieldValueException("Size of inserting values " + newValues.length + " doesn't equal table field size " + table.getSortedFields().size());
+        }
+
+        Record prevRecord = getById(tableName, namespace, id);
+        Record record = new Record(id, newValues);
+        // update hash-indexed values
+        for (DBHashIndex index : table.getHashIndexes()) {
+            if (anyChanged(index.getFieldIds(), record)) {
+                updateIndexedValue(index, prevRecord, record, table);
+            }
+        }
+
+        // update prefix-indexed values
+        for (DBPrefixIndex index : table.getPrefixIndexes()) {
+            if (anyChanged(index.getFieldIds(), record)) {
+                updateIndexedValue(index, prevRecord, record, table);
+            }
+        }
+
+        // update interval-indexed values
+        for (DBIntervalIndex index : table.getIntervalIndexes()) {
+            if (anyChanged(index.getFieldIds(), record)) {
+                updateIndexedValue(index, prevRecord, record, table);
+            }
+        }
+
+        // update range-indexed values
+        for (DBRangeIndex index: table.getRangeIndexes()) {
+            if (anyChanged(index.getFieldIds(), record)) {
+                updateIndexedValue(index, prevRecord, record, table);
+            }
+        }
+
+        // update self-object
+        for (int i = 0; i < newValues.length; ++i) {
+            Object newValue = newValues[i];
+            if (newValue == null) {
+                continue;
+            }
+
+            DBField field = table.getField(i);
+
+            validateUpdatingValue(record, field, newValue, table);
+
+            byte[] key = new FieldKey(record.getId(), TypeConvert.pack(field.getName())).pack();
+            byte[] bValue = TypeConvert.pack(field.getType(), newValue, null);
+            dataCommand.put(table.getDataColumnFamily(), key, bValue);
+        }
+
+        return id;
     }
 
     public void deleteRecord(String tableName, String namespace, long id) throws DatabaseException {
@@ -130,8 +185,13 @@ public class DataCommand extends DataReadCommand {
         );
     }
 
+    //todo Bukharkin Проверить перфоманс
     public void clearTable(String table, String namespace) throws DatabaseException {
-        // TODO realize
+        try (RecordIterator ri = select(table, namespace)) {
+            while (ri.hasNext()){
+                deleteRecord(table, namespace, ri.next().getId());
+            }
+        }
     }
 
     private void validateForeignValues(DBTable table, long id) throws DatabaseException {
@@ -151,35 +211,14 @@ public class DataCommand extends DataReadCommand {
         }
     }
 
-    private static boolean anyChanged(List<Field> fields, Value<Serializable>[] newValues) {
-        for (Field field: fields) {
-            if (newValues[field.getNumber()] != null) {
+    private static boolean anyChanged(int[] fieldIds, Record newRecord) {
+        for (int fieldId : fieldIds) {
+            if (newRecord.getValues()[fieldId] != null) {
                 return true;
             }
         }
         return false;
     }
-
-//    private static void updateIndexedValue(RangeIndex index, DomainObject obj, Value<Serializable>[] prevValues, Value<Serializable>[] newValues, DBTransaction transaction) throws DatabaseException {
-//        final List<Field> hashedFields = index.getHashedFields();
-//        final RangeIndexKey indexKey = new RangeIndexKey(obj.getId(), new long[hashedFields.size()], index);
-//
-//        if (!obj._isJustCreated()) {
-//            // Remove old value-index
-//            HashIndexUtils.setHashValues(hashedFields, prevValues, indexKey.getHashedValues());
-//            RangeIndexUtils.removeIndexedRange(index, indexKey,
-//                    prevValues[index.getBeginIndexedField().getNumber()].getValue(),
-//                    prevValues[index.getEndIndexedField().getNumber()].getValue(),
-//                    transaction, transaction::delete);
-//        }
-//
-//        // Add new value-index
-//        setHashValues(hashedFields, prevValues, newValues, indexKey.getHashedValues());
-//        RangeIndexUtils.insertIndexedRange(index, indexKey,
-//                getValue(index.getBeginIndexedField(), prevValues, newValues),
-//                getValue(index.getEndIndexedField(), prevValues, newValues),
-//                transaction);
-//    }
 
     private void removeIndexedValue(DBHashIndex index, Record record, DBTable table) throws DatabaseException {
         final HashIndexKey indexKey = new HashIndexKey(record.getId(), index);
@@ -196,6 +235,12 @@ public class DataCommand extends DataReadCommand {
         dataCommand.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
+    //todo V.Bukharkin проверить перфоманс
+    private void updateIndexedValue(DBHashIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
+        removeIndexedValue(index, prevRecord, table);
+        createIndexedValue(index, record, table);
+    }
+
     private void removeIndexedValue(DBPrefixIndex index, Record record, DBTable table) throws DatabaseException {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         for (int fieldId : index.getFieldIds()) {
@@ -209,6 +254,14 @@ public class DataCommand extends DataReadCommand {
         List<String> insertingLexemes = new ArrayList<>();
         PrefixIndexUtils.getIndexedLexemes(table.getFields(index.getFieldIds()), record.getValues(), insertingLexemes);
         PrefixIndexUtils.insertIndexedLexemes(index, record.getId(), insertingLexemes, table, dataCommand);
+    }
+
+    private void updateIndexedValue(DBPrefixIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
+        List<String> deletingLexemes = new ArrayList<>();
+        List<String> insertingLexemes = new ArrayList<>();
+        PrefixIndexUtils.diffIndexedLexemes(table.getFields(index.getFieldIds()), prevRecord.getValues(), record.getValues(), deletingLexemes, insertingLexemes);
+        PrefixIndexUtils.removeIndexedLexemes(index, record.getId(), deletingLexemes, table, dataCommand);
+        createIndexedValue(index, record, table);
     }
 
     private void removeIndexedValue(DBIntervalIndex index, Record record, DBTable table) throws DatabaseException {
@@ -231,6 +284,11 @@ public class DataCommand extends DataReadCommand {
         setHashValues(hashedFields, record, indexKey.getHashedValues());
         indexKey.setIndexedValue(record.getValues()[indexedField.getId()]);
         dataCommand.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
+    }
+
+    private void updateIndexedValue(DBIntervalIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
+        removeIndexedValue(index, prevRecord, table);
+        createIndexedValue(index, record, table);
     }
 
     private void removeIndexedValue(DBRangeIndex index, Record record, DBTable table) throws DatabaseException {
@@ -260,20 +318,29 @@ public class DataCommand extends DataReadCommand {
                 dataCommand);
     }
 
+    private void updateIndexedValue(DBRangeIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
+        removeIndexedValue(index, prevRecord, table);
+        createIndexedValue(index, record, table);
+    }
+
     private static void setHashValues(DBField[] fields, Record record, long[] destination) {
+        setHashValues(fields, null, record, destination);
+    }
+
+    private static void setHashValues(DBField[] fields, Record prevRecord, Record record, long[] destination) {
         for (int i = 0; i < fields.length; ++i) {
             DBField field = fields[i];
-//            Object value = getValue(field, prevValues, newValues);
-            destination[i] = HashIndexUtils.buildHash(field.getType(), record.getValues()[field.getId()], null);
+            Object value = getValue(field, prevRecord, record);
+            destination[i] = HashIndexUtils.buildHash(field.getType(), value, null);
         }
     }
 
-    private static Object getValue(Field field, Value<Serializable>[] prevValues, Value<Serializable>[] newValues) {
-        Value<Serializable> value = newValues[field.getNumber()];
-        if (value == null) {
-            value = prevValues[field.getNumber()];
+    private static Object getValue(DBField field, Record prevRecord, Record record) {
+        Object value = record.getValues()[field.getId()];
+        if (prevRecord != null && value == null) {
+            value = prevRecord.getValues()[field.getId()];
         }
-        return value.getValue();
+        return value;
     }
 
     private void validateUpdatingValue(Record record, DBField field, Object value, DBTable table) throws DatabaseException {
