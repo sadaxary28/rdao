@@ -76,8 +76,14 @@ public class SchemaTableCache {
     private void putFieldReference(DBField field, DBTable table) {
         DBTable referencedTable = schema.getTableById(field.getForeignTableId());
         FieldReference fieldReference = new FieldReference(table.getName(), table.getNamespace(), new DBHashIndex(field));
-        Objects.requireNonNull(uuidForeignTableFieldReferences
-                .putIfAbsent(buildUuidTable(referencedTable.getName(), referencedTable.getNamespace()), new HashSet<>()))
-                .add(fieldReference);
+        String tableUuid = buildUuidTable(referencedTable.getName(), referencedTable.getNamespace());
+        Set<FieldReference> references = uuidForeignTableFieldReferences.get(tableUuid);
+        if (references == null) {
+            references = new HashSet<>();
+            references.add(fieldReference);
+            uuidForeignTableFieldReferences.put(tableUuid, references);
+        } else {
+            references.add(fieldReference);
+        }
     }
 }
