@@ -37,7 +37,7 @@ public class IdIterator extends BaseRecordIterator {
 
     @Override
     public boolean hasNext() throws DatabaseException {
-        return state.isEmpty();
+        return !state.isEmpty();
     }
 
     @Override

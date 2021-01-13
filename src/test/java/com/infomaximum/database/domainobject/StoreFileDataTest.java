@@ -6,6 +6,7 @@ import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.RecordSource;
 import com.infomaximum.database.domainobject.filter.Filter;
 import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.IdFilter;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.Schema;
@@ -83,6 +84,9 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         }
         if (filter instanceof PrefixFilter) {
             return recordSource.select(tableName, namespace, (PrefixFilter) filter);
+        }
+        if (filter instanceof IdFilter) {
+            return recordSource.select(tableName, namespace, (IdFilter) filter);
         }
         throw new UnsupportedOperationException();
     }
