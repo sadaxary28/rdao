@@ -570,12 +570,12 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
             transaction.remove(transaction.get(StoreFileEditable.class, 1));
             transaction.remove(transaction.get(StoreFileEditable.class, 2));
 
-            testFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
-            testFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
+            assertFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
+            assertFind(transaction, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
         });
 
-        testFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
-        testFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
+        assertFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 10L, 20L));
+        assertFind(domainObjectSource, new RangeFilter(StoreFileReadable.RANGE_LONG_FIELD, 1L, 2L), 3);
     }
 
     /**

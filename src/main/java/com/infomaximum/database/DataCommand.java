@@ -91,6 +91,10 @@ public class DataCommand extends DataReadCommand {
         return id;
     }
 
+    public long updateRecord(String tableName, String namespace, Record record) throws DatabaseException {
+        return updateRecordSortedValues(tableName, namespace, record.getId(), record.getValues());
+    }
+
     public long updateRecord(String tableName, String namespace, long id, String[] fields, Object[] values) throws DatabaseException {
         if (values == null) {
             return -1;
@@ -99,7 +103,16 @@ public class DataCommand extends DataReadCommand {
             throw new InvalidValueException("Invalid id=" + id);
         }
         Object[] newValues = TableUtils.sortValuesByFieldOrder(tableName, namespace, fields, values, schema);
+        return updateRecordSortedValues(tableName, namespace, id, newValues);
+    }
 
+    private long updateRecordSortedValues(String tableName, String namespace, long id, Object[] newValues) throws DatabaseException {
+        if (newValues == null) {
+            return -1;
+        }
+        if (id <= 0) {
+            throw new InvalidValueException("Invalid id=" + id);
+        }
         DBTable table = schema.getTable(tableName, namespace);
         if (newValues.length != table.getSortedFields().size()) {
             throw new UnexpectedFieldValueException("Size of inserting values " + newValues.length + " doesn't equal table field size " + table.getSortedFields().size());

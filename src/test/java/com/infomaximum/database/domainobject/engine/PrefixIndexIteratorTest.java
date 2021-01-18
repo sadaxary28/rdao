@@ -56,40 +56,40 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
         final PrefixFilter filter = new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "");
 
         filter.setFieldValue("ghbdtn");
-        testFind(filter);
+        assertFind(filter);
 
         filter.setFieldValue("привет");
-        testFind(filter, 1, 2 ,3, 5);
+        assertFind(filter, 1, 2 ,3, 5);
 
         filter.setFieldValue("вс");
-        testFind(filter, 1, 3, 4, 5);
+        assertFind(filter, 1, 3, 4, 5);
 
         filter.setFieldValue("вс com");
-        testFind(filter, 3);
+        assertFind(filter, 3);
 
         filter.setFieldValue(".");
-        testFind(filter, 5);
+        assertFind(filter, 5);
 
         filter.setFieldValue("прив info");
-        testFind(filter, 3);
+        assertFind(filter, 3);
 
         filter.setFieldValue("алекс");
-        testFind(filter, 6);
+        assertFind(filter, 6);
 
         filter.setFieldValue("алекс алекс");
-        testFind(filter, 6);
+        assertFind(filter, 6);
 
         filter.setFieldValue("Р р");
-        testFind(filter, 7);
+        assertFind(filter, 7);
 
         filter.setFieldValue("Р");
-        testFind(filter, 7);
+        assertFind(filter, 7);
 
         filter.setFieldValue("Ре");
-        testFind(filter, 7);
+        assertFind(filter, 7);
 
         filter.setFieldValue("вас");
-        testFind(filter, 8, 9);
+        assertFind(filter, 8, 9);
     }
 
     @Test
@@ -144,34 +144,34 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
         final PrefixFilter filter = new PrefixFilter(Arrays.asList(StoreFileReadable.FIELD_FILE_NAME, StoreFileReadable.FIELD_CONTENT_TYPE), "");
 
         filter.setFieldValue("ghbdtn");
-        testFind(filter);
+        assertFind(filter);
 
         filter.setFieldValue("привет test21");
-        testFind(filter, 2);
+        assertFind(filter, 2);
 
         filter.setFieldValue("вс test");
-        testFind(filter, 1, 3);
+        assertFind(filter, 1, 3);
 
         filter.setFieldValue("test вс com");
-        testFind(filter, 3);
+        assertFind(filter, 3);
 
         filter.setFieldValue("4test");
-        testFind(filter, 4);
+        assertFind(filter, 4);
 
         filter.setFieldValue("5te res");
-        testFind(filter, 5);
+        assertFind(filter, 5);
 
         filter.setFieldValue("алекс");
-        testFind(filter, 6, 8, 9);
+        assertFind(filter, 6, 8, 9);
 
         filter.setFieldValue("алекс алекс");
-        testFind(filter, 6);
+        assertFind(filter, 6);
 
         filter.setFieldValue("Р");
-        testFind(filter, 7);
+        assertFind(filter, 7);
 
         filter.setFieldValue("Ре");
-        testFind(filter, 7);
+        assertFind(filter, 7);
     }
 
     @Test
@@ -190,7 +190,7 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
         final PrefixFilter filter = new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "всем");
 
-        testFind(filter, expectedIds);
+        assertFind(filter, expectedIds);
     }
 
 //    @Test

@@ -9,10 +9,8 @@ import com.infomaximum.database.domainobject.filter.IdFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
-import com.infomaximum.domain.type.FormatType;
 import org.junit.Assert;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 
 public class IdIteratorTest extends StoreFileDataTest {
 
@@ -85,16 +83,16 @@ public class IdIteratorTest extends StoreFileDataTest {
         final int insertedRecordCount = 10;
         initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
 
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-            transaction.remove(transaction.get(StoreFileEditable.class, 5));
+        recordSource.executeTransactional(transaction -> {
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1L);
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 5L);
 
-            testFind(transaction, new IdFilter(0, 1));
-            testFind(transaction, new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
+            assertFind(transaction, new IdFilter(0, 1));
+            assertFind(transaction, new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
         });
 
-        testFind(domainObjectSource, new IdFilter(0, 1));
-        testFind(domainObjectSource, new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
+        assertFind(new IdFilter(0, 1));
+        assertFind(new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
     }
 
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {

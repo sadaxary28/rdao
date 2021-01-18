@@ -1,6 +1,7 @@
 package com.infomaximum.database.domainobject;
 
 import com.google.common.primitives.Longs;
+import com.infomaximum.database.DataCommand;
 import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.RecordSource;
@@ -15,12 +16,14 @@ import com.infomaximum.domain.StoreFileReadable;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 public abstract class StoreFileDataTest extends DomainDataTest {
+
+    protected static final String STORE_FILE_NAMESPACE = "com.infomaximum.store";
+    protected static final String STORE_FILE_NAME = "StoreFile";
 
     protected Schema schema;
     protected RecordSource recordSource;
@@ -35,19 +38,28 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         schema = Schema.read(rocksDBProvider);
     }
 
-    protected void testFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws DatabaseException {
-        testFind(filter, Longs.asList(expectedIds));
+    @Deprecated
+    protected void assertFind(DataEnumerable enumerable, Filter filter, long... expectedIds) throws Exception {
+        assertFind(filter, expectedIds);
     }
 
-    protected void testFind(Filter filter, long... expectedIds) throws DatabaseException {
-        testFind(domainObjectSource, filter, expectedIds);
+    protected void assertFind(DataCommand dataCommand, Filter filter, long... expectedIds) throws DatabaseException {
+        assertFind(dataCommand, filter, Longs.asList(expectedIds));
     }
 
-    protected void testFind(Filter filter, List<Long> expectedIds) throws DatabaseException {
+    protected void assertFind(Filter filter, List<Long> expectedIds) throws Exception {
+        recordSource.executeTransactional(dataCommand -> {assertFind(dataCommand, filter, expectedIds);});
+    }
+
+    protected void assertFind(Filter filter, long... expectedIds) throws Exception {
+        assertFind(filter, LongStream.of(expectedIds).boxed().collect(Collectors.toList()));
+    }
+
+    protected void assertFind(DataCommand dataCommand, Filter filter, List<Long> expectedIds) throws DatabaseException {
         List<Long> temp = new ArrayList<>(expectedIds);
 
         List<Long> foundIds = new ArrayList<>(temp.size());
-        try (RecordIterator iterator = getIteratorForFilter("StoreFile", "com.infomaximum.store", filter)) {
+        try (RecordIterator iterator = getIteratorForFilter(STORE_FILE_NAME, STORE_FILE_NAMESPACE, filter, dataCommand)) {
             while (iterator.hasNext()) {
                 foundIds.add(iterator.next().getId());
             }
@@ -78,15 +90,15 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         }
     }
 
-    private RecordIterator getIteratorForFilter(String tableName, String namespace, Filter filter) {
+    private RecordIterator getIteratorForFilter(String tableName, String namespace, Filter filter, DataCommand dataCommand) {
         if (filter instanceof HashFilter) {
-            return recordSource.select(tableName, namespace, (HashFilter) filter);
+            return dataCommand.select(tableName, namespace, (HashFilter) filter);
         }
         if (filter instanceof PrefixFilter) {
-            return recordSource.select(tableName, namespace, (PrefixFilter) filter);
+            return dataCommand.select(tableName, namespace, (PrefixFilter) filter);
         }
         if (filter instanceof IdFilter) {
-            return recordSource.select(tableName, namespace, (IdFilter) filter);
+            return dataCommand.select(tableName, namespace, (IdFilter) filter);
         }
         throw new UnsupportedOperationException();
     }

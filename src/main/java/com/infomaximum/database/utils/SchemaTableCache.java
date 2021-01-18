@@ -54,7 +54,7 @@ public class SchemaTableCache {
     }
 
     public Set<FieldReference> getTableReference(String name, String namespace) {
-        return uuidForeignTableFieldReferences.get(buildUuidTable(name, namespace));
+        return uuidForeignTableFieldReferences.getOrDefault(buildUuidTable(name, namespace), Collections.emptySet());
     }
 
     private String buildUuidTable(String tableName, String namespace) {

@@ -6,6 +6,7 @@ import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.utils.HashIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
@@ -13,6 +14,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class HashIndexIteratorTest extends StoreFileDataTest {
@@ -106,28 +108,23 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
         }
     }
 
-//    @Test
-//    public void findTransactional() throws Exception {
-//        try (Transaction transaction = domainObjectSource.buildTransaction()) {
-//            // insert
-//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(10);
-//            transaction.save(obj);
-//
-//            Assert.assertEquals(10L, transaction.get(StoreFileReadable.class, obj.getId()).getSize());
-//
-//            // change
-//            obj.setSize(20);
-//            transaction.save(obj);
-//
-//            HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 20L);
-//            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, filter)) {
-//                Assert.assertTrue(i.hasNext());
-//            }
-//
-//            transaction.commit();
-//        }
-//    }
+    @Test
+    public void findTransactional() throws Exception {
+        recordSource.executeTransactional(transaction -> {
+            // insert
+            long objId = transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new String[]{"size"}, new Object[]{10L});
+            Assertions.assertThat(transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, objId).getValues()[StoreFileReadable.FIELD_SIZE])
+                    .isEqualTo(10L);
+
+            // change
+            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, objId, new String[]{"size"}, new Object[]{20L});
+
+            HashFilter filter = new HashFilter(StoreFileReadable.FIELD_SIZE, 20L);
+            try (RecordIterator i = transaction.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE, filter)) {
+                Assertions.assertThat(i.hasNext()).isTrue();
+            }
+        });
+    }
 
     @Test
     public void findBySingleField() throws Exception {
@@ -219,97 +216,94 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
         }
     }
 
-//    @Test
-//    public void iterateAndChange() throws Exception {
-//        final long value = 20;
-//
-//        domainObjectSource.executeTransactional(transaction -> {
-//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-//            obj.setFileName("привет всем");
-//            obj.setSize(value);
-//            transaction.save(obj);
-//
-//            obj = transaction.create(StoreFileEditable.class);
-//            obj.setFileName("привет");
-//            obj.setSize(value);
-//            transaction.save(obj);
-//
-//            obj = transaction.create(StoreFileEditable.class);
-//            obj.setFileName("ПРИВЕТ ВСЕМ");
-//            obj.setSize(40);
-//            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 32));
-//            transaction.save(obj);
-//        });
-//
-//        try (Transaction transaction = domainObjectSource.buildTransaction()) {
-//            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, value))) {
-//                List<Long> ids = new ArrayList<>();
-//                while (i.hasNext()) {
-//                    StoreFileEditable s = transaction.get(StoreFileEditable.class, 3);
-//                    s.setSize(value);
-//                    transaction.save(s);
-//
-//                    StoreFileReadable item = i.next();
-//                    Assert.assertEquals(value, item.getSize());
-//
-//                    ids.add(item.getId());
-//                }
-//
-//                Assert.assertEquals(Arrays.asList(1L, 2L), ids);
-//            }
-//
-//            Assert.assertNotNull(transaction.find(
-//                    StoreFileReadable.class,
-//                    new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, LocalDateTime.of(2018, 10, 22, 18, 32))
-//            ));
-//        }
-//    }
-//
-//    @Test
-//    public void removeAndFind() throws Exception {
-//        domainObjectSource.executeTransactional(transaction -> {
-//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(1);
-//            transaction.save(obj);
-//
-//            obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(20);
-//            transaction.save(obj);
-//
-//            obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(1);
-//            transaction.save(obj);
-//        });
-//
-//        domainObjectSource.executeTransactional(transaction -> {
-//            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-//            transaction.remove(transaction.get(StoreFileEditable.class, 2));
-//
-//            testFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
-//            testFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
-//        });
-//
-//        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
-//        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
-//
-//        StoreFileEditable[] newObj = {null};
-//        domainObjectSource.executeTransactional(transaction -> {
-//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(1);
-//            transaction.save(obj);
-//
-//            try (IteratorEntity<StoreFileEditable> i = transaction.find(StoreFileEditable.class, new HashFilter(StoreFileEditable.FIELD_SIZE, 1L))) {
-//                transaction.remove(i.next());
-//            }
-//
-//            obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(2);
-//            transaction.save(obj);
-//            newObj[0] = obj;
-//        });
-//
-//        testFind(domainObjectSource, new HashFilter(StoreFileReadable.FIELD_SIZE, 2L), newObj[0].getId());
-//    }
+    @Test
+    public void iterateAndChange() throws Exception {
+        final long value = 20;
+
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет всем");
+            obj.setSize(value);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("привет");
+            obj.setSize(value);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setFileName("ПРИВЕТ ВСЕМ");
+            obj.setSize(40);
+            obj.setLocalBegin(LocalDateTime.of(2018, 10, 22, 18, 32));
+            transaction.save(obj);
+        });
+
+        recordSource.executeTransactional(transaction -> {
+            try (RecordIterator i = transaction.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new HashFilter(StoreFileReadable.FIELD_SIZE, value))) {
+                List<Long> ids = new ArrayList<>();
+                while (i.hasNext()) {
+                    Record record = transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 3);
+                    record.getValues()[StoreFileReadable.FIELD_SIZE] = value;
+                    transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, record);
+
+                    Record item = i.next();
+                    Assertions.assertThat(value).isEqualTo(item.getValues()[StoreFileReadable.FIELD_SIZE]);
+                    ids.add(item.getId());
+                }
+                Assertions.assertThat(ids).containsAll(Arrays.asList(1L, 2L));
+            }
+            Assertions
+                    .assertThat(transaction.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                            new HashFilter(StoreFileReadable.FIELD_LOCAL_BEGIN, LocalDateTime.of(2018, 10, 22, 18, 32))))
+                    .isNotNull();
+        });
+    }
+
+    @Test
+    public void removeAndFind() throws Exception {
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(20);
+            transaction.save(obj);
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+        });
+
+        recordSource.executeTransactional(transaction -> {
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1);
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 2);
+
+            assertFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
+            assertFind(transaction, new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
+        });
+
+        assertFind(new HashFilter(StoreFileReadable.FIELD_SIZE, 20L));
+        assertFind(new HashFilter(StoreFileReadable.FIELD_SIZE, 1L), 3);
+
+        StoreFileEditable[] newObj = {null};
+        domainObjectSource.executeTransactional(transaction -> {
+            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(1);
+            transaction.save(obj);
+
+            try (IteratorEntity<StoreFileEditable> i = transaction.find(StoreFileEditable.class, new HashFilter(StoreFileEditable.FIELD_SIZE, 1L))) {
+                transaction.remove(i.next());
+            }
+
+            obj = transaction.create(StoreFileEditable.class);
+            obj.setSize(2);
+            transaction.save(obj);
+            newObj[0] = obj;
+        });
+
+        assertFind(new HashFilter(StoreFileReadable.FIELD_SIZE, 2L), newObj[0].getId());
+    }
 
     private List<StoreFileReadable> initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {
         List<StoreFileReadable> result = new ArrayList<>();

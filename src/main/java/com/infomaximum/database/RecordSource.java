@@ -17,10 +17,10 @@ public class RecordSource {
 
         /**
          * Реализация операции.
-         * @param dataCommand Контекст, в котором выполняется операция.
+         * @param transaction Контекст, в котором выполняется операция.
          * @throws Exception Если во время выполнения операции возникла ошибка.
          */
-        void action(final DataCommand dataCommand) throws Exception;
+        void action(final DataCommand transaction) throws Exception;
     }
 
     @FunctionalInterface
@@ -28,10 +28,10 @@ public class RecordSource {
 
         /**
          * Реализация операции.
-         * @param dataCommand Контекст, в котором выполняется операция.
+         * @param transaction Контекст, в котором выполняется операция.
          * @throws Exception Если во время выполнения операции возникла ошибка.
          */
-        R apply(final DataCommand dataCommand) throws Exception;
+        R apply(final DataCommand transaction) throws Exception;
     }
 
     public RecordSource(DBProvider dbProvider) throws DatabaseException {
