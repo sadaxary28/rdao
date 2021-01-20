@@ -24,6 +24,8 @@ public abstract class StoreFileDataTest extends DomainDataTest {
 
     protected static final String STORE_FILE_NAMESPACE = "com.infomaximum.store";
     protected static final String STORE_FILE_NAME = "StoreFile";
+    protected static final String FOLDER_FILE_NAME = "ExchangeFolder";
+    protected static final String FOLDER_FILE_NAMESPACE = "com.infomaximum.exchange";
 
     protected Schema schema;
     protected RecordSource recordSource;

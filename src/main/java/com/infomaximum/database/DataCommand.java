@@ -92,21 +92,23 @@ public class DataCommand extends DataReadCommand {
     }
 
     public long updateRecord(String tableName, String namespace, Record record) throws DatabaseException {
-        return updateRecordSortedValues(tableName, namespace, record.getId(), record.getValues());
+        Record prevRecord = getById(tableName, namespace, record.getId());
+        return updateRecordSortedValues(tableName, namespace, record.getId(), record.getValues(), prevRecord);
     }
 
     public long updateRecord(String tableName, String namespace, long id, String[] fields, Object[] values) throws DatabaseException {
-        if (values == null) {
+        if (fields == null) {
             return -1;
         }
         if (id <= 0) {
             throw new InvalidValueException("Invalid id=" + id);
         }
-        Object[] newValues = TableUtils.sortValuesByFieldOrder(tableName, namespace, fields, values, schema);
-        return updateRecordSortedValues(tableName, namespace, id, newValues);
+        Record prevRecord = getById(tableName, namespace, id);
+        Object[] newValues = TableUtils.sortValuesByFieldOrder(tableName, namespace, fields, values, prevRecord.getValues(), schema);
+        return updateRecordSortedValues(tableName, namespace, id, newValues, prevRecord);
     }
 
-    private long updateRecordSortedValues(String tableName, String namespace, long id, Object[] newValues) throws DatabaseException {
+    private long updateRecordSortedValues(String tableName, String namespace, long id, Object[] newValues, Record prevRecord) throws DatabaseException {
         if (newValues == null) {
             return -1;
         }
@@ -118,32 +120,31 @@ public class DataCommand extends DataReadCommand {
             throw new UnexpectedFieldValueException("Size of inserting values " + newValues.length + " doesn't equal table field size " + table.getSortedFields().size());
         }
 
-        Record prevRecord = getById(tableName, namespace, id);
         Record record = new Record(id, newValues);
         // update hash-indexed values
         for (DBHashIndex index : table.getHashIndexes()) {
-            if (anyChanged(index.getFieldIds(), record)) {
+            if (anyChanged(index.getFieldIds(), record, prevRecord)) {
                 updateIndexedValue(index, prevRecord, record, table);
             }
         }
 
         // update prefix-indexed values
         for (DBPrefixIndex index : table.getPrefixIndexes()) {
-            if (anyChanged(index.getFieldIds(), record)) {
+            if (anyChanged(index.getFieldIds(), record, prevRecord)) {
                 updateIndexedValue(index, prevRecord, record, table);
             }
         }
 
         // update interval-indexed values
         for (DBIntervalIndex index : table.getIntervalIndexes()) {
-            if (anyChanged(index.getFieldIds(), record)) {
+            if (anyChanged(index.getFieldIds(), record, prevRecord)) {
                 updateIndexedValue(index, prevRecord, record, table);
             }
         }
 
         // update range-indexed values
         for (DBRangeIndex index: table.getRangeIndexes()) {
-            if (anyChanged(index.getFieldIds(), record)) {
+            if (anyChanged(index.getFieldIds(), record, prevRecord)) {
                 updateIndexedValue(index, prevRecord, record, table);
             }
         }
@@ -151,11 +152,13 @@ public class DataCommand extends DataReadCommand {
         // update self-object
         for (int i = 0; i < newValues.length; ++i) {
             Object newValue = newValues[i];
+            DBField field = table.getField(i);
             if (newValue == null) {
+                //todo Убрать после удаления TypeConverter'ов
+                byte[] key = new FieldKey(record.getId(), TypeConvert.pack(field.getName())).pack();
+                dataCommand.delete(table.getDataColumnFamily(), key);
                 continue;
             }
-
-            DBField field = table.getField(i);
 
             validateUpdatingValue(record, field, newValue, table);
 
@@ -224,9 +227,9 @@ public class DataCommand extends DataReadCommand {
         }
     }
 
-    private static boolean anyChanged(int[] fieldIds, Record newRecord) {
+    private static boolean anyChanged(int[] fieldIds, Record newRecord, Record prevRecord) {
         for (int fieldId : fieldIds) {
-            if (newRecord.getValues()[fieldId] != null) {
+            if (!Objects.equals(newRecord.getValues()[fieldId], (prevRecord.getValues()[fieldId]))) {
                 return true;
             }
         }

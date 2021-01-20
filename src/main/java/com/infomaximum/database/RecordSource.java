@@ -39,6 +39,10 @@ public class RecordSource {
         this.dbSchema = Schema.read(dbProvider).getDbSchema();
     }
 
+    public Record getById(String table, String namespace, long id) throws DatabaseException {
+        return new DataReadCommand(dbProvider, dbSchema).getById(table, namespace, id);
+    }
+
     public RecordIterator select(String table, String namespace) throws DatabaseException {
         return new DataReadCommand(dbProvider, dbSchema).select(table, namespace);
     }

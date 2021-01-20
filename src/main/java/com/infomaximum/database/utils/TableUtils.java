@@ -72,4 +72,14 @@ public class TableUtils {
         }
         return result;
     }
+
+    public static Object[] sortValuesByFieldOrder(String tableName, String namespace, String[] fields, Object[] values, Object[] prevValues, DBSchema schema) {
+        DBTable table = schema.getTable(tableName, namespace);
+        Object[] result = Arrays.copyOf(prevValues, prevValues.length);
+        for (int i = 0; i < fields.length; i++) {
+            int fieldId = table.getFieldIndex(fields[i]);
+            result[fieldId] = values[i];
+        }
+        return result;
+    }
 }
