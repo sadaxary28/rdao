@@ -54,8 +54,10 @@ public class PrefixIndexUtils {
             PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
 
             Object newValue = field.getId() < newValues.length ? newValues[field.getId()] : prevValue;
-            String newText = newValue != null ? (String) newValue : prevText;
-            PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
+            if (newValue != null) {
+                String newText = (String) newValue;
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
+            }
         }
 
         for (String newLexeme : newLexemes) {

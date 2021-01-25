@@ -3,8 +3,9 @@ package com.infomaximum.database.domainobject.engine;
 import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.domainobject.StoreFileDataTest;
-import com.infomaximum.database.domainobject.filter.EmptyFilter;
-import com.infomaximum.database.domainobject.iterator.IteratorEntity;
+import com.infomaximum.database.domainobject.filter.HashFilter;
+import com.infomaximum.database.domainobject.filter.IntervalFilter;
+import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.exception.ForeignDependencyException;
 import com.infomaximum.database.maintenance.ChangeMode;
 import com.infomaximum.database.maintenance.DomainService;
@@ -64,16 +65,18 @@ public class TransactionTest extends StoreFileDataTest {
             transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE,
                     new String[]{}, new Object[]{});
         });
-        recordSource.executeTransactional(transaction -> {
-            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
-                    new String[]{}, new Object[]{});
-        });
+        long recordId = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new String[]{}, new Object[]{}));
         Record obj = recordSource.executeFunctionTransactional(transaction -> transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1));
         Assertions.assertThat(obj).isNotNull();
         Assertions.assertThat(obj.getValues()).containsOnlyNulls();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 0d, 1d)).hasNext()).isTrue();
 
         //Добавляем объект
-        long recordId = recordSource.executeFunctionTransactional(transaction -> transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+        recordSource.executeFunctionTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                recordId,
                 new String[]{"name", "folder_id", "single", "data", "double"},
                 new Object[]{"test", 1L, false, new byte[]{1,2}, 0.1}));
 
@@ -85,6 +88,12 @@ public class TransactionTest extends StoreFileDataTest {
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_SINGLE]).isEqualTo(false);
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_DATA]).isEqualTo(new byte[]{1,2});
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_DOUBLE]).isEqualTo(0.1);
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "test")).hasNext()).isTrue();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "test").appendField(StoreFileReadable.FIELD_SINGLE, false)).hasNext()).isTrue();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 0d, 1d)).hasNext()).isTrue();
 
         //Редактируем сохраненный объект
         recordSource.executeTransactional(transaction -> {
@@ -100,6 +109,22 @@ public class TransactionTest extends StoreFileDataTest {
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_SINGLE]).isNull();
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_DATA]).isNull();
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_DOUBLE]).isNull();
+
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "test")).hasNext()).isFalse();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, null)).hasNext()).isTrue();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, "test").appendField(StoreFileReadable.FIELD_SINGLE, false)).hasNext()).isFalse();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, null).appendField(StoreFileReadable.FIELD_SINGLE, null)).hasNext()).isTrue();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new HashFilter(StoreFileReadable.FIELD_FILE_NAME, null).appendField(StoreFileReadable.FIELD_SIZE, null)).hasNext()).isTrue();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "test")).hasNext()).isFalse();
+        Assertions.assertThat(recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 0d, 1d)).hasNext()).isTrue();
+
 
         //Повторно редактируем сохраненный объект
         recordSource.executeTransactional(transaction -> {
@@ -125,176 +150,143 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void updateValueStringEmptyThenNull() throws Exception {
-        final long objectId = 1;
         final String emptyFileName = "";
         final String contentType = "info.json";
 
         //Добавляем объект
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
-            storeFile.setContentType(contentType);
-            storeFile.setFileName(emptyFileName);
-            transaction.save(storeFile);
-        });
+        long recordId = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{"type", "name"}, new Object[]{contentType, emptyFileName}));
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckSave = domainObjectSource.get(StoreFileReadable.class, objectId);
-        Assert.assertNotNull(storeFileCheckSave);
-        Assert.assertEquals(emptyFileName, storeFileCheckSave.getFileName());
-        Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
+        Record storeFileCheckSave = recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
+        Assertions.assertThat(storeFileCheckSave.getValues()[StoreFileReadable.FIELD_FILE_NAME]).isEqualTo(emptyFileName);
+        Assertions.assertThat(storeFileCheckSave.getValues()[StoreFileReadable.FIELD_CONTENT_TYPE]).isEqualTo(contentType);
 
         //Редактируем сохраненый объект
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = domainObjectSource.get(StoreFileEditable.class, objectId);
-            obj.setContentType(null);
-            transaction.save(obj);
-        });
+        recordSource.executeFunctionTransactional(transaction ->
+                transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        recordId,
+                        new String[]{"type"}, new Object[]{null}));
 
         //Загружаем сохраненый объект
-        StoreFileReadable storeFileCheckEdit = domainObjectSource.get(StoreFileReadable.class, objectId);
-        Assert.assertNotNull(storeFileCheckEdit);
-        Assert.assertEquals(emptyFileName, storeFileCheckEdit.getFileName());
-        Assert.assertNull(storeFileCheckEdit.getContentType());
+        Record storeFileCheckEdit = recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
+        Assertions.assertThat(storeFileCheckEdit.getValues()[StoreFileReadable.FIELD_FILE_NAME]).isEqualTo(emptyFileName);
+        Assertions.assertThat(storeFileCheckEdit.getValues()[StoreFileReadable.FIELD_CONTENT_TYPE]).isNull();
     }
 
     @Test
     public void saveEmptyDomainObject() throws Exception {
-        final long objectId = 1;
         final String emptyFileName = "";
         final String contentType = "info.json";
 
         //Добавляем объект
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable storeFile = transaction.create(StoreFileEditable.class);
-            storeFile.setContentType(contentType);
-            storeFile.setFileName(emptyFileName);
-            transaction.save(storeFile);
-            transaction.save(storeFile);
-        });
-
+        long recordId = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{"type", "name"}, new Object[]{contentType, emptyFileName}));
         //Загружаем сохраненый объект и сразу без редактирования полей вызываем сохранение
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = transaction.get(StoreFileEditable.class, objectId);
-            transaction.save(obj);
+        recordSource.executeTransactional(transaction -> {
+                Record record = transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
+                transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        record);
         });
     }
 
     @Test
     public void removeOneObject() throws Exception {
-        //Проверяем, что таких объектов нет в базе
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 3L));
-
         //Добавляем объект
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.save(transaction.create(StoreFileEditable.class));
-            transaction.save(transaction.create(StoreFileEditable.class));
-            transaction.save(transaction.create(StoreFileEditable.class));
-        });
+        long recordId1 = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{}, new Object[]{}));
+        long recordId2 = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{}, new Object[]{}));
+        long recordId3 = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{}, new Object[]{}));
 
         //Проверяем что файлы сохранены
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 2L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId1)).isNotNull();
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId2)).isNotNull();
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId3)).isNotNull();
 
-        //Удяляем 2-й объект
-        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, 2L)));
+        //Удаляем 2-й объект
+        recordSource.executeTransactional(transaction -> transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId2));
 
         //Проверяем, корректность удаления
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 1L));
-        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 2L));
-        Assert.assertNotNull(domainObjectSource.get(StoreFileReadable.class, 3L));
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId1)).isNotNull();
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId2)).isNull();
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId3)).isNotNull();
     }
 
     @Test
     public void removeReferencedObject() throws Exception {
-        domainObjectSource.executeTransactional(transaction -> {
-            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
-            transaction.save(folder);
+        long folderId = recordSource.executeFunctionTransactional(transaction -> transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE,
+                new String[]{}, new Object[]{}));
+        long recordId = recordSource.executeFunctionTransactional(transaction ->
+                transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{"folder_id"}, new Object[]{folderId}));
 
-            StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
-            transaction.save(file);
-        });
+        Assertions.assertThatThrownBy(() -> recordSource
+                        .executeTransactional(transaction -> transaction.deleteRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, folderId)))
+                .isInstanceOf(ForeignDependencyException.class);
 
-        try {
-            domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(ExchangeFolderEditable.class, 1)));
-            Assert.fail();
-        } catch (ForeignDependencyException ex) {
-            try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
-                Assert.assertTrue(i.hasNext());
-            }
-        }
-
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-            transaction.remove(transaction.get(ExchangeFolderEditable.class, 1));
-        });
+        recordSource
+                .executeTransactional(transaction -> {
+                    transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
+                    transaction.deleteRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, folderId);
+                });
     }
 
     @Test
     public void removeAll() throws Exception {
-        domainObjectSource.executeTransactional(transaction -> {
-            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
-            transaction.save(folder);
+        recordSource.executeTransactional(transaction -> {
+            long folderId = transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, new String[]{}, new Object[]{});
+            long folderId2 = transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, new String[]{}, new Object[]{});
 
-            StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(null);
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{null});
 
-            file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(null);
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{null});
 
-            file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(null);
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{null});
         });
 
-        domainObjectSource.executeTransactional(transaction -> transaction.removeAll(ExchangeFolderEditable.class));
-        try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
-            Assert.assertFalse(i.hasNext());
-        }
+        recordSource.executeTransactional(transaction -> transaction.clearTable(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE));
+        Assertions.assertThat(recordSource.select(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE).hasNext()).isFalse();
+
         new DomainService(domainObjectSource.getDbProvider(), schema)
                 .setChangeMode(ChangeMode.NONE)
                 .setValidationMode(true)
                 .setDomain(Schema.getEntity(ExchangeFolderEditable.class))
                 .execute();
 
-        domainObjectSource.executeTransactional(transaction -> {
-            ExchangeFolderEditable folder = transaction.create(ExchangeFolderEditable.class);
-            transaction.save(folder);
+        recordSource.executeTransactional(transaction -> {
+            long folderId = transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, new String[]{}, new Object[]{});
+            long folderId2 = transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE, new String[]{}, new Object[]{});
 
-            StoreFileEditable file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(null);
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{null});
 
-            file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{folderId2});
 
-            file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(folder.getId());
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{folderId2});
 
-            file = transaction.create(StoreFileEditable.class);
-            file.setFolderId(null);
-            transaction.save(file);
+            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    new String[]{"folder_id"}, new Object[]{null});
         });
 
-        try {
-            domainObjectSource.executeTransactional(transaction -> transaction.removeAll(ExchangeFolderEditable.class));
-            Assert.fail();
-        } catch (ForeignDependencyException e) {
-            try (IteratorEntity<ExchangeFolderReadable> i = domainObjectSource.find(ExchangeFolderReadable.class, EmptyFilter.INSTANCE)) {
-                Assert.assertTrue(i.hasNext());
-            }
-        }
+        Assertions.assertThatThrownBy(() -> recordSource
+                        .executeTransactional(transaction -> transaction.clearTable(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE)))
+                .isInstanceOf(ForeignDependencyException.class);
 
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.removeAll(StoreFileEditable.class);
-            transaction.removeAll(ExchangeFolderEditable.class);
+        recordSource.executeTransactional(transaction -> {
+            transaction.clearTable(STORE_FILE_NAME, STORE_FILE_NAMESPACE);
+            transaction.clearTable(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE);
         });
     }
 }

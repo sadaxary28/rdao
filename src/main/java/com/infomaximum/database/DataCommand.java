@@ -196,8 +196,11 @@ public class DataCommand extends DataReadCommand {
         }
 
         // delete self-object
-        dataCommand.singleDelete(table.getDataColumnFamily(),
-                FieldKey.buildKeyPrefix(record.getId())
+        byte[] lowerEndpointId = FieldKey.buildKeyPrefix(record.getId());
+        byte[] upperEndpointId = FieldKey.buildKeyPrefix(record.getId() + 1);
+        dataCommand.singleDeleteRange(table.getDataColumnFamily(),
+                lowerEndpointId,
+                upperEndpointId
         );
     }
 
@@ -217,7 +220,7 @@ public class DataCommand extends DataReadCommand {
         }
         for (FieldReference ref : references) {
             KeyPattern keyPattern = HashIndexKey.buildKeyPattern(ref.getHashIndex(), id);
-            try (DBIterator i = dataCommand.createIterator(ref.getNamespace() + ".index")) {
+            try (DBIterator i = dataCommand.createIterator(ref.getNamespace() + "." + ref.getName() + ".index")) {
                 KeyValue keyValue = i.seek(keyPattern);
                 if (keyValue != null) {
                     long referencingId = HashIndexKey.unpackId(keyValue.getKey());
@@ -240,7 +243,7 @@ public class DataCommand extends DataReadCommand {
         final HashIndexKey indexKey = new HashIndexKey(record.getId(), index);
 
         setHashValues(table.getFields(index.getFieldIds()), record, indexKey.getFieldValues());
-        dataCommand.singleDelete(table.getDataColumnFamily(), indexKey.pack());
+        dataCommand.singleDelete(table.getIndexColumnFamily(), indexKey.pack());
     }
 
     private void createIndexedValue(DBHashIndex index, Record record, DBTable table) throws DatabaseException {
@@ -295,7 +298,6 @@ public class DataCommand extends DataReadCommand {
         final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
         final DBField indexedField = table.getField(index.getIndexedFieldId());
         final IntervalIndexKey indexKey = new IntervalIndexKey(record.getId(), new long[hashedFields.length], index);
-
         // Add new value-index
         setHashValues(hashedFields, record, indexKey.getHashedValues());
         indexKey.setIndexedValue(record.getValues()[indexedField.getId()]);
@@ -323,7 +325,6 @@ public class DataCommand extends DataReadCommand {
     private void createIndexedValue(DBRangeIndex index, Record record, DBTable table) throws DatabaseException {
         final DBField[] hashedFields = table.getFields(index.getHashFieldIds());
         final RangeIndexKey indexKey = new RangeIndexKey(record.getId(), new long[hashedFields.length], index);
-
         // Add new value-index
         setHashValues(hashedFields, record, indexKey.getHashedValues());
         RangeIndexUtils.insertIndexedRange(index,
@@ -340,23 +341,11 @@ public class DataCommand extends DataReadCommand {
     }
 
     private static void setHashValues(DBField[] fields, Record record, long[] destination) {
-        setHashValues(fields, null, record, destination);
-    }
-
-    private static void setHashValues(DBField[] fields, Record prevRecord, Record record, long[] destination) {
         for (int i = 0; i < fields.length; ++i) {
             DBField field = fields[i];
-            Object value = getValue(field, prevRecord, record);
+            Object value = record.getValues()[field.getId()];
             destination[i] = HashIndexUtils.buildHash(field.getType(), value, null);
         }
-    }
-
-    private static Object getValue(DBField field, Record prevRecord, Record record) {
-        Object value = record.getValues()[field.getId()];
-        if (prevRecord != null && value == null) {
-            value = prevRecord.getValues()[field.getId()];
-        }
-        return value;
     }
 
     private void validateUpdatingValue(Record record, DBField field, Object value, DBTable table) throws DatabaseException {
