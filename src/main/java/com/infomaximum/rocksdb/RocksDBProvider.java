@@ -115,6 +115,15 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
     }
 
     @Override
+    public void compactRange() throws DatabaseException {
+        try {
+            rocksDB.compactRange();
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+    @Override
     public void close() {
         List<AbstractNativeReference> refs = new ArrayList<>(columnFamilies.size() + 3);
         refs.add(readOptions);

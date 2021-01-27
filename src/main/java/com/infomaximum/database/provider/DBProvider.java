@@ -13,6 +13,8 @@ public interface DBProvider extends DBDataReader {
     void createColumnFamily(String name) throws DatabaseException;
     void dropColumnFamily(String name) throws DatabaseException;
 
+    void compactRange() throws DatabaseException;
+
     boolean containsSequence(String name) throws DatabaseException;
     void createSequence(String name) throws DatabaseException;
     void dropSequence(String name) throws DatabaseException;
