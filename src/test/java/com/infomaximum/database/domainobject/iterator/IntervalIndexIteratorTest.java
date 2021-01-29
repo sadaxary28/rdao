@@ -7,6 +7,7 @@ import com.infomaximum.database.domainobject.filter.SortDirection;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -393,12 +394,12 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
     private <T> void assertValueEquals(List<T> expected, IntervalFilter filter) throws DatabaseException {
         filter.setSortDirection(SortDirection.ASC);
         List<T> actual = getValues(filter);
-        Assert.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(actual);
 
         filter.setSortDirection(SortDirection.DESC);
         actual = getValues(filter);
         Collections.reverse(expected);
-        Assert.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(actual);
     }
 
     private void assertIdEquals(List<Long> expected, IntervalFilter filter) throws DatabaseException {

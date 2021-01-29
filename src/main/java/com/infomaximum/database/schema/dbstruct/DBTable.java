@@ -152,6 +152,9 @@ public class DBTable extends DBObject {
     }
 
     public DBField getField(int id) throws SchemaException {
+        if (id >= sortedFields.size()) {
+            throw new FieldNotFoundException(id, getName());
+        }
         return sortedFields.get(id);
     }
 

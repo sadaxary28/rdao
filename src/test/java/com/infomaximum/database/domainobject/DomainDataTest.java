@@ -1,5 +1,6 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.RecordSource;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.FieldValueNotFoundException;
 import com.infomaximum.database.schema.Field;
@@ -18,6 +19,7 @@ public abstract class DomainDataTest extends RocksDataTest {
     protected RocksDBProvider rocksDBProvider;
 
     protected DomainObjectSource domainObjectSource;
+    protected RecordSource recordSource;
 
     @BeforeEach
     public void init() throws Exception {
@@ -26,6 +28,7 @@ public abstract class DomainDataTest extends RocksDataTest {
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
         Schema.create(rocksDBProvider);
         domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        recordSource = new RecordSource(rocksDBProvider);
     }
 
     @AfterEach
