@@ -5,10 +5,7 @@ import com.infomaximum.database.DataCommand;
 import com.infomaximum.database.Record;
 import com.infomaximum.database.RecordIterator;
 import com.infomaximum.database.RecordSource;
-import com.infomaximum.database.domainobject.filter.Filter;
-import com.infomaximum.database.domainobject.filter.HashFilter;
-import com.infomaximum.database.domainobject.filter.IdFilter;
-import com.infomaximum.database.domainobject.filter.PrefixFilter;
+import com.infomaximum.database.domainobject.filter.*;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.domain.ExchangeFolderReadable;
@@ -101,6 +98,15 @@ public abstract class StoreFileDataTest extends DomainDataTest {
         }
         if (filter instanceof IdFilter) {
             return dataCommand.select(tableName, namespace, (IdFilter) filter);
+        }
+        if (filter instanceof IntervalFilter) {
+            return dataCommand.select(tableName, namespace, (IntervalFilter) filter);
+        }
+        if (filter instanceof RangeFilter) {
+            return dataCommand.select(tableName, namespace, (RangeFilter) filter);
+        }
+        if (filter instanceof EmptyFilter) {
+            return dataCommand.select(tableName, namespace);
         }
         throw new UnsupportedOperationException();
     }
