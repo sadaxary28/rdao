@@ -61,8 +61,52 @@ public class Schema {
         return new Schema(dbProvider, readSchema(dbProvider));
     }
 
+    private static DBSchema createSchema(DBProvider dbProvider) throws DatabaseException {
+        dbProvider.createColumnFamily(SERVICE_COLUMN_FAMILY);
+
+        String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
+        String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
+        if (version != null || schemaJson != null) {
+            throw new SchemaException("Schema already exists");
+        }
+
+        DBSchema newSchema = DBSchema.fromStrings(CURRENT_VERSION, "[]");
+        saveSchema(newSchema, dbProvider);
+        return newSchema;
+    }
+
     public static boolean exists(DBProvider dbProvider) throws DatabaseException {
         return dbProvider.containsColumnFamily(SERVICE_COLUMN_FAMILY);
+    }
+
+    private static DBSchema readSchema(DBProvider dbProvider) throws DatabaseException {
+        String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
+        String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
+        validateSchema(version, schemaJson);
+        return DBSchema.fromStrings(version, schemaJson);
+    }
+
+    private static void validateSchema(String version, String schemaJson) throws DatabaseException {
+        if (version == null) {
+            if (schemaJson == null) {
+                throw new SchemaException("Schema not found");
+            }
+            throw new CorruptedException("Key 'version' not found");
+        } else if (schemaJson == null) {
+            throw new CorruptedException("Key 'schema' not found");
+        }
+
+        if (!CURRENT_VERSION.equals(version)) {
+            throw new SchemaException("Incorrect version of the database (" + version + "). Current version is " + CURRENT_VERSION + ".");
+        }
+    }
+
+    private static void saveSchema(DBSchema schema, DBProvider dbProvider) throws DatabaseException {
+        try (DBTransaction transaction = dbProvider.beginTransaction()) {
+            transaction.put(SERVICE_COLUMN_FAMILY, VERSION_KEY, TypeConvert.pack(schema.getVersion()));
+            transaction.put(SERVICE_COLUMN_FAMILY, SCHEMA_KEY, TypeConvert.pack(schema.toTablesJsonString()));
+            transaction.commit();
+        }
     }
 
     public DBProvider getDbProvider() {
@@ -91,7 +135,7 @@ public class Schema {
             throw new TableAlreadyExistsException(dbSchema.getTables().get(tableIndex));
         }
         for (TField tableField : table.getFields()) {
-            createField(tableField, table.getName(), table.getNamespace());
+            createField(tableField, dbTable);
         }
         for (THashIndex index : table.getHashIndexes()) {
             createIndex(index, dbTable);
@@ -205,6 +249,10 @@ public class Schema {
         return entity;
     }
 
+    private static <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
+        return new StructEntity(objClass);
+    }
+
     public Collection<StructEntity> getDomains() {
         return objTables.values();
     }
@@ -261,14 +309,36 @@ public class Schema {
 //        saveSchema();
 //    }
 
-    public void createField(TField tableField, Table table) throws DatabaseException {
-        createField(tableField, table.getName(), table.getNamespace());
+    @Deprecated
+    private DBField createField(Field tableField, DBTable dbTable, StructEntity table) throws DatabaseException {
+        int i = dbTable.findFieldIndex(tableField.getName());
+        if (i != -1) {
+            throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName(), dbTable.getNamespace());
+        }
+
+        Integer fTableId = tableField.getForeignDependency() != null
+                ? dbSchema.getTable(tableField.getForeignDependency().getName(), tableField.getForeignDependency().getNamespace()).getId()
+                : null;
+        DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
+        if (newField.isForeignKey()) {
+            createIndex(new HashIndex(tableField, table), dbTable, table);
+        }
+        saveSchema();
+        return newField;
     }
 
-    public DBField createField(TField tableField, String tableName, String namespace) throws DatabaseException {
-        DBField newField = dbSchema.createField(tableField.getName(), tableField.getType(), tableField.getForeignTable(), tableName, namespace);
+    private DBField createField(TField tableField, DBTable dbTable) throws DatabaseException {
+        int i = dbTable.findFieldIndex(tableField.getName());
+        if (i != -1) {
+            throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName(), dbTable.getNamespace());
+        }
+
+        Integer fTableId = tableField.getForeignTable() != null
+                ? dbSchema.getTable(tableField.getForeignTable().getName(), tableField.getForeignTable().getNamespace()).getId()
+                : null;
+        DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
         if (newField.isForeignKey()) {
-            createIndex(new THashIndex(tableField.getName()), tableName, namespace);
+            createIndex(new THashIndex(tableField.getName()), dbTable);
         }
         saveSchema();
         return newField;
@@ -291,6 +361,16 @@ public class Schema {
         return newField;
     }
 
+    public void createField(TField tableField, Table table) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
+        createField(tableField, dbTable);
+    }
+
+    public void createField(TField tableField, String tableName, String namespace) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(tableName, namespace);
+        createField(tableField, dbTable);
+    }
+
     public void insertField(int fieldId, TField tableField, Table table) throws DatabaseException {
         DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
         insertField(fieldId, tableField, dbTable);
@@ -300,19 +380,8 @@ public class Schema {
         DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
         insertField(fieldId, tableField, dbTable);
     }
-
-    public void createField(TField tableField, Table table) throws DatabaseException {
-        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
-        createField(tableField, dbTable);
-    }
-
-    public void createField(TField tableField, String tableName, String tableNamespace) throws DatabaseException {
-        DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
-        createField(tableField, dbTable);
-    }
-
     public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
-        dbSchema.dropField(fieldName, tableName, namespace);
+//        dbSchema.dropField(fieldName, tableName, namespace);
         DBTable table = dbSchema.getTable(tableName, namespace);
         int i = table.findFieldIndex(fieldName);
         if (i == -1) {
@@ -469,6 +538,18 @@ public class Schema {
         createIndex(index, table);
     }
 
+    @Deprecated
+    private void createIndex(RangeIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
+        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
+        if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
+            dbTable.attachIndex(dbIndex);
+            IndexService.doRangeIndex(index, table, dbProvider);
+            saveSchema();
+        } else {
+            throw new IndexAlreadyExistsException(index);
+        }
+    }
+
     public void createIndex(TRangeIndex index, DBTable table) throws DatabaseException {
         DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, table);
         if (table.getRangeIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
@@ -483,36 +564,6 @@ public class Schema {
     public void createIndex(TRangeIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
         createIndex(index, table);
-    }
-
-    private static DBSchema readSchema(DBProvider dbProvider) throws DatabaseException {
-        String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
-        String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
-        validateSchema(version, schemaJson);
-        return DBSchema.fromStrings(version, schemaJson);
-    }
-
-    private static void validateSchema(String version, String schemaJson) throws DatabaseException {
-        if (version == null) {
-            if (schemaJson == null) {
-                throw new SchemaException("Schema not found");
-            }
-            throw new CorruptedException("Key 'version' not found");
-        } else if (schemaJson == null) {
-            throw new CorruptedException("Key 'schema' not found");
-        }
-
-        if (!CURRENT_VERSION.equals(version)) {
-            throw new SchemaException("Incorrect version of the database (" + version + "). Current version is " + CURRENT_VERSION + ".");
-        }
-    }
-
-    private static void saveSchema(DBSchema schema, DBProvider dbProvider) throws DatabaseException {
-        try (DBTransaction transaction = dbProvider.beginTransaction()) {
-            transaction.put(SERVICE_COLUMN_FAMILY, VERSION_KEY, TypeConvert.pack(schema.getVersion()));
-            transaction.put(SERVICE_COLUMN_FAMILY, SCHEMA_KEY, TypeConvert.pack(schema.toTablesJsonString()));
-            transaction.commit();
-        }
     }
 
     @Deprecated
@@ -567,6 +618,16 @@ public class Schema {
         return true;
     }
 
+    private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
+        for (T dbIndex : indexes) {
+            if (predicate.test(dbIndex)) {
+                dropIndexData(dbIndex, table);
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Deprecated
     public boolean dropIndex(PrefixIndex index, String tableName, String namespace) throws DatabaseException {
         DBTable table = dbSchema.getTable(tableName, namespace);
@@ -592,140 +653,6 @@ public class Schema {
         table.dropIndex(targetIndex);
         saveSchema();
         return dropIndex(table.getRangeIndexes(), targetIndex::fieldsEquals, table);
-    }
-
-    private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
-        for (T dbIndex : indexes) {
-            if (predicate.test(dbIndex)) {
-                dropIndexData(dbIndex, table);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Deprecated
-    private void createIndex(RangeIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
-        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
-        if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
-            dbTable.attachIndex(dbIndex);
-            IndexService.doRangeIndex(index, table, dbProvider);
-            saveSchema();
-        } else {
-            throw new IndexAlreadyExistsException(index);
-        }
-    }
-
-    @Deprecated
-    private void createIndex(HashIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
-        DBHashIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
-        if (dbTable.getHashIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
-            dbTable.attachIndex(dbIndex);
-            IndexService.doIndex(index, table, dbProvider);
-            saveSchema();
-        } else if (index.sortedFields.size() != 1 || !dbTable.getField(index.sortedFields.get(0).getName()).isForeignKey()) {
-            throw new IndexAlreadyExistsException(index);
-        }
-    }
-
-    @Deprecated
-    private DBField createField(Field tableField, DBTable dbTable, StructEntity table) throws DatabaseException {
-        int i = dbTable.findFieldIndex(tableField.getName());
-        if (i != -1) {
-            throw new FieldAlreadyExistsException(tableField.getName(), dbTable.getName(), dbTable.getNamespace());
-        }
-
-        Integer fTableId = tableField.getForeignDependency() != null
-                ? dbSchema.getTable(tableField.getForeignDependency().getName(), tableField.getForeignDependency().getNamespace()).getId()
-                : null;
-        DBField newField = dbTable.newField(tableField.getName(), tableField.getType(), fTableId);
-        if (newField.isForeignKey()) {
-            createIndex(new HashIndex(tableField, table), dbTable, table);
-        }
-        saveSchema();
-        return newField;
-    }
-
-    @Deprecated
-    private void createIndex(IntervalIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
-        DBIntervalIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
-        if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
-            dbTable.attachIndex(dbIndex);
-            IndexService.doIntervalIndex(index, table, dbProvider);
-            saveSchema();
-        } else {
-            throw new IndexAlreadyExistsException(index);
-        }
-    }
-
-    @Deprecated
-    private void createIndex(PrefixIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
-        DBPrefixIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
-        if (dbTable.getPrefixIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
-            dbTable.attachIndex(dbIndex);
-            IndexService.doPrefixIndex(index, table, dbProvider);
-            saveSchema();
-        } else {
-            throw new IndexAlreadyExistsException(index);
-        }
-    }
-
-    @Deprecated
-    private void createIndex(RangeIndex index, DBTable dbTable, StructEntity table) throws DatabaseException {
-        DBRangeIndex dbIndex = DBTableUtils.buildIndex(index, dbTable);
-        if (dbTable.getIntervalIndexes().stream().noneMatch(dbIndex::fieldsEquals)) {
-            dbTable.attachIndex(dbIndex);
-            IndexService.doRangeIndex(index, table, dbProvider);
-            saveSchema();
-        } else {
-            throw new IndexAlreadyExistsException(index);
-        }
-    }
-
-    private static <T extends DomainObject> StructEntity buildObjTable(Class<T> objClass) throws SchemaException {
-        return new StructEntity(objClass);
-    }
-
-    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, List<T> indexes, DBTable table) throws DatabaseException {
-        List<T> removedIndexes = new ArrayList<>();
-        Iterator<T> it = indexes.iterator();
-        while (it.hasNext()) {
-            T index = it.next();
-            if (index.fieldContains(field.getId())) {
-                removedIndexes.add(index);
-                dropIndexData(index, table);
-                it.remove();
-            }
-        }
-        return removedIndexes;
-    }
-
-    private <T extends DBIndex> List<T> dropIndexesByField(DBField field, Stream<T> indexes, DBTable table) throws DatabaseException {
-        return dropIndexesByField(field, indexes.collect(Collectors.toList()), table);
-    }
-
-    private <T extends DBIndex> boolean dropIndex(List<T> indexes, Predicate<T> predicate, DBTable table) throws DatabaseException {
-        for (T dbIndex : indexes) {
-            if (predicate.test(dbIndex)) {
-                dropIndexData(dbIndex, table);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static DBSchema createSchema(DBProvider dbProvider) throws DatabaseException {
-        dbProvider.createColumnFamily(SERVICE_COLUMN_FAMILY);
-
-        String version = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, VERSION_KEY));
-        String schemaJson = TypeConvert.unpackString(dbProvider.getValue(SERVICE_COLUMN_FAMILY, SCHEMA_KEY));
-        if (version != null || schemaJson != null) {
-            throw new SchemaException("Schema already exists");
-        }
-
-        DBSchema newSchema = DBSchema.fromStrings(CURRENT_VERSION, "[]");
-        saveSchema(newSchema, dbProvider);
-        return newSchema;
     }
 
     private void saveSchema() throws DatabaseException {
