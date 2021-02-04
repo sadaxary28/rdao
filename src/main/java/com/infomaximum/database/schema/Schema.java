@@ -200,6 +200,7 @@ public class Schema {
         }
 
         DBTable table = dbSchema.getTables().remove(i);
+        dbSchema.dropTable(name, namespace);
         if (actionMode == ActionMode.VALIDATE && hasDependenceOfOtherTable(table.getId())) {
             throw new TableRemoveException("Can't remove table: " + namespace + "." + name + ", there are dependencies on the table");
         }

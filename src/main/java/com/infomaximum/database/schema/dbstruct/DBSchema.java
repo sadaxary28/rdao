@@ -59,10 +59,9 @@ public class DBSchema {
     }
 
     public DBTable getTableById(int id) throws SchemaException {
-        if (tables.size() <= id) {
-            throw new TableNotFoundException("Table with id: " + id + " doesn't found");
-        }
-        return tables.get(id);
+        return tables.stream().filter(table ->  table.getId() == id)
+                .findAny()
+                .orElseThrow(() -> new TableNotFoundException("Table with id: " + id + " doesn't found"));
     }
 
     public List<DBTable> getTablesByNamespace(String namespace) throws SchemaException {
