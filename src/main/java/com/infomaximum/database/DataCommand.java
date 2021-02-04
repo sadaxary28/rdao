@@ -278,7 +278,7 @@ public class DataCommand extends DataReadCommand {
     private void updateIndexedValue(DBPrefixIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
         List<String> deletingLexemes = new ArrayList<>();
         List<String> insertingLexemes = new ArrayList<>();
-        PrefixIndexUtils.diffIndexedLexemes(table.getFields(index.getFieldIds()), prevRecord.getValues(), record.getValues(), deletingLexemes, insertingLexemes);
+        PrefixIndexUtils.diffIndexedLexemes(index.getFieldIds(), prevRecord.getValues(), record.getValues(), deletingLexemes, insertingLexemes);
         PrefixIndexUtils.removeIndexedLexemes(index, record.getId(), deletingLexemes, table, dataCommand);
         createIndexedValue(index, record, table);
     }

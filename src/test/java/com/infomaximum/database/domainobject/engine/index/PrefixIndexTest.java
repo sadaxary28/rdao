@@ -159,10 +159,8 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         final String newFileName = " Test sTrIng inform@mail. \r";
-        domainObjectSource.executeTransactional(transaction -> {
-            StoreFileEditable obj = transaction.get(StoreFileEditable.class, 1);
-            obj.setFileName(newFileName);
-            transaction.save(obj);
+        recordSource.executeTransactional(transaction -> {
+            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"name"}, new Object[]{newFileName});
         });
 
         List<String> currentLexemes = new ArrayList<>(Arrays.asList("test", "string", "inform@mail.", "mail."));
@@ -175,7 +173,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
             }
         }
 
-        Assert.assertEquals(0, currentLexemes.size());
+        Assertions.assertThat(currentLexemes.size()).isEqualTo(0);
     }
 
     private static void assertEquals(int expectedBlock, byte[] expectedValue, List<String> expectedLexemes, KeyValue actual) {

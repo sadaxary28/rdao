@@ -40,7 +40,7 @@ public class PrefixIndexUtils {
         diffIndexedLexemes(fields, prevValues, newValues, outDeletingLexemes, outInsertingLexemes, Field::getNumber);
     }
 
-    public static void diffIndexedLexemes(DBField[] fields, Object[] prevValues, Object[] newValues,
+    public static void diffIndexedLexemes(int[] fieldIds, Object[] prevValues, Object[] newValues,
                                           Collection<String> outDeletingLexemes, Collection<String> outInsertingLexemes) {
         outDeletingLexemes.clear();
         outInsertingLexemes.clear();
@@ -48,12 +48,12 @@ public class PrefixIndexUtils {
         SortedSet<String> prevLexemes = buildSortedSet();
         SortedSet<String> newLexemes = buildSortedSet();
 
-        for (DBField field : fields) {
-            Object prevValue = prevValues[field.getId()];
+        for (int fieldId : fieldIds) {
+            Object prevValue = prevValues[fieldId];
             String prevText = prevValue != null ? (String) prevValue : null;
             PrefixIndexUtils.splitIndexingTextIntoLexemes(prevText, prevLexemes);
 
-            Object newValue = field.getId() < newValues.length ? newValues[field.getId()] : prevValue;
+            Object newValue = fieldId < newValues.length ? newValues[fieldId] : prevValue;
             if (newValue != null) {
                 String newText = (String) newValue;
                 PrefixIndexUtils.splitIndexingTextIntoLexemes(newText, newLexemes);
