@@ -208,8 +208,6 @@ public class Schema {
         dbProvider.dropColumnFamily(table.getIndexColumnFamily());
         dbProvider.dropSequence(table.getDataColumnFamily());
 
-        removeObjTable(name, namespace);
-
         saveSchema();
         return true;
     }
@@ -678,17 +676,6 @@ public class Schema {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
             transaction.singleDeleteRange(table.getIndexColumnFamily(), new KeyPattern(index.getAttendant()));
             transaction.commit();
-        }
-    }
-
-    private void removeObjTable(String name, String namespace) {
-        Iterator<Map.Entry<Class<? extends DomainObject>, StructEntity>> i = objTables.entrySet().iterator();
-        while (i.hasNext()) {
-            StructEntity table = i.next().getValue();
-            if (table.getName().equals(name) && table.getNamespace().equalsIgnoreCase(namespace)) {
-                i.remove();
-            }
-            tableClasses.remove(new TableReference(name, namespace));
         }
     }
 
