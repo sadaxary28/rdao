@@ -152,6 +152,33 @@ public class Schema {
         saveSchema();
     }
 
+    public void clearTable(String name, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(name, namespace);
+
+        List<DBTable> dependenceTables = getDependenciesOfOtherTable(table.getId());
+        if (!dependenceTables.isEmpty()) {
+            for (DBTable dependenceTable : dependenceTables) {
+                try(DBIterator it = dbProvider.createIterator(dependenceTable.getDataColumnFamily())) {
+                    if (it.seek(null) != null) {
+                        throw new TableClearException("Can't clear table: "
+                                + namespace + "." + name +
+                                ", there are dependencies on the data table. " +
+                                ". Clear a dependence table before: "
+                                + dependenceTable.getNamespace() + "." + dependenceTable.getName());
+                    }
+                }
+            }
+        }
+
+        dbProvider.dropColumnFamily(table.getDataColumnFamily());
+        dbProvider.dropColumnFamily(table.getIndexColumnFamily());
+        dbProvider.dropSequence(table.getDataColumnFamily());
+
+        dbProvider.createColumnFamily(table.getDataColumnFamily());
+        dbProvider.createColumnFamily(table.getIndexColumnFamily());
+        dbProvider.createSequence(table.getDataColumnFamily());
+    }
+
     public Table getTable(String name, String namespace) {
         DBTable dbTable = dbSchema.getTable(name, namespace);
         return TableUtils.buildTable(dbTable, dbSchema);
@@ -692,5 +719,20 @@ public class Schema {
             }
         }
         return false;
+    }
+
+    private List<DBTable> getDependenciesOfOtherTable(int tableId) {
+        List<DBTable> result = new ArrayList<>();
+        for (DBTable table : getDbSchema().getTables()) {
+            if(table.getId() == tableId) {
+                continue;
+            }
+            for (DBField field : table.getSortedFields()) {
+                if (field.isForeignKey() && field.getForeignTableId() == tableId) {
+                    result.add(table);
+                }
+            }
+        }
+        return result;
     }
 }

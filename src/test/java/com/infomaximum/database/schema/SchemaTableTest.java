@@ -3,10 +3,10 @@ package com.infomaximum.database.schema;
 import com.infomaximum.database.domainobject.DomainObject;
 import com.infomaximum.database.domainobject.filter.*;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
-import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.FieldAlreadyExistsException;
-import com.infomaximum.database.exception.TableNotFoundException;
-import com.infomaximum.database.exception.TableRemoveException;
+import com.infomaximum.database.exception.*;
+import com.infomaximum.database.provider.DBIterator;
+import com.infomaximum.database.provider.KeyValue;
+import com.infomaximum.database.schema.dbstruct.DBTable;
 import com.infomaximum.database.schema.table.*;
 import com.infomaximum.domain.*;
 import org.assertj.core.api.Assertions;
@@ -162,6 +162,112 @@ public class SchemaTableTest extends DomainDataJ5Test {
                 rangeIndexes
         );
         assertThatSchemaContainsTable(expected);
+    }
+
+    @Test
+    @DisplayName("Очищает таблицу с полями с зависимостями и всеми индексами")
+    void clearTableWithDependenciesAndIndexesTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
+        Table storeFolderTable = createStoreFolderTable();
+        //Добавляем новые данные в таблицу
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable ex = transaction.create(ExchangeFolderEditable.class);
+            ex.setUuid("1243");
+            ex.setUserEmail("email");
+            transaction.save(ex);
+
+            ExchangeFolderEditable ex2 = transaction.create(ExchangeFolderEditable.class);
+            ex.setUuid("12435");
+            ex.setUserEmail("email2");
+            ex.setParentId(ex.getId());
+            transaction.save(ex2);
+
+            StoreFileEditable storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(123L);
+            storeFileEditable.setBegin(124L);
+            storeFileEditable.setEnd(144L);
+            storeFileEditable.setFileName("FileName2");
+            storeFileEditable.setFolderId(ex.getId());
+            storeFileEditable.setDouble(12.7);
+            transaction.save(storeFileEditable);
+
+            storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(11L);
+            storeFileEditable.setBegin(1L);
+            storeFileEditable.setEnd(2L);
+            storeFileEditable.setFolderId(ex2.getId());
+            storeFileEditable.setFileName("FileName2");
+            storeFileEditable.setDouble(13.4);
+            transaction.save(storeFileEditable);
+        });
+
+
+        //Делаем очистку
+        schema.clearTable("StoreFile", "com.infomaximum.store");
+        assertThatTableIsEmpty(storeFolderTable);
+
+        schema.clearTable("ExchangeFolder", "com.infomaximum.exchange");
+        assertThatTableIsEmpty(exchangeFolderTable);
+
+        Table expectedStoreFile = new Table("StoreFile",
+                "com.infomaximum.store",
+                storeFolderTable.getFields(),
+                storeFolderTable.getHashIndexes(),
+                storeFolderTable.getPrefixIndexes(),
+                storeFolderTable.getIntervalIndexes(),
+                storeFolderTable.getRangeIndexes()
+        );
+        assertThatSchemaContainsTable(expectedStoreFile);
+
+        Table expected = new Table("ExchangeFolder",
+                "com.infomaximum.exchange",
+                exchangeFolderTable.getFields(),
+                exchangeFolderTable.getHashIndexes(),
+                exchangeFolderTable.getPrefixIndexes(),
+                exchangeFolderTable.getIntervalIndexes(),
+                exchangeFolderTable.getRangeIndexes()
+        );
+        assertThatSchemaContainsTable(expected);
+    }
+
+    @Test
+    @DisplayName("Проверка ошибки очистки таблицы из-за наличия зависимости от этой таблицы")
+    void errorClearTableWithDependenciesTest() throws Exception {
+        Table exchangeFolderTable = createExchangeFolderTable();
+        Table storeFolderTable = createStoreFolderTable();
+        //Добавляем новые данные в таблицу
+        domainObjectSource.executeTransactional(transaction -> {
+            ExchangeFolderEditable ex = transaction.create(ExchangeFolderEditable.class);
+            ex.setUuid("1243");
+            ex.setUserEmail("email");
+            transaction.save(ex);
+
+            ExchangeFolderEditable ex2 = transaction.create(ExchangeFolderEditable.class);
+            ex.setUuid("12435");
+            ex.setUserEmail("email2");
+            ex.setParentId(ex.getId());
+            transaction.save(ex2);
+
+            StoreFileEditable storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(123L);
+            storeFileEditable.setBegin(124L);
+            storeFileEditable.setEnd(144L);
+            storeFileEditable.setFileName("FileName2");
+            storeFileEditable.setFolderId(ex.getId());
+            storeFileEditable.setDouble(12.7);
+            transaction.save(storeFileEditable);
+
+            storeFileEditable = transaction.create(StoreFileEditable.class);
+            storeFileEditable.setSize(11L);
+            storeFileEditable.setBegin(1L);
+            storeFileEditable.setEnd(2L);
+            storeFileEditable.setFolderId(ex2.getId());
+            storeFileEditable.setFileName("FileName2");
+            storeFileEditable.setDouble(13.4);
+            transaction.save(storeFileEditable);
+        });
+
+        Assertions.assertThatThrownBy(() -> schema.clearTable("ExchangeFolder", "com.infomaximum.exchange")).isInstanceOf(TableClearException.class);
     }
 
     //Удаление таблицы_____________________________________________
@@ -680,6 +786,29 @@ public class SchemaTableTest extends DomainDataJ5Test {
         String indexColumnFamily = expected.getNamespace() + "." + expected.getName() + ".index";
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(dataColumnFamily)).isTrue();
         Assertions.assertThat(rocksDBProvider.containsColumnFamily(indexColumnFamily)).isTrue();
+    }
+
+    private void assertThatTableIsEmpty(String name, String namespace) throws DatabaseException {
+        Schema schema = Schema.read(rocksDBProvider);
+        DBTable table = schema.getDbSchema().getTable(name, namespace);
+
+        try (DBIterator it = rocksDBProvider.createIterator(table.getDataColumnFamily())){
+            KeyValue kv = it.seek(null);
+            Assertions.assertThat(kv)
+                    .as("Table %s.%s doesn't empty", namespace, name)
+                    .isNull();
+        }
+
+        try (DBIterator it = rocksDBProvider.createIterator(table.getIndexColumnFamily())){
+            KeyValue kv = it.seek(null);
+            Assertions.assertThat(kv)
+                    .as("Table %s.%s doesn't empty. Indexes doesn't empty", namespace, name)
+                    .isNull();
+        }
+    }
+
+    private void assertThatTableIsEmpty(Table table) throws DatabaseException {
+        assertThatTableIsEmpty(table.getName(), table.getNamespace());
     }
 
     private void assertTableDoesntExist(String name, String namespace) throws DatabaseException {
