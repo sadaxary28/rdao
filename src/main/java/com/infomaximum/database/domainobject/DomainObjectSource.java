@@ -50,7 +50,7 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     public Transaction buildTransaction() {
-        return new Transaction(getDbProvider()); //TODO V.Bukharkin
+        return new Transaction(getDbProvider());
     }
 
     @Override

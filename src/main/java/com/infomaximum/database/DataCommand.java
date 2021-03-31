@@ -204,7 +204,6 @@ public class DataCommand extends DataReadCommand {
         );
     }
 
-    //todo Bukharkin Проверить перфоманс
     public void clearTable(String table, String namespace) throws DatabaseException {
         try (RecordIterator ri = select(table, namespace)) {
             while (ri.hasNext()){
@@ -254,7 +253,6 @@ public class DataCommand extends DataReadCommand {
         dataCommand.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
     }
 
-    //todo V.Bukharkin проверить перфоманс
     private void updateIndexedValue(DBHashIndex index, Record prevRecord, Record record, DBTable table) throws DatabaseException {
         removeIndexedValue(index, prevRecord, table);
         createIndexedValue(index, record, table);

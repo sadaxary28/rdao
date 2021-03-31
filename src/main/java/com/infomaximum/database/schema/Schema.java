@@ -706,7 +706,6 @@ public class Schema {
         }
     }
 
-    //todo V.Bukharkin медленный способ, нужно придумать быстрее
     private boolean hasDependenceOfOtherTable(int tableId) {
         for (DBTable table : getDbSchema().getTables()) {
             if(table.getId() == tableId) {

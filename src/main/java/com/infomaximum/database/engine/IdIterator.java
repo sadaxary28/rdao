@@ -30,11 +30,6 @@ public class IdIterator extends BaseRecordIterator {
         }
     }
 
-//    @Override
-//    public void reuseReturningRecord(boolean value) {
-//        // TODO realize
-//    }
-
     @Override
     public boolean hasNext() throws DatabaseException {
         return !state.isEmpty();
