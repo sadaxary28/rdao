@@ -13,7 +13,7 @@ import org.junit.Test;
 public class IndexTest extends StoreFileDataTest {
 
     @Test
-    public void notFoundIndex() throws Exception {
+    public void notFoundIndex() {
         try {
             domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_BEGIN_TIME, null));
             Assert.fail();
@@ -118,7 +118,7 @@ public class IndexTest extends StoreFileDataTest {
         });
 
         // find
-        for (long size = (0 + 2 * recordCount); size < (recordCount + 2 * recordCount); size++) {
+        for (long size = (2 * recordCount); size < (recordCount + 2 * recordCount); size++) {
             try (IteratorEntity<StoreFileReadable> i = domainObjectSource.find(StoreFileReadable.class, new HashFilter(StoreFileReadable.FIELD_SIZE, size))) {
                 Assert.assertTrue(i.hasNext());
                 Assert.assertEquals(size, i.next().getSize());

@@ -21,7 +21,7 @@ public abstract class DomainObject implements Serializable {
 
     public DomainObject(long id) {
         if (id < 1) {
-            throw new IllegalArgumentException("id = " + Long.toString(id));
+            throw new IllegalArgumentException("id = " + id);
         }
         this.id = id;
         this.loadedFieldValues = new Value[getStructEntity().getFields().length];

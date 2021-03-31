@@ -251,8 +251,7 @@ public class PrefixIndexUtils {
         }
 
         int matchCount = 0;
-        for (int i = 0; i < sortedSearchingWords.size(); ++i) {
-            String word = sortedSearchingWords.get(i);
+        for (String word : sortedSearchingWords) {
             for (int j = 0; j < tempList.size(); ++j) {
                 if (tempList.get(j).startsWith(word)) {
                     tempList.remove(j);

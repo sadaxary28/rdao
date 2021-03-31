@@ -58,9 +58,7 @@ public abstract class DomainDataTest extends RocksDataTest {
             if (loadingFields.contains(field.getNumber())) {
                 continue;
             }
-            Assertions.assertThrows(FieldValueNotFoundException.class, () -> {
-                target.get(field.getNumber());
-            });
+            Assertions.assertThrows(FieldValueNotFoundException.class, () -> target.get(field.getNumber()));
         }
     }
 }

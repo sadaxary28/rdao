@@ -98,7 +98,7 @@ public class AllIteratorTest extends StoreFileDataTest {
     }
 
     @Test
-    public void iterateTransactional() throws Exception {
+    public void iterateTransactional() {
         try (Transaction transaction = domainObjectSource.buildTransaction()) {
             // insert
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 public class PathUtilsTest {
 
     @Test
-    public void checkPath() throws Exception {
+    public void checkPath() {
         if (!Environment.isWindows()) return;
 
         PathUtils.checkPath(Paths.get("c:/test"));

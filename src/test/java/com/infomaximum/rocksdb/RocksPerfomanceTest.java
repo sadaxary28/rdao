@@ -129,7 +129,7 @@ public class RocksPerfomanceTest {
                     Assert.assertNotNull(value);
                 }
                 double mediana = (new Median()).evaluate(times);
-                System.out.println(Long.toString(keyCount) + "\t" + Long.toString((long)mediana));
+                System.out.println(Long.toString(keyCount) + "\t" + (long) mediana);
             }
 
             FileUtils.deleteDirectory(pathDataBase.toAbsolutePath().toFile());

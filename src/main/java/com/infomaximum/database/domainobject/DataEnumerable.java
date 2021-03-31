@@ -24,7 +24,7 @@ public abstract class DataEnumerable {
 
     public static class NextState {
 
-        private long nextId = -1;
+        private long nextId;
 
         private NextState(long recordId) {
             this.nextId = recordId;

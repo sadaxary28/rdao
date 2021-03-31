@@ -35,7 +35,7 @@ public class DataCommandTest extends StoreFileDataTest {
     }
 
     @Test()
-    public void selectAllIteratorNoneObjects() throws Exception {
+    public void selectAllIteratorNoneObjects() {
         try (RecordIterator iterator = recordSource.select("StoreFile", "com.infomaximum.store")){
             Assertions.assertThat(iterator.hasNext()).isFalse();
         }
@@ -229,7 +229,7 @@ public class DataCommandTest extends StoreFileDataTest {
 
     @Test
     @DisplayName("Проверка HashIndex итератора. Не должен упасть с NPE при отстутствии объектов в бд")
-    public void selectHashIteratorNoneObjects() throws Exception {
+    public void selectHashIteratorNoneObjects() {
         try (RecordIterator iterator = recordSource
                 .select("StoreFile", "com.infomaximum.store", new HashFilter(StoreFileReadable.FIELD_SINGLE, false)
                         .appendField(StoreFileReadable.FIELD_FILE_NAME, "name"))) {

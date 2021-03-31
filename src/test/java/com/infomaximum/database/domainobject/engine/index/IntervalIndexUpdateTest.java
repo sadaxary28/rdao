@@ -13,14 +13,10 @@ public class IntervalIndexUpdateTest extends IntervalTest {
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L);
-        });
+        recordSource.executeTransactional(transaction -> transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 2L);
-        });
+        recordSource.executeTransactional(transaction -> transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 2L));
         assertValueEquals(Arrays.asList(-4L, 0L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
     }
 
@@ -30,14 +26,10 @@ public class IntervalIndexUpdateTest extends IntervalTest {
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L);
-        });
+        recordSource.executeTransactional(transaction -> transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new String[]{"size"}, new Object[]{-2L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new String[]{"size"}, new Object[]{-2L}));
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
     }
@@ -48,14 +40,10 @@ public class IntervalIndexUpdateTest extends IntervalTest {
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L, new String[]{"size"}, new Object[]{3L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L, new String[]{"size"}, new Object[]{3L}));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L, new String[]{"size"}, new Object[]{8L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 4L, new String[]{"size"}, new Object[]{8L}));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 5L, 8L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
     }
 

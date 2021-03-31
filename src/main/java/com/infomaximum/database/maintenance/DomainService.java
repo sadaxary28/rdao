@@ -147,8 +147,7 @@ public class DomainService {
         FieldKey fieldKey = new FieldKey(0);
 
         RangeSet<Long>[] processedIds = new RangeSet[domain.getFields().length];
-        for (int i = 0; i < foreignFields.size(); ++i) {
-            Field field = foreignFields.get(i);
+        for (Field field : foreignFields) {
             processedIds[field.getNumber()] = TreeRangeSet.create();
         }
 
@@ -157,8 +156,7 @@ public class DomainService {
             while (iter.hasNext()) {
                 DomainObject obj = iter.next();
 
-                for (int i = 0; i < foreignFields.size(); ++i) {
-                    Field field = foreignFields.get(i);
+                for (Field field : foreignFields) {
                     Long value = obj.get(field.getNumber());
                     if (value == null) {
                         continue;

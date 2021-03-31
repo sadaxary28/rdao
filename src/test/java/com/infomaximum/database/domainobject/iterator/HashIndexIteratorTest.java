@@ -132,7 +132,7 @@ public class HashIndexIteratorTest extends StoreFileDataTest {
     }
 
     @Test
-    public void findTransactional() throws Exception {
+    public void findTransactional() {
         try (Transaction transaction = domainObjectSource.buildTransaction()) {
             // insert
             StoreFileEditable obj = transaction.create(StoreFileEditable.class);

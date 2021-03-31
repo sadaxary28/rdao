@@ -46,10 +46,8 @@ public class TransactionTest extends StoreFileDataTest {
         String contentType="info.json";
         long size=1000L;
 
-        recordSource.executeTransactional(transaction -> {
-            transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
-                    new String[]{"name", "size", "type"}, new Object[] {fileName, size, contentType});
-        });
+        recordSource.executeTransactional(transaction -> transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                new String[]{"name", "size", "type"}, new Object[] {fileName, size, contentType}));
 
         //Загружаем сохраненый объект
         Record storeFileCheckSave = recordSource.executeFunctionTransactional(transaction -> transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1));
@@ -61,10 +59,8 @@ public class TransactionTest extends StoreFileDataTest {
 
     @Test
     public void update() throws Exception {
-        recordSource.executeTransactional(transaction -> {
-            transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE,
-                    new String[]{}, new Object[]{});
-        });
+        recordSource.executeTransactional(transaction -> transaction.insertRecord(FOLDER_FILE_NAME, FOLDER_FILE_NAMESPACE,
+                new String[]{}, new Object[]{}));
         long recordId = recordSource.executeFunctionTransactional(transaction ->
                 transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
                 new String[]{}, new Object[]{}));
@@ -96,12 +92,10 @@ public class TransactionTest extends StoreFileDataTest {
                 new IntervalFilter(StoreFileReadable.FIELD_DOUBLE, 0d, 1d)).hasNext()).isTrue();
 
         //Редактируем сохраненный объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
-                    recordId,
-                    new String[]{"name", "folder_id", "single", "data", "double"},
-                    new Object[]{null, null, null, null, null});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                recordId,
+                new String[]{"name", "folder_id", "single", "data", "double"},
+                new Object[]{null, null, null, null, null}));
         obj = recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
         Assertions.assertThat(obj).isNotNull();
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_FILE_NAME]).isNull();
@@ -127,12 +121,10 @@ public class TransactionTest extends StoreFileDataTest {
 
 
         //Повторно редактируем сохраненный объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
-                    recordId,
-                    new String[]{"name", "data"},
-                    new Object[]{"", new byte[] {TypeConvert.NULL_BYTE_ARRAY_SCHIELD, 1, 2}});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                recordId,
+                new String[]{"name", "data"},
+                new Object[]{"", new byte[] {TypeConvert.NULL_BYTE_ARRAY_SCHIELD, 1, 2}}));
         obj = recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, recordId);
         Assertions.assertThat(obj).isNotNull();
         Assertions.assertThat(obj.getValues()[StoreFileReadable.FIELD_FILE_NAME]).isEqualTo("");
@@ -142,10 +134,8 @@ public class TransactionTest extends StoreFileDataTest {
     @Test
     public void updateByNonExistenceObject() {
         Assertions.assertThatThrownBy(() ->
-                recordSource.executeTransactional(transaction -> {
-                    transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
-                            new String[]{"folder_id"}, new Object[] {256L});
-        })).isInstanceOf(ForeignDependencyException.class);
+                recordSource.executeTransactional(transaction -> transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                        new String[]{"folder_id"}, new Object[] {256L}))).isInstanceOf(ForeignDependencyException.class);
     }
 
     @Test

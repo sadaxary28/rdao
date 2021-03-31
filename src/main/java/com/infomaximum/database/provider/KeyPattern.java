@@ -84,8 +84,8 @@ public class KeyPattern implements Serializable {
             return MATCH_RESULT_SUCCESS;
         }
 
-        for (int i = 0; i < orPatterns.length; ++i) {
-            if (orPatterns[i].match(key)) {
+        for (Postfix orPattern : orPatterns) {
+            if (orPattern.match(key)) {
                 return MATCH_RESULT_SUCCESS;
             }
         }

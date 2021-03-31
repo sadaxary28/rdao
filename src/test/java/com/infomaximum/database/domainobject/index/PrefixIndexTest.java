@@ -39,7 +39,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
     }
 
     @Test
-    public void notFoundIndex() throws Exception {
+    public void notFoundIndex() {
         try {
             domainObjectSource.find(StoreFileReadable.class, new PrefixFilter(StoreFileReadable.FIELD_BEGIN_TIME, null));
             Assert.fail();
@@ -149,9 +149,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         byte[] buffer = createRecords(recordCount).array();
 
         final long removingId = 7;
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, removingId));
-        });
+        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, removingId)));
         buffer = PrefixIndexUtils.removeId(removingId, buffer);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);

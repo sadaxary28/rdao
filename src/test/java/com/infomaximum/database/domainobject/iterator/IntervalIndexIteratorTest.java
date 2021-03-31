@@ -52,8 +52,8 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -4L, 5L);
         assertValueEquals(Arrays.asList(-4L, -2L), StoreFileReadable.FIELD_SIZE, -4L, -1L);
         assertValueEquals(Arrays.asList(-2L, 0L, 3L), StoreFileReadable.FIELD_SIZE, -3L, 4L);
-        assertValueEquals(Arrays.asList(3L), StoreFileReadable.FIELD_SIZE, 1L, 4L);
-        assertValueEquals(Arrays.asList(), StoreFileReadable.FIELD_SIZE, 6L, 8L);
+        assertValueEquals(Collections.singletonList(3L), StoreFileReadable.FIELD_SIZE, 1L, 4L);
+        assertValueEquals(Collections.emptyList(), StoreFileReadable.FIELD_SIZE, 6L, 8L);
     }
 
     @Test
@@ -170,9 +170,9 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
         assertValueEquals(Arrays.asList(-4.0, -2.0), StoreFileReadable.FIELD_DOUBLE, -4.0, -1.0);
         assertValueEquals(Arrays.asList(-2.0, -0.0, 0.0, Double.MIN_VALUE, 2.0000089, 2.0001, 3.0), StoreFileReadable.FIELD_DOUBLE, -3.0, 4.0);
         assertValueEquals(Arrays.asList(2.0000089, 2.0001, 3.0), StoreFileReadable.FIELD_DOUBLE, 2.0, 4.0);
-        assertValueEquals(Arrays.asList(), StoreFileReadable.FIELD_DOUBLE, 6.0, 8.0);
+        assertValueEquals(Collections.emptyList(), StoreFileReadable.FIELD_DOUBLE, 6.0, 8.0);
 
-        assertValueEquals(Arrays.asList(Double.MAX_VALUE), StoreFileReadable.FIELD_DOUBLE, 1000.0, Double.MAX_VALUE);
+        assertValueEquals(Collections.singletonList(Double.MAX_VALUE), StoreFileReadable.FIELD_DOUBLE, 1000.0, Double.MAX_VALUE);
         assertValueEquals(Arrays.asList(Double.MAX_VALUE, Double.POSITIVE_INFINITY, Double.NaN), StoreFileReadable.FIELD_DOUBLE, Double.MAX_VALUE, Double.NaN);
         assertValueEquals(Arrays.asList(Double.NEGATIVE_INFINITY, -9.0, -4.0, -2.0, -0.0, 0.0, Double.MIN_VALUE, 2.0000089, 2.0001, 3.0, 5.0, Double.MAX_VALUE, Double.POSITIVE_INFINITY),
                 StoreFileReadable.FIELD_DOUBLE,
@@ -218,9 +218,9 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         assertValueEquals(Arrays.asList(-4L, 3L, 5L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name1));
-        assertValueEquals(Arrays.asList(-2L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
+        assertValueEquals(Collections.singletonList(-2L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, name2));
-        assertValueEquals(Arrays.asList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
+        assertValueEquals(Collections.emptyList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, -1L)
                 .appendHashedField(StoreFileReadable.FIELD_FILE_NAME, "name3"));
     }
 
@@ -247,11 +247,11 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
 
         assertIdEquals(Arrays.asList(2L, 1L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
-        assertIdEquals(Arrays.asList(1L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, 5L, 5L)
+        assertIdEquals(Collections.singletonList(1L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, 5L, 5L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 1L));
-        assertIdEquals(Arrays.asList(3L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertIdEquals(Collections.singletonList(3L), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 2L));
-        assertIdEquals(Arrays.asList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
+        assertIdEquals(Collections.emptyList(), new IntervalFilter(StoreFileReadable.FIELD_SIZE, -5L, 10L)
                 .appendHashedField(StoreFileReadable.FIELD_FOLDER_ID, 3L));
     }
 

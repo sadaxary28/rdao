@@ -4,7 +4,6 @@ import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.utils.ByteUtils;
 import com.infomaximum.database.utils.TypeConvert;
 
-import java.util.Arrays;
 import java.util.Set;
 
 public class FieldKey extends Key {

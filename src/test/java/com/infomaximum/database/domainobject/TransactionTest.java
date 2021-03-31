@@ -71,12 +71,12 @@ public class TransactionTest extends StoreFileDataTest {
         domainObjectSource.executeTransactional(transaction -> transaction.save(transaction.create(StoreFileEditable.class)));
         StoreFileReadable obj = domainObjectSource.get(StoreFileReadable.class, 1);
         Assert.assertNotNull(obj);
-        Assert.assertEquals(null, obj.getFileName());
-        Assert.assertEquals(null, obj.getFolderId());
-        Assert.assertEquals(null, obj.getFormat());
-        Assert.assertEquals(null, obj.isSingle());
+        Assert.assertNull(obj.getFileName());
+        Assert.assertNull(obj.getFolderId());
+        Assert.assertNull(obj.getFormat());
+        Assert.assertNull(obj.isSingle());
         Assert.assertArrayEquals(null, obj.getData());
-        Assert.assertEquals(null, obj.getDouble());
+        Assert.assertNull(obj.getDouble());
 
         //Добавляем объект
         domainObjectSource.executeTransactional(transaction -> {
@@ -115,12 +115,12 @@ public class TransactionTest extends StoreFileDataTest {
         });
         obj = domainObjectSource.get(StoreFileReadable.class, 1);
         Assert.assertNotNull(obj);
-        Assert.assertEquals(null, obj.getFileName());
-        Assert.assertEquals(null, obj.getFolderId());
-        Assert.assertEquals(null, obj.getFormat());
-        Assert.assertEquals(null, obj.isSingle());
+        Assert.assertNull(obj.getFileName());
+        Assert.assertNull(obj.getFolderId());
+        Assert.assertNull(obj.getFormat());
+        Assert.assertNull(obj.isSingle());
         Assert.assertArrayEquals(null, obj.getData());
-        Assert.assertEquals(null, obj.getDouble());
+        Assert.assertNull(obj.getDouble());
 
 
         //Повторно редактируем сохраненый объект

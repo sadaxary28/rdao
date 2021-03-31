@@ -73,7 +73,7 @@ public class RocksDBDropColumnTest extends RocksDataTest {
             List<ColumnFamilyHandle> cfs = new ArrayList<>();
             try (OptimisticTransactionDB txnDb = OptimisticTransactionDB.open(options, pathDataBase.toString(), desc, cfs)) {
                 txnDb.dropColumnFamily(cfs.get(cfIndex));
-                cfs.forEach(columnFamilyHandle -> columnFamilyHandle.close());
+                cfs.forEach(AbstractImmutableNativeReference::close);
             }
         }
 

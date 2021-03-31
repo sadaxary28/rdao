@@ -135,9 +135,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         byte[] buffer = createRecords(recordCount).array();
 
         final long removingId = 7;
-        recordSource.executeTransactional(transaction -> {
-            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, removingId);
-        });
+        recordSource.executeTransactional(transaction -> transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, removingId));
         buffer = PrefixIndexUtils.removeId(removingId, buffer);
 
         List<String> currentLexemes = new ArrayList<>(lexemes);
@@ -159,9 +157,7 @@ public class PrefixIndexTest extends StoreFileDataTest {
         ByteBuffer buffer = createRecords(recordCount);
 
         final String newFileName = " Test sTrIng inform@mail. \r";
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"name"}, new Object[]{newFileName});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"name"}, new Object[]{newFileName}));
 
         List<String> currentLexemes = new ArrayList<>(Arrays.asList("test", "string", "inform@mail.", "mail."));
         try (DBIterator iterator = rocksDBProvider.createIterator(indexColumnFamily)) {

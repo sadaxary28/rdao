@@ -27,7 +27,7 @@ public class PrefixIndexIterator<E extends DomainObject> extends BaseIndexIterat
 
     private List<String> searchingWords;
     private ByteBuffer loadingIds = null;
-    private RangeSet<Long> prevLoadedIds = TreeRangeSet.create();
+    private final RangeSet<Long> prevLoadedIds = TreeRangeSet.create();
     private String[] values;
 
     private List<String> tempList;

@@ -19,9 +19,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
                 transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new String[]{"size"}, new Object[]{oldValue}));
 
         //Редактируем объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, id, new String[]{"size"}, new Object[]{99L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, id, new String[]{"size"}, new Object[]{99L}));
 
         //Ищем объекты по size
         try (RecordIterator i = recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new HashFilter(StoreFileReadable.FIELD_SIZE, oldValue))){
@@ -41,9 +39,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
         });
 
         //Редактируем 1-й объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"size"}, new Object[]{99L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"size"}, new Object[]{99L}));
 
         //Ищем объекты по size
         try (RecordIterator i = recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new HashFilter(StoreFileReadable.FIELD_SIZE, prevValue))){
@@ -65,9 +61,7 @@ public class IndexUpdateTest extends StoreFileDataTest {
         });
 
         //Редактируем 1-й объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"size"}, new Object[]{99L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1, new String[]{"size"}, new Object[]{99L}));
 
         //Ищем объекты по size
         try (RecordIterator i = recordSource.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE, new HashFilter(StoreFileReadable.FIELD_SIZE, value))){

@@ -82,7 +82,7 @@ public class SchemaServiceTest extends DomainDataTest {
 //    }
 
     @Test
-    public void validateWithIgnoringNotOwnedColumnFamily() throws Exception {
+    public void validateWithIgnoringNotOwnedColumnFamily() {
         createDomain(ExchangeFolderReadable.class);
         createDomain(StoreFileReadable.class);
 
@@ -97,7 +97,7 @@ public class SchemaServiceTest extends DomainDataTest {
     }
 
     @Test
-    public void validateInaccurateData() throws Exception {
+    public void validateInaccurateData() {
         try {
             createDomain(StoreFileEditable.class);
             Assert.fail();

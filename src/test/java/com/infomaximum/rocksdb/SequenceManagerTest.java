@@ -11,7 +11,7 @@ import java.util.Set;
 public class SequenceManagerTest extends RocksDataTest {
 
     @Test
-    public void createNew() throws Exception {
+    public void createNew() {
         String sequenceName = "sdfuisii";
 
         try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
@@ -23,7 +23,7 @@ public class SequenceManagerTest extends RocksDataTest {
     }
 
     @Test
-    public void createExisting() throws Exception {
+    public void createExisting() {
         String sequenceName = "sdfuisii";
 
         try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
@@ -40,7 +40,7 @@ public class SequenceManagerTest extends RocksDataTest {
     }
 
     @Test
-    public void drop() throws Exception {
+    public void drop() {
         String sequenceName = "sdfuisii";
 
         try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {
@@ -56,7 +56,7 @@ public class SequenceManagerTest extends RocksDataTest {
     }
 
     @Test
-    public void order() throws Exception {
+    public void order() {
         String sequenceName = "sdfuisii";
 
         try (RocksDBProvider rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build()) {

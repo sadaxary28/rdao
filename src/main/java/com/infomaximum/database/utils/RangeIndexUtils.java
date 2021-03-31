@@ -13,7 +13,7 @@ import java.util.ArrayList;
 public class RangeIndexUtils {
 
     public static void insertIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTransaction transaction) throws DatabaseException {
-        if (!isIndexedRange(beginValue, endValue)) {
+        if (isIndexedRange(beginValue, endValue)) {
             return;
         }
 
@@ -95,7 +95,7 @@ public class RangeIndexUtils {
     }
 
     public static void insertIndexedRange(DBRangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, DBTable table, DBDataCommand dataCommand) throws DatabaseException {
-        if (!isIndexedRange(beginValue, endValue)) {
+        if (isIndexedRange(beginValue, endValue)) {
             return;
         }
 
@@ -177,7 +177,7 @@ public class RangeIndexUtils {
     }
 
     public static void insertIndexedRange(DBRangeIndex index, RangeIndexKey key, Object beginValue, Object endValue, String indexColumnFamily, DBTransaction transaction) throws DatabaseException {
-        if (!isIndexedRange(beginValue, endValue)) {
+        if (isIndexedRange(beginValue, endValue)) {
             return;
         }
 
@@ -264,7 +264,7 @@ public class RangeIndexUtils {
 
     public static void removeIndexedRange(RangeIndex index, RangeIndexKey key, Object beginValue, Object endValue,
                                           DBTransaction transaction, BiConsumer<String, byte[]> deleteFunc) throws DatabaseException {
-        if (!isIndexedRange(beginValue, endValue)) {
+        if (isIndexedRange(beginValue, endValue)) {
             return;
         }
 
@@ -296,7 +296,7 @@ public class RangeIndexUtils {
                                           Object endValue,
                                           DBTable table,
                                           DBDataCommand dataCommand) throws DatabaseException {
-        if (!isIndexedRange(beginValue, endValue)) {
+        if (isIndexedRange(beginValue, endValue)) {
             return;
         }
 
@@ -323,7 +323,7 @@ public class RangeIndexUtils {
     }
 
     private static boolean isIndexedRange(Object beginValue, Object endValue) {
-        return beginValue != null && endValue != null;
+        return beginValue == null || endValue == null;
     }
 
     private static KeyValue stepForward(DBIterator iterator, KeyPattern pattern) throws DatabaseException {

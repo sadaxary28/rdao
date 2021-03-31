@@ -31,7 +31,7 @@ public class MultiIndexWithNullTest extends StoreFileDataTest {
                 StoreFileReadable storeFileReadable = i.next();
 
                 Assert.assertEquals(size, storeFileReadable.getSize());
-                Assert.assertEquals(null, storeFileReadable.getFileName());
+                Assert.assertNull(storeFileReadable.getFileName());
 
                 Assert.assertFalse(i.hasNext());
             }

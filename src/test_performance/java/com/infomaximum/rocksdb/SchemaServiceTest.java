@@ -34,8 +34,6 @@ public class SchemaServiceTest extends DomainDataTest {
                 .setChangeMode(ChangeMode.NONE)
                 .setSchema(Schema.read(rocksDBProvider));
 
-        PerfomanceTest.test(10, step -> {
-            schemaService.execute();
-        });
+        PerfomanceTest.test(10, step -> schemaService.execute());
     }
 }

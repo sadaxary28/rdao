@@ -6,7 +6,6 @@ import com.infomaximum.domain.GeneralEditable;
 import com.infomaximum.rocksdb.RocksDBProvider;
 import com.infomaximum.util.DurationUtils;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.time.Duration;
 
@@ -58,7 +57,7 @@ public class PerformanceTest extends DomainDataInstanceTest {
         });
     }
 
-    private void deleteObjects(long count, Transaction transaction) throws Exception {
+    private void deleteObjects(long count, Transaction transaction) {
         for (long i = 1; i <= count; i++) {
             GeneralEditable generalEditable = transaction.get(GeneralEditable.class, i);
             transaction.remove(generalEditable);

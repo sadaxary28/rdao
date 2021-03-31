@@ -49,25 +49,15 @@ public class DBTableTestUtil {
             Assertions.assertThat(actual.getPrefixIndexes()).hasSameSizeAs(expected.getPrefixIndexes());
             Assertions.assertThat(actual.getRangeIndexes()).hasSameSizeAs(expected.getRangeIndexes());
 
-            expected.getSortedFields().forEach(expectedField -> {
-                assertField(expectedField, actual.getField(expectedField.getName()));
-            });
+            expected.getSortedFields().forEach(expectedField -> assertField(expectedField, actual.getField(expectedField.getName())));
 
-            expected.getHashIndexes().forEach(expectedIndex -> {
-                assertIndex(expectedIndex, actual.getHashIndexes());
-            });
+            expected.getHashIndexes().forEach(expectedIndex -> assertIndex(expectedIndex, actual.getHashIndexes()));
 
-            expected.getIntervalIndexes().forEach(expectedIndex -> {
-                assertIndex(expectedIndex, actual.getIntervalIndexes());
-            });
+            expected.getIntervalIndexes().forEach(expectedIndex -> assertIndex(expectedIndex, actual.getIntervalIndexes()));
 
-            expected.getPrefixIndexes().forEach(expectedIndex -> {
-                assertIndex(expectedIndex, actual.getPrefixIndexes());
-            });
+            expected.getPrefixIndexes().forEach(expectedIndex -> assertIndex(expectedIndex, actual.getPrefixIndexes()));
 
-            expected.getRangeIndexes().forEach(expectedIndex -> {
-                assertIndex(expectedIndex, actual.getRangeIndexes());
-            });
+            expected.getRangeIndexes().forEach(expectedIndex -> assertIndex(expectedIndex, actual.getRangeIndexes()));
         }
     }
 

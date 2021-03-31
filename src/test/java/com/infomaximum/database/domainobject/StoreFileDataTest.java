@@ -47,7 +47,7 @@ public abstract class StoreFileDataTest extends DomainDataTest {
     }
 
     protected void assertFind(Filter filter, List<Long> expectedIds) throws Exception {
-        recordSource.executeTransactional(dataCommand -> {assertFind(dataCommand, filter, expectedIds);});
+        recordSource.executeTransactional(dataCommand -> assertFind(dataCommand, filter, expectedIds));
     }
 
     protected void assertFind(Filter filter, long... expectedIds) throws Exception {

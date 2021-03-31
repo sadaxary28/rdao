@@ -23,9 +23,7 @@ public class MuiltiIndexUpdateTest extends StoreFileDataTest {
         });
 
         //Редактируем 1-й объект
-        recordSource.executeTransactional(transaction -> {
-            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1L, new String[]{"size"}, new Object[]{99L});
-        });
+        recordSource.executeTransactional(transaction -> transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1L, new String[]{"size"}, new Object[]{99L}));
 
         //Ищем объекты по size
         int count=0;

@@ -10,6 +10,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Objects;
+
 public class RocksDBDataSourceTest extends RocksDataTest {
 
     private RocksDBProvider rocksDBProvider;
@@ -62,7 +64,7 @@ public class RocksDBDataSourceTest extends RocksDataTest {
             iterator.seek(new KeyPattern(TypeConvert.pack(0xA0000000)));
             for (long i = startValue + valueCount - 1; i >= startValue; --i) {
                 KeyValue keyValue = iterator.step(DBIterator.StepDirection.BACKWARD);
-                Assert.assertEquals(i, TypeConvert.unpackLong(keyValue.getKey()).longValue());
+                Assert.assertEquals(i, Objects.requireNonNull(TypeConvert.unpackLong(keyValue.getKey())).longValue());
             }
         }
 
@@ -71,7 +73,7 @@ public class RocksDBDataSourceTest extends RocksDataTest {
             iterator.seek(new KeyPattern(TypeConvert.pack(0x70000000)));
             for (long i = startValue; i < startValue + valueCount; ++i) {
                 KeyValue keyValue = iterator.step(DBIterator.StepDirection.FORWARD);
-                Assert.assertEquals(i, TypeConvert.unpackLong(keyValue.getKey()).longValue());
+                Assert.assertEquals(i, Objects.requireNonNull(TypeConvert.unpackLong(keyValue.getKey())).longValue());
             }
         }
 
@@ -90,7 +92,7 @@ public class RocksDBDataSourceTest extends RocksDataTest {
         }
     }
 
-    private void fillData() throws Exception {
+    private void fillData() {
         rocksDBProvider.createColumnFamily(columnFamily);
 
         try (DBTransaction transaction = rocksDBProvider.beginTransaction()) {

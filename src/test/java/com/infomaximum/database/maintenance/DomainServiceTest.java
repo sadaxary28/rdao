@@ -152,7 +152,7 @@ public class DomainServiceTest extends DomainDataTest {
     }
 
     @Test
-    public void validateUnknownColumnFamily() throws Exception {
+    public void validateUnknownColumnFamily() {
         Schema schema = ensureSchema();
         rocksDBProvider.createColumnFamily("com.infomaximum.store.StoreFile.some_prefix");
         Assertions.assertThatExceptionOfType(InconsistentDatabaseException.class).isThrownBy(() -> new DomainService(rocksDBProvider, schema)

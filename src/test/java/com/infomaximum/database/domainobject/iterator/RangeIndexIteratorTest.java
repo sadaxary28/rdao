@@ -24,7 +24,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
 
     @Test
     public void insertAndFindZeroLengthRange() throws Exception {
-        final Long value = 10L;
+        final long value = 10L;
         final Long folderId = 20L;
 
         domainObjectSource.executeTransactional(transaction -> {
@@ -609,7 +609,7 @@ public class RangeIndexIteratorTest extends StoreFileDataTest {
         List<StoreFileReadable> actual = findAll(interval);
 
         Comparator<StoreFileReadable> comparator = Comparator.comparingLong(StoreFileReadable::getBegin)
-                .thenComparing(Comparator.comparingLong(StoreFileReadable::getId));
+                .thenComparingLong(StoreFileReadable::getId);
         expected.sort(comparator);
         actual.sort(comparator);
         Assert.assertEquals(expected, actual);

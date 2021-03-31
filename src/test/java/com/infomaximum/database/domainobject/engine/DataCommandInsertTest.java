@@ -204,7 +204,7 @@ public class DataCommandInsertTest extends StoreFileDataTest {
     }
 
     @Test
-    public void failForeignDependencyExceptionNotExistingReferencingObject() throws Exception {
+    public void failForeignDependencyExceptionNotExistingReferencingObject() {
         String tableName = "StoreFile";
         String namespace = "com.infomaximum.store";
 

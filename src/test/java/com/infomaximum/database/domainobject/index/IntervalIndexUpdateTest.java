@@ -15,14 +15,10 @@ public class IntervalIndexUpdateTest extends IntervalIndexIteratorTest {
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 4));
-        });
+        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, 4)));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 2));
-        });
+        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, 2)));
         assertValueEquals(Arrays.asList(-4L, 0L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
     }
 
@@ -32,9 +28,7 @@ public class IntervalIndexUpdateTest extends IntervalIndexIteratorTest {
 
         assertValueEquals(Arrays.asList(-4L, -2L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
-        domainObjectSource.executeTransactional(transaction -> {
-            transaction.remove(transaction.get(StoreFileEditable.class, 4));
-        });
+        domainObjectSource.executeTransactional(transaction -> transaction.remove(transaction.get(StoreFileEditable.class, 4)));
         assertValueEquals(Arrays.asList(-4L, 0L, 3L, 5L), StoreFileReadable.FIELD_SIZE, -5L, 10L);
 
         domainObjectSource.executeTransactional(transaction -> {

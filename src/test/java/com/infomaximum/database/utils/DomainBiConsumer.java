@@ -6,5 +6,5 @@ import com.infomaximum.rocksdb.RocksDBProvider;
 @FunctionalInterface
 public interface DomainBiConsumer {
 
-    public void accept(DomainObjectSource domainObjectSource, RocksDBProvider rocksDBProvider) throws Exception;
+    void accept(DomainObjectSource domainObjectSource, RocksDBProvider rocksDBProvider) throws Exception;
 }

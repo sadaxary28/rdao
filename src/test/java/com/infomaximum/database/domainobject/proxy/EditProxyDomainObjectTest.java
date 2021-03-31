@@ -47,7 +47,7 @@ public class EditProxyDomainObjectTest extends DomainDataTest {
         Assert.assertEquals(fileName1, storeFileCheckSave.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave.getContentType());
         Assert.assertEquals(size, storeFileCheckSave.getSize());
-        Assert.assertEquals(false, storeFileCheckSave.isSingle());
+        Assert.assertFalse(storeFileCheckSave.isSingle());
 
         //Редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
@@ -63,7 +63,7 @@ public class EditProxyDomainObjectTest extends DomainDataTest {
         Assert.assertEquals(fileName2, editFileCheckSave.getFileName());
         Assert.assertEquals(contentType, editFileCheckSave.getContentType());
         Assert.assertEquals(size, editFileCheckSave.getSize());
-        Assert.assertEquals(true, editFileCheckSave.isSingle());
+        Assert.assertTrue(editFileCheckSave.isSingle());
 
         //Повторно редактируем сохраненый объект
         domainObjectSource.executeTransactional(transaction -> {
@@ -78,6 +78,6 @@ public class EditProxyDomainObjectTest extends DomainDataTest {
         Assert.assertEquals(fileName1, storeFileCheckSave2.getFileName());
         Assert.assertEquals(contentType, storeFileCheckSave2.getContentType());
         Assert.assertEquals(size, storeFileCheckSave2.getSize());
-        Assert.assertEquals(false, storeFileCheckSave2.isSingle());
+        Assert.assertFalse(storeFileCheckSave2.isSingle());
     }
 }
