@@ -2,9 +2,8 @@ group 'com.infomaximum'
 version '1.13.1'
 
 apply plugin: 'java'
-apply plugin: 'maven'
 
-if (file('publish.gradle').exists()) {
+if (project.hasProperty('ossrhUsername')) {
     apply from: 'publish.gradle'
 }
 
@@ -28,7 +27,6 @@ sourceSets {
 
 repositories {
     mavenCentral()
-    maven { url "http://maven.office.infomaximum.com/content/repositories/releases/" }
 }
 
 dependencies {
