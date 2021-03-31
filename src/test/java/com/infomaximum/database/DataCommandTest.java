@@ -79,79 +79,73 @@ public class DataCommandTest extends StoreFileDataTest {
             Assertions.assertThat(insertedRecordCount).isEqualTo(iteratedRecordCount);
         }
     }
-//
-//    @Test //todo after insert
-//    public void iterateTransactional() throws Exception {
-//        try (com.infomaximum.database.domainobject.Transaction transaction = domainObjectSource.buildTransaction()) {
-//            // insert
-//            StoreFileEditable obj = transaction.create(StoreFileEditable.class);
-//            obj.setSize(10);
-//            obj.setFormat(FormatType.B);
-//            transaction.save(obj);
-//
-//            Assert.assertEquals(10L, transaction.get(StoreFileReadable.class, obj.getId()).getSize());
-//
-//            // change
-//            obj.setSize(20);
-//            transaction.save(obj);
-//
-//            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
-//                Assert.assertEquals(20L, i.next().getSize());
-//            }
-//
-//            // change
-//            obj.setFormat(null);
-//            transaction.save(obj);
-//
-//            StoreFileReadable storedObj = transaction.get(StoreFileReadable.class, obj.getId());
-//            Assert.assertNull(storedObj.getFormat());
-//
-//            transaction.commit();
-//        }
-//    }
-//
-//    @Test
-//    public void iterateAndChange() throws Exception {
-//        final int insertedRecordCount = 10;
-//        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
-//
-//        try (Transaction transaction = domainObjectSource.buildTransaction()) {
-//            try (IteratorEntity<StoreFileReadable> i = transaction.find(StoreFileReadable.class, EmptyFilter.INSTANCE)) {
-//                while (i.hasNext()) {
-//                    StoreFileReadable current = i.next();
-//                    if (current.getId() == insertedRecordCount) {
-//                        break;
-//                    }
-//
-//                    StoreFileEditable newNext = transaction.get(StoreFileEditable.class, current.getId() + 1);
-//                    newNext.setDouble(Double.POSITIVE_INFINITY);
-//                    newNext.setFileName(UUID.randomUUID().toString());
-//                    transaction.save(newNext);
-//
-//                    StoreFileReadable next = i.next();
-//                    Assert.assertEquals("name", next.getFileName());
-//                    Assert.assertNull(next.getDouble());
-//                }
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void removeAndFind() throws Exception {
-//        final int insertedRecordCount = 10;
-//        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
-//
-//        domainObjectSource.executeTransactional(transaction -> {
-//            transaction.remove(transaction.get(StoreFileEditable.class, 1));
-//            transaction.remove(transaction.get(StoreFileEditable.class, 5));
-//
-//            Assert.assertNull(transaction.get(StoreFileReadable.class, 1));
-//            testFind(transaction, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
-//        });
-//
-//        Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1));
-//        testFind(domainObjectSource, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
-//    }
+
+    @Test
+    public void iterateTransactional() throws Exception {
+        recordSource.executeTransactional(transaction ->  {
+            // insert
+            long objId = transaction.insertRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                            new String[]{"size"},
+                            new Object[]{10L});
+
+            Assertions.assertThat(transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, objId))
+                    .matches(record -> record.getValues()[StoreFileReadable.FIELD_SIZE].equals(10L));
+
+            // change
+            transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                    objId,
+                    new String[]{"size"},
+                    new Object[]{20L});
+
+            try (RecordIterator i = transaction.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE)) {
+                Assertions.assertThat(i.next().getValues()[StoreFileReadable.FIELD_SIZE]).isEqualTo(20L);
+            }
+        });
+    }
+
+    @Test
+    public void iterateAndChange() throws Exception {
+        final int insertedRecordCount = 10;
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+        recordSource.executeTransactional(transaction ->  {
+            try (RecordIterator i = transaction.select(STORE_FILE_NAME, STORE_FILE_NAMESPACE)) {
+                while (i.hasNext()) {
+                    Record current = i.next();
+                    if (current.getId() == insertedRecordCount) {
+                        break;
+                    }
+
+                    Record newNext = transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, current.getId() + 1);
+                    transaction.updateRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE,
+                            newNext.getId(),
+                            new String[]{"double", "name"},
+                            new Object[]{Double.POSITIVE_INFINITY, UUID.randomUUID().toString()});
+
+                    Record next = i.next();
+                    Assertions.assertThat(next.getValues()[StoreFileReadable.FIELD_FILE_NAME]).isEqualTo("name");
+                    Assertions.assertThat(next.getValues()[StoreFileReadable.FIELD_DOUBLE]).isNull();
+
+                }
+            }
+        });
+    }
+
+    @Test
+    public void removeAndFind() throws Exception {
+        final int insertedRecordCount = 10;
+        initAndFillStoreFiles(domainObjectSource, insertedRecordCount);
+
+
+        recordSource.executeTransactional(transaction ->  {
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1);
+            transaction.deleteRecord(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 5);
+
+            Assertions.assertThat(transaction.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1)).isNull();
+        });
+
+        Assertions.assertThat(recordSource.getById(STORE_FILE_NAME, STORE_FILE_NAMESPACE, 1)).isNull();
+    }
 
     //Hash iterator test
     @Test

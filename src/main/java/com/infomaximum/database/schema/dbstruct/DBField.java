@@ -69,7 +69,7 @@ public class DBField extends DBObject {
             return (Class<? extends Serializable>) Class.forName(type);
         } catch (ClassNotFoundException e) {
             log.warn("Class not found for type: " + type);
-            return String.class; //todo V.Bukharkin change it
+            return String.class;
         }
     }
 }

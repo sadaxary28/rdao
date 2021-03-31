@@ -11,9 +11,8 @@ import com.infomaximum.database.domainobject.DomainDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SchemaServiceTest extends DomainDataTest { //todo V.Bukharkin дополнить тесты
+public class SchemaServiceTest extends DomainDataTest {
 
-    //todo add install
     @Test
     public void validateValidScheme() throws DatabaseException {
         createDomain(ExchangeFolderReadable.class);
