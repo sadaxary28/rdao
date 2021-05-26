@@ -44,9 +44,11 @@ public abstract class DataEnumerable {
     }
 
     private final DBProvider dbProvider;
+    private final Schema schema;
 
     DataEnumerable(DBProvider dbProvider) {
         this.dbProvider = dbProvider;
+        this.schema = Schema.read(dbProvider);
     }
 
     public DBProvider getDbProvider() {
@@ -157,6 +159,10 @@ public abstract class DataEnumerable {
 
         long objId = FieldKey.unpackId(keyValue.getKey());
         return new NextState(getNextNotMarkedForDeletion(entity, objId, iterator));
+    }
+
+    public Schema getSchema() {
+        return schema;
     }
 
     private <T extends DomainObject> long readObject(T obj, DBIterator iterator) throws DatabaseException {

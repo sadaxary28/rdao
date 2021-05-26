@@ -3,6 +3,7 @@ package com.infomaximum.database.domainobject;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.infomaximum.database.DataCommand;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
@@ -25,6 +26,7 @@ import java.util.*;
 public class Transaction extends DataEnumerable implements AutoCloseable {
 
     private DBTransaction transaction = null;
+    private DataCommand dataCommand = null;
     private boolean closed = false;
     private boolean foreignFieldEnabled = true;
     private final Map<String, Objects> deletingObjects = new HashMap<>();
@@ -44,6 +46,12 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     public DBTransaction getDBTransaction() throws DatabaseException {
         ensureTransaction();
         return transaction;
+    }
+
+    public DataCommand getDataCommand() throws DatabaseException {
+        ensureTransaction();
+        dataCommand = new DataCommand(transaction, getSchema().getDbSchema());
+        return dataCommand;
     }
 
     public <T extends DomainObject & DomainObjectEditable> T create(final Class<T> clazz) throws DatabaseException {

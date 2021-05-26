@@ -19,7 +19,7 @@ public class DataCommand extends DataReadCommand {
 
     private final DBDataCommand dataCommand;
 
-    DataCommand(DBDataCommand dataCommand, DBSchema schema) {
+    public DataCommand(DBDataCommand dataCommand, DBSchema schema) {
         super(dataCommand, schema);
         this.dataCommand = dataCommand;
     }
