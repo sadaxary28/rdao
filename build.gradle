@@ -2,10 +2,12 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
+    id ("de.jjohannes.extra-java-module-info") version "0.15"
 }
 if (project.hasProperty('ossrhUsername')) {
     apply from: 'publish.gradle'
 }
+apply from: 'https://raw.githubusercontent.com/Infomaximum/platform-java-module-info/main/com.infomaximum.platform-java-module-info.gradle'
 
 group 'com.infomaximum'
 version '1.14.1'
@@ -55,9 +57,15 @@ repositories {
 
 dependencies {
 
-    implementation group: 'org.rocksdb', name: 'rocksdbjni', version: '6.8.1'
+    implementation 'org.rocksdb:rocksdbjni:6.8.1'
 
-    implementation 'com.google.guava:guava:31.1-jre'
+    implementation('com.google.guava:guava:31.1-jre') {
+        exclude group: 'com.google.guava', module: 'failureaccess'
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
+    }
+
     implementation 'net.minidev:json-smart:2.4.8'
 
     implementation 'org.slf4j:slf4j-api:1.7.30'

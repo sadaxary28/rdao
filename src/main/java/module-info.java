@@ -1,8 +1,9 @@
 module com.infomaximum.rdao {
-    requires rocksdbjni;
-    requires com.google.common;
+
+    requires org.rocksdb.rocksdbjni;
+    requires com.google.guava.guava;
     requires org.slf4j;
-    requires json.smart;
+    requires net.minidev.jsonsmart;
 
     exports com.infomaximum.database.domainobject;
     exports com.infomaximum.database.exception;
