@@ -10,7 +10,7 @@ if (project.hasProperty('ossrhUsername')) {
 apply from: 'https://raw.githubusercontent.com/Infomaximum/platform-java-module-info/main/com.infomaximum.platform-java-module-info.gradle'
 
 group 'com.infomaximum'
-version '1.14.1'
+version '1.14.2'
 
 ext.moduleName = 'com.infomaximum.rdao'
 
