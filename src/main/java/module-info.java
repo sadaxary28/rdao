@@ -1,6 +1,6 @@
 module com.infomaximum.rdao {
 
-    requires org.rocksdb.rocksdbjni;
+    requires transitive org.rocksdb.rocksdbjni;
     requires com.google.guava.guava;
     requires org.slf4j;
     requires net.minidev.jsonsmart;
