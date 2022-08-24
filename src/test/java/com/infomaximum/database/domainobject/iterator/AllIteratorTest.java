@@ -1,16 +1,16 @@
 package com.infomaximum.database.domainobject.iterator;
 
-import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.Transaction;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.exception.UnexpectedEndObjectException;
+import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.utils.TypeConvert;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
 import com.infomaximum.domain.type.FormatType;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -163,11 +163,11 @@ public class AllIteratorTest extends StoreFileDataTest {
             transaction.remove(transaction.get(StoreFileEditable.class, 5));
 
             Assert.assertNull(transaction.get(StoreFileReadable.class, 1));
-            assertFind(transaction, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
+            testFind(transaction, EmptyFilter.INSTANCE, 2, 3, 4, 6, 7, 8, 9, 10);
         });
 
         Assert.assertNull(domainObjectSource.get(StoreFileReadable.class, 1));
-        assertFind(domainObjectSource, EmptyFilter.INSTANCE, 2,3,4,6,7,8,9,10);
+        testFind(domainObjectSource, EmptyFilter.INSTANCE, 2, 3, 4, 6, 7, 8, 9, 10);
     }
 
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {

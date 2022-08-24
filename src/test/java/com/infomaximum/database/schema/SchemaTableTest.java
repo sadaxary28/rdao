@@ -10,7 +10,6 @@ import com.infomaximum.database.schema.dbstruct.DBTable;
 import com.infomaximum.database.schema.table.*;
 import com.infomaximum.domain.*;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,13 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SchemaTableTest extends DomainDataJ5Test {
-
-    @BeforeEach
-    void setUp() throws DatabaseException {
-        schema = Schema.create(rocksDBProvider);
-    }
-
-    private Schema schema;
 
     //Создание таблицы_____________________________________________
     @Test
