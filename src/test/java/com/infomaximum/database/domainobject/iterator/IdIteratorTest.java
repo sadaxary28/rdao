@@ -11,7 +11,10 @@ import com.infomaximum.domain.type.FormatType;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class IdIteratorTest extends StoreFileDataTest {
 
@@ -112,12 +115,15 @@ public class IdIteratorTest extends StoreFileDataTest {
             transaction.remove(transaction.get(StoreFileEditable.class, 1));
             transaction.remove(transaction.get(StoreFileEditable.class, 5));
 
-            assertFind(transaction, new IdFilter(0, 1));
-            assertFind(transaction, new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
+            testFind(transaction, new IdFilter(0, 1));
+
+            testFind(transaction, new IdFilter(0, 1));
+            testFind(transaction, new IdFilter(0, 1000), 2, 3, 4, 6, 7, 8, 9, 10);
+
         });
 
-        assertFind(domainObjectSource, new IdFilter(0, 1));
-        assertFind(domainObjectSource, new IdFilter(0, 1000), 2,3,4,6,7,8,9,10);
+        testFind(domainObjectSource, new IdFilter(0, 1));
+        testFind(domainObjectSource, new IdFilter(0, 1000), 2, 3, 4, 6, 7, 8, 9, 10);
     }
 
     private void initAndFillStoreFiles(DomainObjectSource domainObjectSource, int recordCount) throws Exception {

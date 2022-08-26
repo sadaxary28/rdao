@@ -20,6 +20,10 @@ import java.util.ArrayList;
 
 class SchemaTest extends DomainDataJ5Test {
 
+    @Override
+    public void createSchema() {
+    }
+
     @Test
     @DisplayName("Создание пустой схемы")
     void justCreateTest() throws DatabaseException {
