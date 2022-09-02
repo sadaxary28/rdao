@@ -305,7 +305,7 @@ public class Schema {
         }
     }
 
-    public void checkSubsystemIntegrity(Set<StructEntity> domains, String namespace) throws DatabaseException {
+    public void checkSubsystemIntegrity(Set<StructEntity> domains, String namespace, HashMap<String, ArrayList<String>> excludedIntegrityTables) throws DatabaseException {
         Set<String> domainNames = new HashSet<>(domains.size());
         for (StructEntity domain : domains) {
             domainNames.add(domain.getName());
@@ -314,9 +314,20 @@ public class Schema {
                 throw new TableNotFoundException("Table in schema for class " + domain.getObjectClass() + " doesn't exist");
             }
             Table domainTable = DBTableUtils.buildTable(domain);
+            final boolean isExcludedIntegrity = isExcludedIntegrity(domain, excludedIntegrityTables);
+            if (isExcludedIntegrity) {
+                log.info("DOMAIN TABLE " + domainTable.getNamespace() + "." + domainTable.getName()
+                        + " EXCLUDED FROM CHECK SUBSYSTEM INTEGRITY");
+            }
+
             if (!domainTable.same(table)) {
-                throw new InconsistentTableException("Domain table " + domainTable.getNamespace() + "." + domainTable.getName()
-                        + " doesn't equal to schema table. \nDomain table: " + domainTable + "\nSchema table: " + table);
+                if (isExcludedIntegrity) {
+                    log.error("Domain table " + domainTable.getNamespace() + "." + domainTable.getName()
+                            + " doesn't equal to schema table. \nDomain table: " + domainTable + "\nSchema table: " + table);
+                } else {
+                    throw new InconsistentTableException("Domain table " + domainTable.getNamespace() + "." + domainTable.getName()
+                            + " doesn't equal to schema table. \nDomain table: " + domainTable + "\nSchema table: " + table);
+                }
             }
         }
         List<DBTable> schemaTables = dbSchema.getTables()
@@ -328,6 +339,17 @@ public class Schema {
                 throw new TableNotFoundException("Domain class " + schemaTable.getNamespace() + "." + schemaTable.getName() + " doesn't exists");
             }
         }
+    }
+
+    private boolean isExcludedIntegrity(StructEntity domain, HashMap<String, ArrayList<String>> excludedIntegrityTables) {
+        return excludedIntegrityTables
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().equals(domain.getNamespace()))
+                .flatMap(entry -> entry.getValue().stream())
+                .filter(name -> domain.getName().equals(name))
+                .findFirst()
+                .isPresent();
     }
 //
 //    public void renameTable(String oldName, String newName, String namespace) throws DatabaseException {
