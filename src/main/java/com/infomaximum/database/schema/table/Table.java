@@ -68,11 +68,11 @@ public class Table {
         Table table = (Table) o;
         return Objects.equals(name, table.name) &&
                 Objects.equals(namespace, table.namespace) &&
-                Objects.equals(fields, table.fields) &&
-                hashIndexes == null ? table.hashIndexes == null : hashIndexes.containsAll(table.hashIndexes) &&
-                prefixIndexes == null ? table.prefixIndexes == null : prefixIndexes.containsAll(table.prefixIndexes) &&
-                intervalIndexes == null ? table.intervalIndexes == null : intervalIndexes.containsAll(table.intervalIndexes) &&
-                rangeIndexes == null ? table.rangeIndexes == null : rangeIndexes.containsAll(table.rangeIndexes);
+                (fields.containsAll(table.fields) && fields.size() == table.fields.size()) &&
+                (Objects.isNull(hashIndexes) ? table.hashIndexes == null : hashIndexes.containsAll(table.hashIndexes)) &&
+                (Objects.isNull(prefixIndexes) ? table.prefixIndexes == null : prefixIndexes.containsAll(table.prefixIndexes)) &&
+                (Objects.isNull(intervalIndexes) ? table.intervalIndexes == null : intervalIndexes.containsAll(table.intervalIndexes)) &&
+                (Objects.isNull(rangeIndexes) ? table.rangeIndexes == null : rangeIndexes.containsAll(table.rangeIndexes));
     }
 
     @Override
