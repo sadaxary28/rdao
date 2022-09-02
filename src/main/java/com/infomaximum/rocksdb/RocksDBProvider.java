@@ -1,14 +1,18 @@
 package com.infomaximum.rocksdb;
 
+import com.infomaximum.database.exception.ColumnFamilyNotFoundException;
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
-import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.ColumnFamilyNotFoundException;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfig;
+import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfigMapper;
 import org.rocksdb.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 public class RocksDBProvider implements DBProvider, AutoCloseable {
@@ -104,6 +108,25 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
     }
 
     @Override
+    public void createColumnFamily(String columnFamilyName, ColumnFamilyConfig options) throws DatabaseException {
+        try {
+            ColumnFamilyDescriptor columnFamilyDescriptor = new ColumnFamilyDescriptor(
+                    TypeConvert.pack(columnFamilyName),
+                    ColumnFamilyConfigMapper.toRocksDbOpt(options)
+            );
+            ColumnFamilyHandle columnFamilyHandle = getRocksDB().createColumnFamily(columnFamilyDescriptor);
+            if (columnFamilies.putIfAbsent(columnFamilyName, columnFamilyHandle) != null) {
+                try (ColumnFamilyHandle handle = columnFamilyHandle) {
+                    getRocksDB().dropColumnFamily(handle);
+                }
+            }
+        } catch (RocksDBException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+
+    @Override
     public void dropColumnFamily(String columnFamilyName) throws DatabaseException {
         try (ColumnFamilyHandle columnFamilyHandle = columnFamilies.remove(columnFamilyName)) {
             if (columnFamilyHandle != null) {
@@ -148,7 +171,7 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
         }
     }
 
-    ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) throws ColumnFamilyNotFoundException {
+    public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) throws ColumnFamilyNotFoundException {
         ColumnFamilyHandle cf = columnFamilies.get(columnFamilyName);
         if (cf != null) {
             return cf;

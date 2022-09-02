@@ -4,6 +4,8 @@ import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.utils.PathUtils;
 import com.infomaximum.database.utils.TempLibraryCleaner;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfig;
+import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfigService;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
 
@@ -12,15 +14,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class RocksDataBaseBuilder {
 
     private Path path;
+    private ColumnFamilyConfigService columnFamilyConfigService;
+
 
     public RocksDataBaseBuilder withPath(Path path) {
         this.path = path.toAbsolutePath();
+        return this;
+    }
+
+    public RocksDataBaseBuilder withConfigColumnFamilies(Map<String, ColumnFamilyConfig> configuredColumnFamilies) {
+        columnFamilyConfigService = new ColumnFamilyConfigService(configuredColumnFamilies);
         return this;
     }
 
@@ -29,7 +40,9 @@ public class RocksDataBaseBuilder {
         PathUtils.checkPath(path);
         try (DBOptions options = buildOptions()) {
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = getColumnFamilyDescriptors();
-
+            if (Objects.nonNull(columnFamilyConfigService)) {
+                columnFamilyConfigService.applySettings(columnFamilyDescriptors);
+            }
             List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
             OptimisticTransactionDB rocksDB = OptimisticTransactionDB.open(options, path.toString(), columnFamilyDescriptors, columnFamilyHandles);
 
