@@ -18,4 +18,5 @@ module com.infomaximum.rdao {
     exports com.infomaximum.database.schema.dbstruct;
     exports com.infomaximum.database.schema.table;
     exports com.infomaximum.database;
+    exports com.infomaximum.rocksdb.options.columnfamily;
 }
