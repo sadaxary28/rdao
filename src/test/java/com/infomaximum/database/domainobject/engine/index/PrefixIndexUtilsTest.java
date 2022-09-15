@@ -77,7 +77,7 @@ public class PrefixIndexUtilsTest {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assertions.assertThat(lexemes.toArray())
-                .containsOnly(new String[] {"привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "comparator", "2d"});
+                .containsOnly("привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "comparator", "2d");
     }
 
     @Test
@@ -87,7 +87,7 @@ public class PrefixIndexUtilsTest {
         SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
         PrefixIndexUtils.splitIndexingTextIntoLexemes(text, lexemes);
         Assertions.assertThat(lexemes.toArray())
-                .containsOnly(new String[] {"привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "com", "2d", "...test...2d"});
+                .containsOnly("привет", "медвед", "test...2d", "sop@ru", "ru", "infom.com", "com", "2d", "...test...2d");
     }
 
     @Test

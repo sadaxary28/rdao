@@ -5,6 +5,7 @@ import com.infomaximum.database.domainobject.DomainObjectSource;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.SchemaException;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.schema.*;
@@ -37,15 +38,13 @@ public class IndexService {
     }
 
     public static void doIndex(DBHashIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
-        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final DBField[] dbFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds());
+        final StructEntity structEntity = getStructEntity(table);
+        ArrayList<Field> structEntityFields = getStructEntityFields(dbFields, structEntity);
         final HashIndexKey indexKey = new HashIndexKey(0, index);
-
-        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+        indexData(getLoadedFields(structEntityFields), table, dbProvider, (obj, transaction) -> {
             indexKey.setId(obj.getId());
-            HashIndexUtils.setHashValues(IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds()),
-                    obj,
-                    indexKey.getFieldValues());
-
+            HashIndexUtils.setHashValues(structEntityFields, obj, indexKey.getFieldValues());
             transaction.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
         });
     }
@@ -64,13 +63,14 @@ public class IndexService {
     }
 
     public static void doPrefixIndex(DBPrefixIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
-        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
+        final DBField[] dbFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds());
+        final StructEntity structEntity = getStructEntity(table);
+        ArrayList<Field> structEntityFields = getStructEntityFields(dbFields, structEntity);
         final SortedSet<String> lexemes = PrefixIndexUtils.buildSortedSet();
-
-        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+        indexData(getLoadedFields(structEntityFields), table, dbProvider, (obj, transaction) -> {
             lexemes.clear();
-            for (DBField field : IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds())) {
-                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getId()), lexemes);
+            for (Field field : structEntityFields) {
+                PrefixIndexUtils.splitIndexingTextIntoLexemes(obj.get(field.getNumber()), lexemes);
             }
             PrefixIndexUtils.insertIndexedLexemes(index, obj.getId(), lexemes, table.getIndexColumnFamily(), transaction);
         });
@@ -92,14 +92,17 @@ public class IndexService {
     }
 
     public static void doIntervalIndex(DBIntervalIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
-        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
-        final DBField[] hashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
+        final DBField[] dbFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds());
+        final StructEntity structEntity = getStructEntity(table);
+        final ArrayList<Field> structEntityFields = getStructEntityFields(dbFields, structEntity);
+        final DBField[] dbHashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
+        ArrayList<Field> hashIndexFields = getStructEntityFields(dbHashedFields, structEntity);
         final DBField indexedField = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getIndexedFieldId());
-        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[hashedFields.length], index);
+        final IntervalIndexKey indexKey = new IntervalIndexKey(0, new long[dbHashedFields.length], index);
 
-        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+        indexData(getLoadedFields(structEntityFields), table, dbProvider, (obj, transaction) -> {
             indexKey.setId(obj.getId());
-            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            HashIndexUtils.setHashValues(hashIndexFields, obj, indexKey.getHashedValues());
             indexKey.setIndexedValue(obj.get(indexedField.getId()));
 
             transaction.put(table.getIndexColumnFamily(), indexKey.pack(), TypeConvert.EMPTY_BYTE_ARRAY);
@@ -122,17 +125,23 @@ public class IndexService {
     }
 
     public static void doRangeIndex(DBRangeIndex index, DBTable table, DBProvider dbProvider) throws DatabaseException {
-        final Set<Integer> indexingFields = Arrays.stream(index.getFieldIds()).boxed().collect(Collectors.toSet());
-        final DBField[] hashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
-        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashedFields.length], index);
+        final DBField[] allFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getFieldIds());
+        final StructEntity structEntity = getStructEntity(table);
+        final ArrayList<Field> structEntityFields = getStructEntityFields(allFields, structEntity);
+        final DBField[] dbHashedFields = IndexUtils.getFieldsByIds(table.getSortedFields(), index.getHashFieldIds());
+        ArrayList<Field> hashIndexFields = getStructEntityFields(dbHashedFields, structEntity);
 
-        indexData(indexingFields, table, dbProvider, (obj, transaction) -> {
+        final RangeIndexKey indexKey = new RangeIndexKey(0, new long[hashIndexFields.size()], index);
+        final Field beginField = getStructEntityField(IndexUtils.getFieldsByIds(table.getSortedFields(), index.getBeginFieldId()), structEntity);
+        final Field endField = getStructEntityField(IndexUtils.getFieldsByIds(table.getSortedFields(), index.getEndFieldId()), structEntity);
+
+        indexData(getLoadedFields(structEntityFields), table, dbProvider, (obj, transaction) -> {
             indexKey.setId(obj.getId());
-            HashIndexUtils.setHashValues(hashedFields, obj, indexKey.getHashedValues());
+            HashIndexUtils.setHashValues(hashIndexFields, obj, indexKey.getHashedValues());
             RangeIndexUtils.insertIndexedRange(index,
                     indexKey,
-                    obj.get(index.getBeginFieldId()),
-                    obj.get(index.getEndFieldId()),
+                    obj.get(beginField.getNumber()),
+                    obj.get(endField.getNumber()),
                     table.getIndexColumnFamily(),
                     transaction);
         });
@@ -143,9 +152,9 @@ public class IndexService {
         DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
         try (DBTransaction transaction = dbProvider.beginTransaction();
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(table.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {
-             while (iter.hasNext()) {
-                 recordCreator.apply(iter.next(), transaction);
-             }
+            while (iter.hasNext()) {
+                recordCreator.apply(iter.next(), transaction);
+            }
             transaction.commit();
         }
     }
@@ -156,10 +165,39 @@ public class IndexService {
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(Schema.getTableClass(table.getName(), table.getNamespace()),
                      EmptyFilter.INSTANCE,
                      loadingFields)) {
-             while (iter.hasNext()) {
-                 recordCreator.apply(iter.next(), transaction);
-             }
+            while (iter.hasNext()) {
+                recordCreator.apply(iter.next(), transaction);
+            }
             transaction.commit();
         }
+    }
+
+    private static StructEntity getStructEntity(DBTable table) {
+        final Class<? extends DomainObject> tableClass = Schema.getTableClass(table.getName(), table.getNamespace());
+        return new StructEntity(StructEntity.getAnnotationClass(tableClass));
+    }
+
+    private static ArrayList<Field> getStructEntityFields(DBField[] dbFields, StructEntity structEntity) {
+        ArrayList<Field> fields = new ArrayList<>();
+        for (DBField dbField : dbFields) {
+            fields.add(getStructEntityField(dbField, structEntity));
+        }
+        return fields;
+    }
+
+    private static Field getStructEntityField(DBField dbFields, StructEntity structEntity) {
+        final Field[] structEntityFields = structEntity.getFields();
+        for (Field structEntityField : structEntityFields) {
+            if (structEntityField.getName().equals(dbFields.getName())) {
+                return structEntityField;
+            }
+        }
+        throw new SchemaException("Required field:" + dbFields.getName() + "from schema doesn't found in StructEntity");
+    }
+
+    private static HashSet<Integer> getLoadedFields(ArrayList<Field> fields) {
+        return fields.stream()
+                .map(Field::getNumber)
+                .collect(Collectors.toCollection(HashSet::new));
     }
 }

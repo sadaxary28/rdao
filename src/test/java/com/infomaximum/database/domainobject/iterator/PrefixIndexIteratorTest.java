@@ -1,13 +1,15 @@
 package com.infomaximum.database.domainobject.iterator;
 
+import com.infomaximum.database.domainobject.StoreFileDataTest;
 import com.infomaximum.database.domainobject.filter.PrefixFilter;
 import com.infomaximum.database.utils.PrefixIndexUtils;
 import com.infomaximum.domain.StoreFileEditable;
 import com.infomaximum.domain.StoreFileReadable;
-import com.infomaximum.database.domainobject.StoreFileDataTest;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class PrefixIndexIteratorTest extends StoreFileDataTest {
 
@@ -211,11 +213,11 @@ public class PrefixIndexIteratorTest extends StoreFileDataTest {
             transaction.remove(transaction.get(StoreFileEditable.class, 1));
             transaction.remove(transaction.get(StoreFileEditable.class, 2));
 
-            assertFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
-            assertFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
+            testFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
+            testFind(transaction, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
         });
 
-        assertFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
-        assertFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
+        testFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "by"));
+        testFind(domainObjectSource, new PrefixFilter(StoreFileReadable.FIELD_FILE_NAME, "hel"), 3);
     }
 }

@@ -371,12 +371,12 @@ public class IntervalIndexIteratorTest extends StoreFileDataTest {
             transaction.remove(transaction.get(StoreFileEditable.class, 1));
             transaction.remove(transaction.get(StoreFileEditable.class, 2));
 
-            assertFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
-            assertFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+            testFind(transaction, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
         });
 
-        assertFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
-        assertFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
+        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 19L, 21L));
+        testFind(domainObjectSource, new IntervalFilter(StoreFileReadable.FIELD_SIZE, 0L, 1L), 3);
     }
 
     protected void assertValueEquals(List<Double> expected, Integer fieldName, Double begin, Double end) throws DatabaseException {

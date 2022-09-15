@@ -17,12 +17,17 @@ public abstract class DomainDataJ5Test extends RocksDataTest {
     protected RocksDBProvider rocksDBProvider;
 
     protected DomainObjectSource domainObjectSource;
+    protected Schema schema;
 
     @BeforeEach
     public void init() throws Exception {
         super.init();
-
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
+        createSchema();
+    }
+
+    public void createSchema() {
+        schema = Schema.create(rocksDBProvider);
         domainObjectSource = new DomainObjectSource(rocksDBProvider);
     }
 
