@@ -10,7 +10,7 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '1.14.7'
+version '1.14.8'
 
 ext.moduleName = 'com.infomaximum.rdao'
 
@@ -57,7 +57,7 @@ repositories {
 
 dependencies {
 
-    api 'org.rocksdb:rocksdbjni:6.8.1'
+    implementation 'org.rocksdb:rocksdbjni:6.8.1'
 
     implementation('com.google.guava:guava:31.1-jre') {
         exclude group: 'com.google.guava', module: 'failureaccess'
