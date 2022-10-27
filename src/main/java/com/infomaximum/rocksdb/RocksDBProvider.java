@@ -6,6 +6,7 @@ import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
 import com.infomaximum.database.provider.DBTransaction;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.rocksdb.backup.RocksDBCreateBackup;
 import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfig;
 import com.infomaximum.rocksdb.options.columnfamily.ColumnFamilyConfigMapper;
 import org.rocksdb.*;
@@ -144,6 +145,10 @@ public class RocksDBProvider implements DBProvider, AutoCloseable {
         } catch (RocksDBException e) {
             throw new DatabaseException(e);
         }
+    }
+
+    public RocksDBCreateBackup getRocksDBBackup() {
+        return new RocksDBCreateBackup(rocksDB);
     }
 
     @Override
