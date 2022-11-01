@@ -1,6 +1,9 @@
 package com.infomaximum.database.schema;
 
 import com.infomaximum.database.domainobject.DomainObject;
+import com.infomaximum.database.domainobject.DomainObjectSource;
+import com.infomaximum.database.domainobject.filter.EmptyFilter;
+import com.infomaximum.database.domainobject.iterator.IteratorEntity;
 import com.infomaximum.database.exception.*;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.dbstruct.*;
@@ -152,31 +155,14 @@ public class Schema {
         saveSchema();
     }
 
-    public void clearTable(String name, String namespace) throws DatabaseException {
-        DBTable table = dbSchema.getTable(name, namespace);
-
-        List<DBTable> dependenceTables = getDependenciesOfOtherTable(table.getId());
-        if (!dependenceTables.isEmpty()) {
-            for (DBTable dependenceTable : dependenceTables) {
-                try(DBIterator it = dbProvider.createIterator(dependenceTable.getDataColumnFamily())) {
-                    if (it.seek(null) != null) {
-                        throw new TableClearException("Can't clear table: "
-                                + namespace + "." + name +
-                                ", there are dependencies on the data table. " +
-                                ". Clear a dependence table before: "
-                                + dependenceTable.getNamespace() + "." + dependenceTable.getName());
-                    }
-                }
+    private static Field getStructEntityField(DBField dbFields, DBTable table) {
+        final Field[] structEntityFields = getStructEntity(table).getFields();
+        for (Field structEntityField : structEntityFields) {
+            if (structEntityField.getName().equals(dbFields.getName())) {
+                return structEntityField;
             }
         }
-
-        dbProvider.dropColumnFamily(table.getDataColumnFamily());
-        dbProvider.dropColumnFamily(table.getIndexColumnFamily());
-        dbProvider.dropSequence(table.getDataColumnFamily());
-
-        dbProvider.createColumnFamily(table.getDataColumnFamily());
-        dbProvider.createColumnFamily(table.getIndexColumnFamily());
-        dbProvider.createSequence(table.getDataColumnFamily());
+        throw new SchemaException("Required field:" + dbFields.getName() + "from schema doesn't found in StructEntity");
     }
 
     public Table getTable(String name, String namespace) {
@@ -392,6 +378,122 @@ public class Schema {
         return newField;
     }
 
+    private static StructEntity getStructEntity(DBTable table) {
+        final Class<? extends DomainObject> tableClass = Schema.getTableClass(table.getName(), table.getNamespace());
+        return new StructEntity(StructEntity.getAnnotationClass(tableClass));
+    }
+
+    public void clearTable(String name, String namespace) throws DatabaseException {
+        DBTable table = dbSchema.getTable(name, namespace);
+
+        List<DBTable> dependenceTables = getDependenciesOfOtherTable(table.getId());
+        if (!dependenceTables.isEmpty()) {
+            for (DBTable dependenceTable : dependenceTables) {
+                try (DBIterator it = dbProvider.createIterator(dependenceTable.getDataColumnFamily())) {
+                    if (it.seek(null) != null) {
+                        throw new TableClearException("Can't clear table: "
+                                + namespace + "." + name +
+                                ", there are dependencies on the data table. " +
+                                ". Clear a dependence table before: "
+                                + dependenceTable.getNamespace() + "." + dependenceTable.getName());
+                    }
+                }
+            }
+        }
+
+        dbProvider.dropColumnFamily(table.getDataColumnFamily());
+        dbProvider.dropColumnFamily(table.getIndexColumnFamily());
+        dbProvider.dropSequence(table.getDataColumnFamily());
+
+        dbProvider.createColumnFamily(table.getDataColumnFamily());
+        dbProvider.createColumnFamily(table.getIndexColumnFamily());
+        dbProvider.createSequence(table.getDataColumnFamily());
+    }
+
+    public void dropForeignKey(TField tableField, Table table) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
+        dropForeignKey(tableField, dbTable);
+    }
+
+    public void dropForeignKey(TField tableField, String tableName, String namespace) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(tableName, namespace);
+        dropForeignKey(tableField, dbTable);
+    }
+
+    private DBField dropForeignKey(TField tableField, DBTable dbTable) throws DatabaseException {
+        final String fieldName = tableField.getName();
+        final DBField field = dbTable.getField(fieldName);
+        final String tableName = dbTable.getName();
+        if (field == null) {
+            throw new FieldNotFoundException(fieldName, tableName);
+        }
+        if (!field.isForeignKey()) {
+            throw new ForeignDependencyNotFoundException(fieldName, tableName);
+        }
+        field.setForeignTableId(null);
+        saveSchema();
+        return field;
+    }
+
+    public void appendForeignKey(TField tableField, Table table) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(table.getName(), table.getNamespace());
+        appendForeignKey(tableField, dbTable);
+    }
+
+    public void appendForeignKey(TField tableField, String tableName, String namespace) throws DatabaseException {
+        DBTable dbTable = dbSchema.getTable(tableName, namespace);
+        appendForeignKey(tableField, dbTable);
+    }
+
+    private DBField appendForeignKey(TField tableField, DBTable dbTable) throws DatabaseException {
+        final String fieldName = tableField.getName();
+        final DBField field = dbTable.getField(fieldName);
+        final String tableName = dbTable.getName();
+        if (field == null) {
+            throw new FieldNotFoundException(fieldName, tableName);
+        }
+
+        final Class<? extends Serializable> type = field.getType();
+        if (!type.equals(Long.class)) {
+            throw new IllegalTypeException(Long.class, type);
+        }
+
+        if (field.isForeignKey()) {
+            throw new ForeignDependencyAlreadyExistException(fieldName, tableName);
+        }
+
+        final TableReference tableReference = tableField.getForeignTable();
+        final DBTable referenceTable = dbSchema.getTable(tableReference.getName(), tableReference.getNamespace());
+
+        if (referenceTable == null) {
+            throw new TableNotFoundException(tableReference.getName());
+        }
+
+        checkForeignDependencyIntegrity(dbTable, tableField, referenceTable);
+        field.setForeignTableId(referenceTable.getId());
+        createIndex(new THashIndex(field.getName()), dbTable);
+        saveSchema();
+        return field;
+    }
+
+    private void checkForeignDependencyIntegrity(DBTable dbTable, TField tableField, DBTable referenceTable) {
+        final DBField field = dbTable.getField(tableField.getName());
+        final Field structEntityField = getStructEntityField(field, dbTable);
+        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
+        final Class<? extends DomainObject> dbTableClass = Schema.getTableClass(dbTable.getName(), dbTable.getNamespace());
+        final Class<? extends DomainObject> referenceTableClass = Schema.getTableClass(referenceTable.getName(), referenceTable.getNamespace());
+        try (IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(dbTableClass, EmptyFilter.INSTANCE)) {
+            while (iter.hasNext()) {
+                final DomainObject domainObject = iter.next();
+                final Long referenceId = domainObject.get(structEntityField.getNumber());
+                final DomainObject referenceObject = domainObjectSource.get(referenceTableClass, referenceId);
+                if (Objects.isNull(referenceObject)) {
+                    throw new ForeignDependencyException(domainObject.getId(), dbTable, referenceTable, field, referenceId);
+                }
+            }
+        }
+    }
+
     private DBField insertField(int fieldId, TField tableField, DBTable dbTable) throws DatabaseException {
         int i = dbTable.findFieldIndex(tableField.getName());
         if (i != -1) {
@@ -428,6 +530,7 @@ public class Schema {
         DBTable dbTable = dbSchema.getTable(tableName, tableNamespace);
         insertField(fieldId, tableField, dbTable);
     }
+
     public boolean dropField(String fieldName, String tableName, String namespace) throws DatabaseException {
 //        dbSchema.dropField(fieldName, tableName, namespace);
         DBTable table = dbSchema.getTable(tableName, namespace);
@@ -709,7 +812,7 @@ public class Schema {
 
     private void dropFieldData(DBField field, DBTable table) throws DatabaseException {
         try (DBTransaction transaction = dbProvider.beginTransaction()) {
-            KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[] {
+            KeyPattern pattern = new KeyPattern(new KeyPattern.Postfix[]{
                     new KeyPattern.Postfix(FieldKey.ID_BYTE_SIZE, TypeConvert.pack(field.getName()))
             });
             try (DBIterator i = transaction.createIterator(table.getDataColumnFamily())) {
@@ -730,7 +833,7 @@ public class Schema {
 
     private boolean hasDependenceOfOtherTable(int tableId) {
         for (DBTable table : getDbSchema().getTables()) {
-            if(table.getId() == tableId) {
+            if (table.getId() == tableId) {
                 continue;
             }
             for (DBField field : table.getSortedFields()) {
@@ -745,7 +848,7 @@ public class Schema {
     private List<DBTable> getDependenciesOfOtherTable(int tableId) {
         List<DBTable> result = new ArrayList<>();
         for (DBTable table : getDbSchema().getTables()) {
-            if(table.getId() == tableId) {
+            if (table.getId() == tableId) {
                 continue;
             }
             for (DBField field : table.getSortedFields()) {

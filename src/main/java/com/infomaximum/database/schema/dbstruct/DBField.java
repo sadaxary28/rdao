@@ -15,8 +15,8 @@ public class DBField extends DBObject {
     private static final String JSON_PROP_FOREIGN_TABLE_ID = "foreign_table_id";
 
     private String name;
-    private final Class<? extends Serializable> type;
-    private final Integer foreignTableId;
+    private Class<? extends Serializable> type;
+    private Integer foreignTableId;
 
     DBField(int id, String name, Class<? extends Serializable> type, Integer foreignTableId) {
         super(id);
@@ -37,8 +37,16 @@ public class DBField extends DBObject {
         return type;
     }
 
+    public void setType(Class<? extends Serializable> type) {
+        this.type = type;
+    }
+
     public Integer getForeignTableId() {
         return foreignTableId;
+    }
+
+    public void setForeignTableId(Integer foreignTableId) {
+        this.foreignTableId = foreignTableId;
     }
 
     public boolean isForeignKey() {
