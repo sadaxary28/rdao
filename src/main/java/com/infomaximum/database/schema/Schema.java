@@ -486,6 +486,9 @@ public class Schema {
             while (iter.hasNext()) {
                 final DomainObject domainObject = iter.next();
                 final Long referenceId = domainObject.get(structEntityField.getNumber());
+                if (referenceId == null) {
+                    continue;
+                }
                 final DomainObject referenceObject = domainObjectSource.get(referenceTableClass, referenceId);
                 if (Objects.isNull(referenceObject)) {
                     throw new ForeignDependencyException(domainObject.getId(), dbTable, referenceTable, field, referenceId);
