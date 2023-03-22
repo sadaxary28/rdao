@@ -109,8 +109,8 @@ public class ChangeForeignDependencyTest extends DomainDataJ5Test {
         Assertions.assertThatThrownBy(
                         () -> schema.checkSubsystemIntegrity(
                                 Sets.newHashSet(new StructEntity(StoreFileReadable.class)),
-                                "com.infomaximum.store",
-                                new HashMap<>()))
+                                "com.infomaximum.store"
+                        ))
                 .isInstanceOf(InconsistentTableException.class);
     }
 
