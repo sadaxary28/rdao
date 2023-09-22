@@ -6,9 +6,9 @@ import com.google.common.collect.TreeRangeSet;
 import com.infomaximum.database.DataCommand;
 import com.infomaximum.database.domainobject.filter.EmptyFilter;
 import com.infomaximum.database.domainobject.iterator.IteratorEntity;
+import com.infomaximum.database.exception.ClosedObjectException;
 import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.exception.ForeignDependencyException;
-import com.infomaximum.database.exception.ClosedObjectException;
 import com.infomaximum.database.provider.*;
 import com.infomaximum.database.schema.*;
 import com.infomaximum.database.utils.HashIndexUtils;
@@ -31,8 +31,8 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
     private boolean foreignFieldEnabled = true;
     private final Map<String, Objects> deletingObjects = new HashMap<>();
 
-    protected Transaction(DBProvider dbProvider) {
-        super(dbProvider);
+    protected Transaction(DBProvider dbProvider, Boolean reloadSchema) {
+        super(dbProvider, reloadSchema);
     }
 
     public boolean isForeignFieldEnabled() {

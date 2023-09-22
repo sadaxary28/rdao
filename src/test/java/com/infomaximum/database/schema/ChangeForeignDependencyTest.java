@@ -232,7 +232,7 @@ public class ChangeForeignDependencyTest extends DomainDataJ5Test {
     @DisplayName("При добавлении foreign dependency, полю на таблицах с корректными данными, в схеме у поля добавляется foreign_table_id и создается индекс"
             + " После создания делается попытка удалить объект на который установлена ссылка.")
     void appendForeignKeyOnTablesWithDataSuccessfully() throws Exception {
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider, true);
 
         initAndFillStoreFiles(domainObjectSource, 10, false);
         initAndFillExchangeFolder(domainObjectSource, 10);
@@ -285,7 +285,7 @@ public class ChangeForeignDependencyTest extends DomainDataJ5Test {
     @Test
     @DisplayName("При добавлении foreign dependency, полю в таблице с данными, где значение foreign dependency null ")
     void appendForeignKeyOnTablesWithDataNullReference() throws Exception {
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider, true);
         initAndFillStoreFiles(domainObjectSource, 10, true);
         final Table storeFileTable = schema.getTable("StoreFile", "com.infomaximum.store");
         final String sizeFieldName = "size";
@@ -299,7 +299,7 @@ public class ChangeForeignDependencyTest extends DomainDataJ5Test {
     @Test
     @DisplayName("При добавлении foreign dependency, полю в таблице с данными, где есть значения, которых нет в reference table, генерирует исключение")
     void appendForeignKeyOnTablesWithDataNotExistReferenceRecords() throws Exception {
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider, true);
         initAndFillStoreFiles(domainObjectSource, 10, false);
         initAndFillExchangeFolder(domainObjectSource, 5);
         final Table storeFileTable = schema.getTable("StoreFile", "com.infomaximum.store");

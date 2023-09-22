@@ -1,9 +1,8 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
-
-import com.infomaximum.database.exception.DatabaseException;
 import com.infomaximum.database.schema.StructEntity;
 
 public class DomainObjectSource extends DataEnumerable {
@@ -30,12 +29,12 @@ public class DomainObjectSource extends DataEnumerable {
         R apply(final Transaction transaction) throws Exception;
     }
 
-    public DomainObjectSource(DBProvider dbProvider) {
-        super(dbProvider);
+    public DomainObjectSource(DBProvider dbProvider, Boolean reloadSchema) {
+        super(dbProvider, reloadSchema);
     }
 
     public void executeTransactional(final Monad operation) throws Exception {
-        try (Transaction transaction = buildTransaction()) {
+        try (Transaction transaction = buildTransaction(true)) {
             operation.action(transaction);
             transaction.commit();
         }
@@ -50,7 +49,11 @@ public class DomainObjectSource extends DataEnumerable {
     }
 
     public Transaction buildTransaction() {
-        return new Transaction(getDbProvider());
+        return new Transaction(getDbProvider(), false);
+    }
+
+    public Transaction buildTransaction(Boolean reloadSchema) {
+        return new Transaction(getDbProvider(), reloadSchema);
     }
 
     @Override
