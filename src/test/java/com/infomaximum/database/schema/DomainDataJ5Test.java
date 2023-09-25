@@ -28,7 +28,7 @@ public abstract class DomainDataJ5Test extends RocksDataTest {
 
     public void createSchema() {
         schema = Schema.create(rocksDBProvider);
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider, true);
     }
 
     @AfterEach

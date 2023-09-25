@@ -149,7 +149,7 @@ public class IndexService {
 
 
     private static void indexData(Set<Integer> loadingFields, StructEntity table, DBProvider dbProvider, ModifierCreator recordCreator) throws DatabaseException {
-        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
+        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider, true);
         try (DBTransaction transaction = dbProvider.beginTransaction();
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(table.getObjectClass(), EmptyFilter.INSTANCE, loadingFields)) {
             while (iter.hasNext()) {
@@ -160,7 +160,7 @@ public class IndexService {
     }
 
     private static void indexData(Set<Integer> loadingFields, DBTable table, DBProvider dbProvider, ModifierCreator recordCreator) throws DatabaseException {
-        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
+        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider, true);
         try (DBTransaction transaction = dbProvider.beginTransaction();
              IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(Schema.getTableClass(table.getName(), table.getNamespace()),
                      EmptyFilter.INSTANCE,

@@ -45,6 +45,7 @@ public class Schema {
     public static final String SERVICE_COLUMN_FAMILY = "service";
     static final byte[] VERSION_KEY = TypeConvert.pack("version");
     static final byte[] SCHEMA_KEY = TypeConvert.pack("schema");
+    private static DBSchema cacheDbSchema;
 
     private final DBProvider dbProvider;
     private final DBSchema dbSchema;
@@ -61,7 +62,16 @@ public class Schema {
     }
 
     public static Schema read(DBProvider dbProvider) throws DatabaseException {
-        return new Schema(dbProvider, readSchema(dbProvider));
+        cacheDbSchema = readSchema(dbProvider);
+        return new Schema(dbProvider, cacheDbSchema);
+    }
+
+    public static Schema readFromCache(DBProvider dbProvider) throws DatabaseException {
+        if (Objects.nonNull(cacheDbSchema)) {
+            return new Schema(dbProvider, cacheDbSchema);
+        }
+        cacheDbSchema = readSchema(dbProvider);
+        return new Schema(dbProvider, cacheDbSchema);
     }
 
     private static DBSchema createSchema(DBProvider dbProvider) throws DatabaseException {
@@ -458,7 +468,7 @@ public class Schema {
     private void checkForeignDependencyIntegrity(DBTable dbTable, TField tableField, DBTable referenceTable) {
         final DBField field = dbTable.getField(tableField.getName());
         final Field structEntityField = getStructEntityField(field, dbTable);
-        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider);
+        DomainObjectSource domainObjectSource = new DomainObjectSource(dbProvider, true);
         final Class<? extends DomainObject> dbTableClass = Schema.getTableClass(dbTable.getName(), dbTable.getNamespace());
         final Class<? extends DomainObject> referenceTableClass = Schema.getTableClass(referenceTable.getName(), referenceTable.getNamespace());
         try (IteratorEntity<? extends DomainObject> iter = domainObjectSource.find(dbTableClass, EmptyFilter.INSTANCE)) {

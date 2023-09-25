@@ -51,7 +51,7 @@ public abstract class DomainDataInstanceTest extends DomainDataTest {
         }
         FileUtils.copyDirectory(super.pathDataBase.toFile(), pathDataBase.toFile());
         rocksDBProvider = new RocksDataBaseBuilder().withPath(pathDataBase).build();
-        domainObjectSource = new DomainObjectSource(rocksDBProvider);
+        domainObjectSource = new DomainObjectSource(rocksDBProvider, true);
     }
 
     private void closeEtalonBD() {
@@ -62,6 +62,6 @@ public abstract class DomainDataInstanceTest extends DomainDataTest {
 
     private void openEtalonBD() throws DatabaseException {
         super.rocksDBProvider = new RocksDataBaseBuilder().withPath(super.pathDataBase).build();
-        super.domainObjectSource = new DomainObjectSource(super.rocksDBProvider);
+        super.domainObjectSource = new DomainObjectSource(super.rocksDBProvider, true);
     }
 }

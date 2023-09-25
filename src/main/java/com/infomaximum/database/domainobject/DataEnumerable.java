@@ -1,20 +1,19 @@
 package com.infomaximum.database.domainobject;
 
+import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.domainobject.iterator.*;
+import com.infomaximum.database.exception.DatabaseException;
+import com.infomaximum.database.exception.IllegalTypeException;
+import com.infomaximum.database.exception.UnexpectedEndObjectException;
 import com.infomaximum.database.provider.DBIterator;
 import com.infomaximum.database.provider.DBProvider;
-import com.infomaximum.database.domainobject.iterator.*;
-import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.provider.KeyPattern;
 import com.infomaximum.database.provider.KeyValue;
-import com.infomaximum.database.domainobject.filter.*;
+import com.infomaximum.database.schema.Field;
 import com.infomaximum.database.schema.Schema;
 import com.infomaximum.database.schema.StructEntity;
-import com.infomaximum.database.utils.key.FieldKey;
-
-import com.infomaximum.database.exception.DatabaseException;
-import com.infomaximum.database.exception.UnexpectedEndObjectException;
-import com.infomaximum.database.exception.IllegalTypeException;
 import com.infomaximum.database.utils.TypeConvert;
+import com.infomaximum.database.utils.key.FieldKey;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -46,9 +45,11 @@ public abstract class DataEnumerable {
     private final DBProvider dbProvider;
     private final Schema schema;
 
-    DataEnumerable(DBProvider dbProvider) {
+    DataEnumerable(DBProvider dbProvider, Boolean reloadSchema) {
         this.dbProvider = dbProvider;
-        this.schema = Schema.read(dbProvider);
+        this.schema = reloadSchema ?
+                Schema.read(dbProvider)
+                : Schema.readFromCache(dbProvider);
     }
 
     public DBProvider getDbProvider() {
@@ -79,9 +80,9 @@ public abstract class DataEnumerable {
         if (filter instanceof EmptyFilter) {
             return new AllIterator<>(this, clazz, loadingFields);
         } else if (filter instanceof HashFilter) {
-            return new HashIndexIterator<>(this, clazz, loadingFields, (HashFilter)filter);
+            return new HashIndexIterator<>(this, clazz, loadingFields, (HashFilter) filter);
         } else if (filter instanceof PrefixFilter) {
-            return new PrefixIndexIterator<>( this, clazz, loadingFields, (PrefixFilter)filter);
+            return new PrefixIndexIterator<>(this, clazz, loadingFields, (PrefixFilter) filter);
         } else if (filter instanceof IntervalFilter) {
             return new IntervalIndexIterator<>(this, clazz, loadingFields, (IntervalFilter) filter);
         } else if (filter instanceof RangeFilter) {

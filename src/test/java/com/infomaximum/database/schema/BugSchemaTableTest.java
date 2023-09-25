@@ -98,7 +98,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendHashedField(IndexRecreationReadable.FIELD_NAME_Z, name);
 
 
-        try (RangeIndexIterator<IndexRecreationReadable> hashIndexIterator = new RangeIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (RangeIndexIterator<IndexRecreationReadable> hashIndexIterator = new RangeIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -127,7 +127,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendHashedField(IndexRecreationReadable.FIELD_PRICE, price);
 
 
-        try (RangeIndexIterator<IndexRecreationReadable> hashIndexIterator = new RangeIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (RangeIndexIterator<IndexRecreationReadable> hashIndexIterator = new RangeIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -151,7 +151,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendHashedField(IndexRecreationReadable.FIELD_NAME_Z, name)
                 .appendHashedField(IndexRecreationReadable.FIELD_PRICE, price);
 
-        try (IntervalIndexIterator<IndexRecreationReadable> hashIndexIterator = new IntervalIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (IntervalIndexIterator<IndexRecreationReadable> hashIndexIterator = new IntervalIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -175,7 +175,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendHashedField(IndexRecreationReadable.FIELD_PRICE, price)
                 .appendHashedField(IndexRecreationReadable.FIELD_NAME_Z, name);
 
-        try (IntervalIndexIterator<IndexRecreationReadable> hashIndexIterator = new IntervalIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (IntervalIndexIterator<IndexRecreationReadable> hashIndexIterator = new IntervalIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -198,7 +198,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
         PrefixFilter filter = new PrefixFilter(Arrays.asList(IndexRecreationReadable.FIELD_NAME_X, IndexRecreationReadable.FIELD_NAME_Z), name);
 
 
-        try (PrefixIndexIterator<IndexRecreationReadable> hashIndexIterator = new PrefixIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (PrefixIndexIterator<IndexRecreationReadable> hashIndexIterator = new PrefixIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -219,7 +219,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
         PrefixFilter filter = new PrefixFilter(Arrays.asList(IndexRecreationReadable.FIELD_NAME_Z, IndexRecreationReadable.FIELD_NAME_X), name);
 
 
-        try (PrefixIndexIterator<IndexRecreationReadable> hashIndexIterator = new PrefixIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (PrefixIndexIterator<IndexRecreationReadable> hashIndexIterator = new PrefixIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -241,7 +241,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendField(IndexRecreationReadable.FIELD_NAME_Z, zName);
 
 
-        try (HashIndexIterator<IndexRecreationReadable> hashIndexIterator = new HashIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (HashIndexIterator<IndexRecreationReadable> hashIndexIterator = new HashIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
@@ -265,7 +265,7 @@ public class BugSchemaTableTest extends DomainDataJ5Test {
                 .appendField(IndexRecreationReadable.FIELD_PRICE, price);
 
 
-        try (HashIndexIterator<IndexRecreationReadable> hashIndexIterator = new HashIndexIterator<>(new DomainObjectSource(rocksDBProvider),
+        try (HashIndexIterator<IndexRecreationReadable> hashIndexIterator = new HashIndexIterator<>(new DomainObjectSource(rocksDBProvider, true),
                 IndexRecreationReadable.class,
                 null,
                 filter
