@@ -50,7 +50,7 @@ public class Transaction extends DataEnumerable implements AutoCloseable {
 
     public DataCommand getDataCommand() throws DatabaseException {
         ensureTransaction();
-        dataCommand = new DataCommand(transaction, getSchema().getDbSchema());
+        dataCommand = new DataCommand(transaction, schema.getDbSchema());
         return dataCommand;
     }
 
